@@ -43,7 +43,9 @@ restart the game.
 
 A blocked spawn or blocks remaining in the hidden rows after a lock ends the
 game. Game over records a completed framework result and shows your score,
-best score, and **Play again / Share best** actions.
+best score, and **Play again / Share best** actions in an independent draggable
+window above the launcher. Drag its background to reposition it; close with the
+top-right button or Escape. Closing the launcher also dismisses the dialog.
 
 ## Saved best and sharing
 
@@ -64,7 +66,7 @@ then press Enter to send. Nothing is sent automatically.
 keyboard input. The framework records an interrupted match without a loss;
 your earned best score remains saved. No confirmation is required.
 
-Using **Launcher**, closing the window, or focusing a chat/edit box automatically
+Using **Launcher**, closing the window, opening match history, or focusing a chat/edit box automatically
 pauses play and releases held movement keys. Reopen via **Open game** or
 `/kictetris`, then press **P** or **Resume**. Escape and other non-game keys keep
 their normal WoW behavior. Combat-specific handling is outside this addon scope.

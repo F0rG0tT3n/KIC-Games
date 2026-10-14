@@ -120,10 +120,18 @@ local function client(name, realm)
         self.events = {}
     end
     function methods:Show()
+        local changed = not self.shown
         self.shown = true
+        if changed and self.scripts.OnShow then
+            self.scripts.OnShow(self)
+        end
     end
     function methods:Hide()
+        local changed = self.shown
         self.shown = false
+        if changed and self.scripts.OnHide then
+            self.scripts.OnHide(self)
+        end
     end
     function methods:IsShown()
         return self.shown
@@ -132,7 +140,7 @@ local function client(name, realm)
         return self.shown and (not self.parent or self.parent:IsVisible())
     end
     function methods:GetFrameLevel()
-        return 1
+        return self.frameLevel or 1
     end
     function methods:EnableKeyboard(value)
         self.keyboardEnabled = value
@@ -141,16 +149,32 @@ local function client(name, realm)
         self.propagate = value
     end
     function methods:SetShown(value)
-        self.shown = not not value
+        if value then
+            self:Show()
+        else
+            self:Hide()
+        end
     end
     function methods:Enable()
         self.enabled = true
+        if self.scripts.OnEnable then
+            self.scripts.OnEnable(self)
+        end
     end
     function methods:Disable()
         self.enabled = false
+        if self.scripts.OnDisable then
+            self.scripts.OnDisable(self)
+        end
+    end
+    function methods:IsEnabled()
+        return self.enabled
     end
     function methods:SetText(value)
         self.text = value
+        if self.caption and self.caption ~= self then
+            self.caption.text = value
+        end
     end
     function methods:GetStringHeight()
         local _, lines = (self.text or ""):gsub("\n", "\n")
@@ -163,35 +187,102 @@ local function client(name, realm)
         return 1
     end
     for _, method in ipairs({
-        "SetPoint",
-        "SetColorTexture",
         "SetAlpha",
-        "SetFrameLevel",
-        "ClearAllPoints",
-        "SetSize",
-        "SetHeight",
-        "SetWidth",
         "SetJustifyH",
-        "SetTextColor",
         "SetSpacing",
         "SetBackdrop",
-        "SetBackdropColor",
-        "SetBackdropBorderColor",
-        "SetAllPoints",
-        "SetFrameStrata",
         "SetClampedToScreen",
-        "SetMovable",
         "EnableMouse",
+        "EnableMouseWheel",
+        "SetOrientation",
+        "SetValueStep",
+        "SetThumbTexture",
         "RegisterForDrag",
         "SetScrollChild",
         "SetHighlightTexture",
         "SetTexCoord",
-        "StartMoving",
-        "StopMovingOrSizing",
+        "SetToplevel",
+        "SetFontString",
         "SetOwner",
         "AddLine",
     }) do
         methods[method] = function() end
+    end
+    function methods:SetPoint(...)
+        self.points = self.points or {}
+        self.points[#self.points + 1] = { ... }
+    end
+    function methods:ClearAllPoints()
+        self.points = {}
+    end
+    function methods:SetAllPoints(parent)
+        self.allPoints = parent or self.parent
+    end
+    function methods:SetSize(width, height)
+        self.width, self.height = width, height
+    end
+    function methods:SetHeight(height)
+        self.height = height
+        if self.scripts.OnSizeChanged then
+            self.scripts.OnSizeChanged(self)
+        end
+    end
+    function methods:GetHeight()
+        return self.height or 0
+    end
+    function methods:SetMinMaxValues(minimum, maximum)
+        self.minimum, self.maximum = minimum, maximum
+    end
+    function methods:SetValue(value)
+        self.value = math.max(self.minimum or 0, math.min(value, self.maximum or value))
+        if self.scripts.OnValueChanged then
+            self.scripts.OnValueChanged(self, self.value)
+        end
+    end
+    function methods:SetVerticalScroll(value)
+        self.verticalScroll = value
+        if self.scripts.OnVerticalScroll then
+            self.scripts.OnVerticalScroll(self, value)
+        end
+    end
+    function methods:GetVerticalScroll()
+        return self.verticalScroll or 0
+    end
+    function methods:SetWidth(width)
+        self.width = width
+    end
+    function methods:SetFont(_, size)
+        self.fontSize = size
+    end
+    function methods:SetColorTexture(...)
+        self.color = { ... }
+    end
+    function methods:SetTextColor(...)
+        self.textColor = { ... }
+    end
+    function methods:SetBackdropColor(...)
+        self.background = { ... }
+    end
+    function methods:SetBackdropBorderColor(...)
+        self.border = { ... }
+    end
+    function methods:SetFrameStrata(strata)
+        self.strata = strata
+    end
+    function methods:SetFrameLevel(level)
+        self.frameLevel = level
+    end
+    function methods:SetMovable(value)
+        self.movable = value
+    end
+    function methods:StartMoving()
+        self.moving = true
+    end
+    function methods:StopMovingOrSizing()
+        self.moving = false
+    end
+    function methods:Raise()
+        self.raiseCount = (self.raiseCount or 0) + 1
     end
     function methods:SetTexture(value)
         if env.rejectTexture == value then
@@ -945,6 +1036,36 @@ t.grouped = false
 local G, T = t.games, t.games.Tetris
 local before = #packets
 check(G:StartSingleplayer("tetris"), "Bundled Tetris could not start")
+check(
+    G.UI.frame.strata == "DIALOG" and G.UI.resultsFrame.strata == "FULLSCREEN_DIALOG",
+    "History can render underneath the launcher"
+)
+check(
+    G.UI.resultsFrame.movable and G.UI.resultsFrame.parent == t.env.UIParent,
+    "History is not an independent movable window"
+)
+G.UI:ShowResults()
+G.UI.resultsFrame.scripts.OnDragStart()
+check(G.UI.resultsFrame.moving and G.UI.resultsFrame.raiseCount > 0, "History did not raise and start dragging")
+G.UI.resultsFrame.scripts.OnDragStop()
+check(not G.UI.resultsFrame.moving, "History did not stop dragging")
+local historyScroll = G.UI.resultList.parent
+G.UI.resultList:SetHeight(900)
+historyScroll.scripts.OnMouseWheel(historyScroll, -1)
+check(
+    historyScroll:GetVerticalScroll() > 0 and historyScroll.scrollBar:IsShown(),
+    "Custom history scrolling did not move the content"
+)
+G.UI.resultList:SetHeight(100)
+check(
+    historyScroll:GetVerticalScroll() == 0 and not historyScroll.scrollBar:IsShown(),
+    "Shorter history content retained a stale scroll offset"
+)
+G.UI:RefreshResults()
+T:Advance(0.1)
+check(T.paused, "History overlay did not pause Tetris input")
+G.UI.resultsFrame:Hide()
+T:Pause(false)
 check(T.running and T.root:IsVisible() and T.root.keyboardEnabled, "Tetris UI or keyboard did not start")
 check(#T.cells == 200 and #T.Presets == 13, "Missing board cells or class presets")
 -- Spell lookup must be completely unnecessary, even when it returns question marks.
@@ -1011,6 +1132,18 @@ T.model:AddScore(200)
 T.model.lines, T.model.level, T.model.gameover = 2, 1, true
 T:Advance(0)
 check(not G.ActiveGame and not G.Lobby and T.summary:IsShown(), "Game over did not release session and show summary")
+check(
+    T.summary.parent == t.env.UIParent and T.summary.strata == "FULLSCREEN_DIALOG" and T.summary.movable,
+    "Game-over dialog can render underneath the launcher or cannot move"
+)
+T.summary.scripts.OnDragStart()
+check(T.summary.moving and T.summary.raiseCount > 0, "Game-over dialog did not raise and drag")
+T.summary.scripts.OnDragStop()
+check(not T.summary.moving, "Game-over dialog did not stop moving")
+G.UI.frame:Hide()
+check(not T.summary:IsShown(), "Closing launcher left the independent game-over dialog behind")
+G.UI.frame:Show()
+T.summary:Show()
 check(G:GetResults()[1].entries[1].score == T.model.score, "Tetris completion lost score")
 check(G.DB.tetris.best.lines == 2, "Best record lost line metadata")
 G.UI:HideAll()
@@ -1028,3 +1161,78 @@ check(
     "Invalid saved values were not repaired"
 )
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))
+
+-- Optional layout snapshots from the actual UI constructors, for offline visual review.
+if arg[1] == "--preview" then
+    local function json(value)
+        if type(value) == "string" then
+            return '"' .. value:gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\n", "\\n"):gsub("\r", "\\r") .. '"'
+        elseif type(value) == "number" or type(value) == "boolean" then
+            return tostring(value)
+        elseif type(value) == "table" then
+            local out = {}
+            for i, item in ipairs(value) do
+                out[i] = json(item)
+            end
+            return "[" .. table.concat(out, ",") .. "]"
+        end
+        return "null"
+    end
+    local function snapshot(name)
+        local ids, rows = {}, {}
+        for i, frame in ipairs(t.frames) do
+            ids[frame] = i
+        end
+        for i, frame in ipairs(t.frames) do
+            local fields = { '"id":' .. i }
+            for _, key in ipairs({
+                "width",
+                "height",
+                "fontSize",
+                "text",
+                "background",
+                "border",
+                "color",
+                "textColor",
+                "textureValue",
+                "strata",
+                "frameLevel",
+            }) do
+                if frame[key] ~= nil then
+                    fields[#fields + 1] = json(key) .. ":" .. json(frame[key])
+                end
+            end
+            fields[#fields + 1] = '"visible":' .. json(frame:IsVisible())
+            fields[#fields + 1] = '"parent":' .. json(ids[frame.parent])
+            fields[#fields + 1] = '"allPoints":' .. json(ids[frame.allPoints])
+            local points = {}
+            for p, point in ipairs(frame.points or {}) do
+                local copy = {}
+                for j, value in ipairs(point) do
+                    copy[j] = type(value) == "table" and ids[value] or value
+                end
+                points[p] = copy
+            end
+            fields[#fields + 1] = '"points":' .. json(points)
+            rows[#rows + 1] = "{" .. table.concat(fields, ",") .. "}"
+        end
+        local file = assert(io.open(arg[2] .. "/" .. name .. ".json", "w"))
+        file:write("[" .. table.concat(rows, ",") .. "]")
+        file:close()
+    end
+    G.UI:SelectTab("singleplayer")
+    G:StartSingleplayer("tetris")
+    T:SelectPreset("DRUID")
+    for _ = 1, 3 do
+        T.model:HardDrop()
+    end
+    T:Advance(0)
+    snapshot("tetris")
+    G.UI:ShowResults()
+    T:Advance(0)
+    snapshot("history")
+    G.UI.resultsFrame:Hide()
+    T.model.gameover = true
+    T:Advance(0)
+    snapshot("game-over")
+end

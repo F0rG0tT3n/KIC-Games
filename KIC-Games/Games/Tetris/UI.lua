@@ -1,29 +1,14 @@
 local _, Games = ...
 local T = Games.Tetris
+local Theme = Games.Theme
 local function text(parent, value, x, y, width, large)
-    local f = parent:CreateFontString(nil, "OVERLAY", large and "GameFontNormalLarge" or "GameFontHighlight")
-    f:SetPoint("TOPLEFT", x, y)
-    f:SetWidth(width)
-    f:SetJustifyH("LEFT")
-    f:SetText(value)
-    return f
+    return Theme:Label(parent, value, x, y, width, large and "GameFontNormalLarge" or nil)
 end
 local function button(parent, value, x, y, width, callback)
-    local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    b:SetSize(width, 24)
-    b:SetPoint("TOPLEFT", x, y)
-    b:SetText(value)
-    b:SetScript("OnClick", callback)
-    return b
+    return Theme:Button(parent, value, width, x, y, callback, 24)
 end
 local function panel(parent, width, height, x, y)
-    local f = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    f:SetSize(width, height)
-    f:SetPoint("TOPLEFT", x, y)
-    f:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-    f:SetBackdropColor(0.02, 0.025, 0.04, 1)
-    f:SetBackdropBorderColor(0.35, 0.4, 0.5, 1)
-    return f
+    return Theme:Panel(parent, width, height, x, y)
 end
 local function cell(parent, x, y, size)
     local bg = parent:CreateTexture(nil, "BACKGROUND")
@@ -97,7 +82,7 @@ function T:Render(force)
         self:Preview(self.holdCells, m.hold)
         self.drawRevision = m.revision
     end
-    self.pauseText:SetShown(self.paused == true)
+    self.pauseOverlay:SetShown(self.paused == true)
     self.pauseButton:SetText(self.paused and "Resume (P)" or "Pause (P)")
 end
 function T:SelectPreset(token)
@@ -108,6 +93,7 @@ function T:SelectPreset(token)
     self.icons = self:GetIcons(token)
     self.fallbackIcon = self.FallbackIcons[token]
     for _, preset in ipairs(self.Presets) do
+        Theme:Select(self.presetButtons[preset.token], token == preset.token)
         self.presetButtons[preset.token]:SetText(
             (token == preset.token and "> " or "") .. "|cff" .. preset.color .. preset.name .. "|r"
         )
@@ -117,7 +103,8 @@ end
 local captured =
     { LEFT = true, RIGHT = true, DOWN = true, UP = true, X = true, Z = true, SPACE = true, C = true, P = true }
 function T:HasFocus()
-    return GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus() ~= nil
+    return (GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus() ~= nil)
+        or (Games.UI.resultsFrame and Games.UI.resultsFrame:IsShown())
 end
 function T:ReleaseKeys()
     self.keys = {}
@@ -218,8 +205,8 @@ function T:CreateUI(parent)
     local root = CreateFrame("Frame", nil, parent)
     root:SetAllPoints(parent)
     self.root, self.keys = root, {}
-    text(root, "KIC Tetris", 20, -8, 260, true)
-    text(root, "Class icon preset", 20, -44, 260)
+    text(root, "TETRIS", 20, -12, 260, true):SetTextColor(unpack(Theme.Colors.accent))
+    text(root, "ICON COLLECTION / CLASS", 20, -46, 260):SetTextColor(unpack(Theme.Colors.muted))
     self.presetButtons = {}
     for i, preset in ipairs(self.Presets) do
         local token = preset.token
@@ -245,20 +232,28 @@ function T:CreateUI(parent)
         275
     )
     local board = panel(root, 202, 402, 312, -20)
+    board:SetBackdropColor(0.025, 0.03, 0.05, 1)
+    board:SetBackdropBorderColor(unpack(Theme.Colors.accent))
     self.cells = {}
     for y = 1, 20 do
         for x = 1, 10 do
             self.cells[#self.cells + 1] = cell(board, 1 + (x - 1) * 20, -1 - (y - 1) * 20, 20)
         end
     end
-    self.pauseText = text(board, "PAUSED\nPress P to resume", 12, -168, 178, true)
-    self.scoreText = text(root, "", 548, -20, 290, true)
-    text(root, "Next", 548, -115, 290)
+    self.pauseOverlay = panel(board, 200, 108, 1, -147)
+    self.pauseOverlay:SetFrameLevel(board:GetFrameLevel() + 5)
+    self.pauseOverlay:SetBackdropColor(0.035, 0.043, 0.065, 0.97)
+    self.pauseText = text(self.pauseOverlay, "PAUSED", 18, -24, 164, true)
+    self.pauseText:SetJustifyH("CENTER")
+    text(self.pauseOverlay, "Press P to resume", 18, -60, 164):SetJustifyH("CENTER")
+    self.scoreText = text(root, "", 548, -22, 290, true)
+    self.scoreText:SetFont("Fonts\\ARIALN.TTF", 18, "")
+    text(root, "UP NEXT", 548, -115, 290):SetTextColor(unpack(Theme.Colors.muted))
     self.nextCells = {}
     for i = 1, 5 do
         self.nextCells[i] = preview(root, 548 + (i % 2 == 0 and 104 or 0), -140 - math.floor((i - 1) / 2) * 48, 20)
     end
-    text(root, "Hold (C)", 548, -290, 290)
+    text(root, "HOLD / C", 548, -290, 290):SetTextColor(unpack(Theme.Colors.muted))
     self.holdCells = preview(root, 548, -315, 20)
     self.pauseButton = button(root, "Pause (P)", 548, -376, 230, function()
         self:Pause(not self.paused)
@@ -284,21 +279,27 @@ function T:CreateUI(parent)
     return root
 end
 function T:CreateSummary()
-    local f = panel(Games.UI.frame, 420, 240, 240, -190)
-    f:SetFrameLevel(Games.UI.frame:GetFrameLevel() + 20)
-    f:EnableMouse(true)
-    text(f, "Game over", 20, -20, 380, true)
-    self.summaryText = text(f, "", 20, -62, 380)
-    button(f, "Play again", 20, -160, 180, function()
+    local f = panel(UIParent, 440, 284, 0, 0)
+    f:ClearAllPoints()
+    f:SetPoint("CENTER", Games.UI.frame, "CENTER", 0, 0)
+    Theme:Window(f, true)
+    _G.KICGamesTetrisResult = f
+    UISpecialFrames[#UISpecialFrames + 1] = "KICGamesTetrisResult"
+    Theme:CloseButton(f)
+    text(f, "RUN COMPLETE", 24, -26, 350):SetTextColor(unpack(Theme.Colors.accent))
+    text(f, "Game over", 24, -54, 380, true)
+    self.summaryText = text(f, "", 24, -104, 392)
+    self.summaryText:SetFont("Fonts\\ARIALN.TTF", 17, "")
+    button(f, "Play again", 24, -230, 188, function()
         f:Hide()
         Games:StartSingleplayer("tetris")
     end)
-    button(f, "Share best", 220, -160, 180, function()
-        self:ShareBest()
-    end)
-    button(f, "Close", 120, -198, 180, function()
-        f:Hide()
-    end)
+    Theme:Select(
+        button(f, "Share best", 228, -230, 188, function()
+            self:ShareBest()
+        end),
+        true
+    )
     f:Hide()
     self.summary = f
     Games.UI:RegisterAuxiliaryWindow(f)

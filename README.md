@@ -1,7 +1,7 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.4.1. Intended for waiting for the group to fill and the time between dungeons.
+0.5.0. Intended for waiting for the group to fill and the time between dungeons.
 Includes **Tetris**, the first singleplayer module, with colorful WoW icons,
 13 class presets, a saved high score and chat sharing. See [Tetris](TETRIS.md).
 
@@ -133,6 +133,7 @@ stopping, managed timers, sender checks and transport.
 - `Results.lua`: normal completion, quick interruption and bounded shared results.
 - `Countdown.lua`: all-ready scheduling, shared countdown and cancellation.
 - `UI.lua`: library, lobby browser, participants and minimap launcher.
+- `Theme.lua`: shared dark cards, typography, custom buttons and movable layered windows.
 - `Games/Tetris/`: independent rules engine, class presets, game UI and module lifecycle.
 - `Libs/`: bundled Ace3 libraries; no separate Ace3 addon installation required.
 

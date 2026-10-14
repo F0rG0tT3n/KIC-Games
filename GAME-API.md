@@ -257,7 +257,9 @@ rules and UI. Separate addons remain supported.
 
 A module's result dialog can call `KICGames.UI:RegisterAuxiliaryWindow(frame)`
 once when it creates the frame. The framework hides registered windows during
-quick stopping, launcher/game navigation and tab switches. Parent the dialog to
-the launcher frame so closing the main window also hides it. Reuse frames, since
+quick stopping, launcher/game navigation, tab switches and closing the main window.
+Dialogs may be parented to `UIParent` and styled with `KICGames.Theme:Window(frame, true)`
+to receive explicit overlay strata, raising and dragging without being constrained
+by the launcher's frame level. Reuse frames, since
 WoW does not garbage collect them. These local UI helpers do not change API v3's
 network protocol.

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 - 2026-10-14
+
+- Restyled the launcher, lobby, Tetris and result dialogs with dark cards, blue accents, clean typography, custom flat buttons and thin scrollbars.
+- Made both match history and Tetris game-over windows independently draggable and raised them above the launcher with explicit overlay strata.
+- Added automatic game-over dialog cleanup when closing the launcher, plus Escape support.
+- Added a readable pause overlay and paused Tetris while match history is open.
+- Added regression checks for result-window strata, dragging, raising, input pausing and close cleanup.
+
 ## 0.4.1 - 2026-10-14
 
 - Replaced spell-dependent icon lookup in all 13 Tetris class presets with 91 audited texture FileDataIDs.

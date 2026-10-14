@@ -1,29 +1,15 @@
 local _, Games = ...
 local UI = { gameRows = {}, listingRows = {} }
 Games.UI = UI
-local GOLD = { 1, 0.82, 0.35 }
+local Theme = Games.Theme
+local GOLD = Theme.Colors.accent
 
 local function label(parent, value, x, y, width, template)
-    local font = parent:CreateFontString(nil, "OVERLAY", template or "GameFontHighlight")
-    font:SetPoint("TOPLEFT", x, y)
-    font:SetWidth(width)
-    font:SetJustifyH("LEFT")
-    font:SetText(value)
-    return font
+    return Theme:Label(parent, value, x, y, width, template)
 end
 
 local function panel(parent, width, height, x, y)
-    local frame = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    frame:SetSize(width, height)
-    frame:SetPoint("TOPLEFT", x, y)
-    frame:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Buttons\\WHITE8X8",
-        edgeSize = 1,
-    })
-    frame:SetBackdropColor(0.055, 0.065, 0.085, 0.98)
-    frame:SetBackdropBorderColor(0.25, 0.28, 0.34, 1)
-    return frame
+    return Theme:Panel(parent, width, height, x, y)
 end
 
 local function action(fn)
@@ -36,22 +22,11 @@ local function action(fn)
 end
 
 local function button(parent, value, width, x, y, callback)
-    local result = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    result:SetSize(width, 26)
-    result:SetPoint("TOPLEFT", x, y)
-    result:SetText(value)
-    result:SetScript("OnClick", callback)
-    return result
+    return Theme:Button(parent, value, width, x, y, callback)
 end
 
 local function scroll(parent, width, height, x, y)
-    local frame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
-    frame:SetSize(width, height)
-    frame:SetPoint("TOPLEFT", x, y)
-    local child = CreateFrame("Frame", nil, frame)
-    child:SetSize(width, 1)
-    frame:SetScrollChild(child)
-    return child, frame
+    return Theme:Scroll(parent, width, height, x, y)
 end
 
 local function enable(widget, condition)
@@ -66,26 +41,19 @@ function UI:Initialize()
     local frame = panel(UIParent, 900, 630, 0, 0)
     frame:ClearAllPoints()
     frame:SetPoint("CENTER")
-    frame:SetFrameStrata("DIALOG")
-    frame:SetClampedToScreen(true)
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", function()
-        frame:StartMoving()
-    end)
-    frame:SetScript("OnDragStop", function()
+    Theme:Window(frame)
+    frame:SetScript("OnHide", function()
         frame:StopMovingOrSizing()
+        UI:HideAuxiliaryWindows()
     end)
     frame:Hide()
     _G.KICGamesWindow = frame
     UISpecialFrames[#UISpecialFrames + 1] = "KICGamesWindow"
     self.frame = frame
-    local title = label(frame, "KIC-Games", 22, -20, 400, "GameFontNormalLarge")
+    local title = label(frame, "KIC / GAMES", 22, -18, 400, "GameFontNormalLarge")
     title:SetTextColor(unpack(GOLD))
-    label(frame, "Party games for the time between adventures", 22, -47, 510, "GameFontHighlightSmall")
-    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", -4, -4)
+    label(frame, "A little play between adventures", 22, -47, 490, "GameFontHighlightSmall")
+    Theme:CloseButton(frame)
     self.homeButton = button(frame, "Launcher", 100, 742, -34, function()
         UI:ShowHome()
     end)
@@ -198,6 +166,7 @@ function UI:Initialize()
             return Games:StartSingleplayer(UI.selectedSolo)
         end)
     )
+    Theme:Select(self.soloPlay, true)
     self.soloOpen = button(self.singlePanel, "Open game", 145, 16, -393, function()
         UI:ShowGame()
     end)
@@ -291,16 +260,13 @@ end
 function UI:CreateResultsWindow()
     local frame = panel(UIParent, 640, 470, 0, 0)
     frame:ClearAllPoints()
-    frame:SetPoint("CENTER")
-    frame:SetFrameStrata("DIALOG")
-    frame:SetClampedToScreen(true)
-    frame:EnableMouse(true)
+    frame:SetPoint("CENTER", self.frame, "CENTER", 0, 0)
+    Theme:Window(frame, true)
     _G.KICGamesResultsWindow = frame
     UISpecialFrames[#UISpecialFrames + 1] = "KICGamesResultsWindow"
-    label(frame, "KIC-Games - Results", 20, -20, 560, "GameFontNormalLarge")
+    label(frame, "Match history", 24, -22, 540, "GameFontNormalLarge")
     label(frame, "Last 20 matches. Interrupted matches never count as a loss.", 20, -48, 580, "GameFontHighlightSmall")
-    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", -4, -4)
+    Theme:CloseButton(frame)
     self.resultSummary = label(frame, "", 20, -76, 580)
     self.resultList = scroll(frame, 571, 323, 20, -116)
     self.resultText = label(self.resultList, "", 0, 0, 560)
@@ -313,6 +279,7 @@ function UI:ShowResults()
     self:HideAuxiliaryWindows()
     self:RefreshResults()
     self.resultsFrame:Show()
+    self.resultsFrame:Raise()
 end
 
 function UI:RefreshResults()
@@ -406,6 +373,8 @@ function UI:Refresh()
     self.multiTab:SetText("Multiplayer (" .. #multiGames .. ")")
     enable(self.singleTab, self.tab ~= "singleplayer")
     enable(self.multiTab, self.tab ~= "multiplayer")
+    Theme:Select(self.singleTab, self.tab == "singleplayer")
+    Theme:Select(self.multiTab, self.tab == "multiplayer")
     self.browserPanel:SetShown(self.tab == "multiplayer")
     self.lobbyPanel:SetShown(self.tab == "multiplayer")
     self.singlePanel:SetShown(self.tab == "singleplayer")
@@ -429,9 +398,9 @@ function UI:Refresh()
     for i, game in ipairs(games) do
         local row = self.gameRows[i]
         if not row then
-            row = CreateFrame("Button", nil, self.library)
+            row = CreateFrame("Button", nil, self.library, "BackdropTemplate")
             row:SetSize(301, 62)
-            row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+            Theme:StyleButton(row)
             row.title = label(row, "", 6, -5, 288, "GameFontNormal")
             row.detail = label(row, "", 6, -28, 288, "GameFontHighlightSmall")
             row.title:SetHeight(18)
@@ -443,19 +412,15 @@ function UI:Refresh()
         row:SetPoint("TOPLEFT", 0, -(i - 1) * 68)
         row.title:SetText(game.title)
         local selectedID = self.tab == "singleplayer" and self.selectedSolo or self.selectedMulti
+        Theme:Select(row, game.id == selectedID)
         if game.id == selectedID then
             row.title:SetTextColor(unpack(GOLD))
         else
             row.title:SetTextColor(0.8, 0.8, 0.8)
         end
         row.detail:SetText(
-            string.format(
-                "%d-%d players | v%s\n%s",
-                game.minPlayers,
-                game.maxPlayers,
-                game.version,
-                game.description or ""
-            )
+            game.mode == "singleplayer" and "Solo game / Play at your pace"
+                or string.format("Party game / %d-%d players", game.minPlayers, game.maxPlayers)
         )
         row:SetScript(
             "OnClick",
@@ -497,9 +462,9 @@ function UI:Refresh()
     for i, listing in ipairs(listings) do
         local row = self.listingRows[i]
         if not row then
-            row = CreateFrame("Button", nil, self.browser)
+            row = CreateFrame("Button", nil, self.browser, "BackdropTemplate")
             row:SetSize(301, 56)
-            row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+            Theme:StyleButton(row)
             row.title = label(row, "", 6, -3, 290, "GameFontNormal")
             row.detail = label(row, "", 6, -24, 290, "GameFontHighlightSmall")
             row.title:SetHeight(18)
