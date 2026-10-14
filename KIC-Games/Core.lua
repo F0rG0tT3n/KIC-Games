@@ -1,9 +1,10 @@
 local addonName, Games = ...
 _G.KICGames = Games
 
-Games.VERSION = "0.1.0"
-Games.API_VERSION = 1
-Games.PREFIX = "KICGames1"
+Games.VERSION = "0.2.0"
+Games.API_VERSION = 2
+Games.PREFIX = "KICGames2"
+Games.CONTROL_PREFIX = "KICGames2Ctl"
 Games.Registry = {}
 Games.Listings = {}
 Games.MAX_PLAYERS = 5
@@ -88,6 +89,7 @@ function Games:RegisterGame(game)
     assert(type(game.title) == "string" and #game.title > 0 and #game.title <= 80, "Invalid game title")
     assert(type(game.version) == "string" and #game.version > 0 and #game.version <= 32, "Game version required")
     assert(type(game.OnStart) == "function", "Game OnStart callback required")
+    assert(type(game.CreateUI) == "function", "Every game module must provide its own CreateUI callback")
     game.minPlayers = game.minPlayers or 2
     game.maxPlayers = game.maxPlayers or 5
     assert(
@@ -98,7 +100,7 @@ function Games:RegisterGame(game)
             and game.maxPlayers <= self.MAX_PLAYERS,
         "Games support 1-5 players"
     )
-    for _, hook in ipairs({ "CreateUI", "OnStop", "OnMessage", "OnSyncRequested", "OnPlayersChanged" }) do
+    for _, hook in ipairs({ "OnStop", "OnMessage", "OnSyncRequested", "OnPlayersChanged", "OnResult" }) do
         assert(game[hook] == nil or type(game[hook]) == "function", "Invalid callback: " .. hook)
     end
     self.Registry[game.id] = game
@@ -147,16 +149,19 @@ function Games:StopModule(reason)
     if not active then
         return
     end
-    -- Detach before invoking module code so an OnStop hook can safely end the round.
+    -- Detach before hooks so teardown cannot dispatch another game action.
     self.ActiveGame = nil
+    if active.frame then
+        active.frame:Hide()
+    end
+    for timer in pairs(active.timers) do
+        timer:Cancel()
+    end
     if active.game.OnStop then
         local ok, err = pcall(active.game.OnStop, active.context, reason)
         if not ok then
             self:Notify(active.game.title .. " / OnStop: " .. tostring(err))
         end
-    end
-    if active.frame then
-        active.frame:Hide()
     end
 end
 
@@ -168,11 +173,14 @@ function Games:StartModule(restored)
     self:StopModule("restart")
     local game = self.Registry[lobby.gameID]
     local sessionID, run = lobby.id, lobby.run
+    local active
     local function current()
         return Games.Lobby
             and Games.Lobby.id == sessionID
             and Games.Lobby.run == run
             and Games.Lobby.status == "running"
+            and not Games:IsRoundStopped()
+            and Games.ActiveGame == active
     end
     local context = {
         isHost = self:IsHost(),
@@ -192,9 +200,15 @@ function Games:StartModule(restored)
             end
             return Games:SendGameState(event, data, target)
         end,
-        EndGame = function()
+        FinishGame = function(_, result)
             if current() then
-                return Games:ReturnToLobby()
+                return Games:FinishGame(result)
+            end
+            return false
+        end,
+        AbortGame = function()
+            if current() then
+                return Games:AbortGame()
             end
             return false
         end,
@@ -204,14 +218,62 @@ function Games:StartModule(restored)
             end
         end,
     }
-    self.ActiveGame = { game = game, context = context }
+    -- EndGame remains an alias for a normal completion; manual stopping uses AbortGame.
+    context.EndGame = context.FinishGame
+    active = { game = game, context = context, timers = {} }
+    self.ActiveGame = active
+    local function timer(seconds, callback, repeating)
+        if
+            not current()
+            or type(seconds) ~= "number"
+            or seconds ~= seconds
+            or seconds <= 0
+            or seconds > 3600
+            or type(callback) ~= "function"
+        then
+            return nil, "Invalid timer or ended game."
+        end
+        local handle
+        local function fire()
+            if not repeating then
+                active.timers[handle] = nil
+            end
+            if not current() then
+                return
+            end
+            local ok, err = pcall(callback, context)
+            if not ok then
+                Games:Notify(game.title .. " / timer: " .. tostring(err))
+            end
+        end
+        handle = (repeating and C_Timer.NewTicker or C_Timer.NewTimer)(seconds, fire)
+        active.timers[handle] = true
+        return handle
+    end
+    context.NewTicker = function(_, seconds, callback)
+        return timer(seconds, callback, true)
+    end
+    context.After = function(_, seconds, callback)
+        return timer(seconds, callback, false)
+    end
     if game.CreateUI then
         local ok, frame = self:CallGame("CreateUI", self.UI:GetGameContainer())
         if not ok then
             self:StopModule("error")
             return
         end
-        self.ActiveGame.frame = frame
+        if self.ActiveGame ~= active then
+            if frame then
+                frame:Hide()
+            end
+            return
+        end
+        if (type(frame) ~= "table" and type(frame) ~= "userdata") or type(frame.Hide) ~= "function" then
+            self:Notify(game.title .. " / CreateUI: return the module's root frame.")
+            self:StopModule("error")
+            return
+        end
+        active.frame = frame
     end
     if not self:CallGame("OnStart", self:GetSession(), restored == true) then
         self:StopModule("error")
@@ -222,7 +284,13 @@ function Games:StartModule(restored)
     end
     self.UI:ShowGame()
     if not self:IsHost() then
-        self:Send("GAME_SYNC", { id = lobby.id, run = lobby.run, target = lobby.host })
+        self:Send("GAME_SYNC", {
+            id = lobby.id,
+            run = lobby.run,
+            target = lobby.host,
+            gameID = lobby.gameID,
+            gameVersion = lobby.gameVersion,
+        })
     end
 end
 
@@ -237,6 +305,7 @@ events:SetScript("OnEvent", function(_, event, name)
         end
         Games.DB = KICGamesDB
         Games.DB.minimapAngle = tonumber(Games.DB.minimapAngle) or 220
+        Games:InitializeResults()
     elseif event == "PLAYER_LOGIN" then
         Games:InitializeCommunication()
         Games.UI:Initialize()
@@ -247,6 +316,10 @@ events:SetScript("OnEvent", function(_, event, name)
                 Games:Discover()
             elseif text:lower():match("^%s*leave%s*$") then
                 Games:LeaveLobby()
+            elseif text:lower():match("^%s*stop%s*$") or text:lower():match("^%s*abort%s*$") then
+                Games:AbortGame()
+            elseif text:lower():match("^%s*results%s*$") then
+                Games.UI:ShowResults()
             else
                 Games.UI:Toggle()
             end

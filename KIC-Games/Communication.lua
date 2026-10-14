@@ -40,8 +40,12 @@ end
 function Games:InitializeCommunication()
     self.Comm = {}
     LibStub("AceComm-3.0"):Embed(self.Comm)
-    self.Comm:RegisterComm(self.PREFIX, function(_, message, channel, sender)
-        if type(message) ~= "string" or #message > MAX_BYTES or channel ~= Games:GroupChannel() then
+    local function receive(control, message, channel, sender)
+        if
+            type(message) ~= "string"
+            or #message > (control and 255 or MAX_BYTES)
+            or channel ~= Games:GroupChannel()
+        then
             return
         end
         sender = Games:NormalizeName(sender)
@@ -58,8 +62,35 @@ function Games:InitializeCommunication()
         then
             return
         end
-        Games:Receive(kind, data, sender)
+        if control then
+            Games:ReceiveControl(kind, data, sender)
+        else
+            Games:Receive(kind, data, sender)
+        end
+    end
+    self.Comm:RegisterComm(self.PREFIX, function(_, message, channel, sender)
+        receive(false, message, channel, sender)
     end)
+    self.Comm:RegisterComm(self.CONTROL_PREFIX, function(_, message, channel, sender)
+        receive(true, message, channel, sender)
+    end)
+end
+
+function Games:SendControl(kind, data)
+    local channel = self:GroupChannel()
+    if not self.Comm or not channel then
+        return false, "Join a group first."
+    end
+    if kind ~= "ABORT" or not self:ValidData(data) then
+        return false, "Invalid control message."
+    end
+    local message = Serializer:Serialize(self.API_VERSION, kind, data)
+    if #message > 255 then
+        return false, "Control message is too large."
+    end
+    -- Separate prefix/queue: an interrupt cannot split a queued multipart game message.
+    self.Comm:SendCommMessage(self.CONTROL_PREFIX, message, channel, nil, "ALERT")
+    return true
 end
 
 function Games:Send(kind, data)

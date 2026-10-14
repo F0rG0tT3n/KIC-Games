@@ -61,6 +61,7 @@ function Games:CreateLobby()
         revision = 0,
         run = 0,
         epoch = 0,
+        startedAt = 0,
         gameID = "",
         gameVersion = "",
         status = "waiting",
@@ -82,6 +83,7 @@ function Games:SelectGame(id)
         return false, "Too many players for this game."
     end
     self.Lobby.gameID, self.Lobby.gameVersion = id, game.version
+    self.Lobby.result = nil
     self.Lobby.epoch = self.Lobby.epoch + 1
     for _, entry in ipairs(self.Lobby.members) do
         entry.ready = false
@@ -123,14 +125,26 @@ function Games:JoinLobby(host, id)
 end
 
 function Games:ResetLobby(reason)
+    if self.Lobby and self.Lobby.status == "running" and reason ~= "reload" then
+        local result = self:BuildResult("aborted", reason)
+        if result then
+            result.provisional = true
+            self:RecordResult(result)
+        end
+    end
     self:StopModule(reason)
     self.Lobby, self.Pending, self.LastSnapshot = nil, nil, nil
+    self.StoppedRound = nil
+    self.PendingAbort = nil
     self:Changed()
 end
 
 function Games:LeaveLobby()
     local lobby, pending = self.Lobby, self.Pending
     if lobby then
+        if self:IsHost() and lobby.status == "running" then
+            self:FinishRound("aborted", "closed")
+        end
         self:Send(
             self:IsHost() and "CLOSE" or "LEAVE",
             { id = lobby.id, target = not self:IsHost() and lobby.host or nil }
@@ -189,26 +203,18 @@ function Games:StartGame()
     end
     self.Lobby.status = "running"
     self.Lobby.run = self.Lobby.run + 1
+    self.Lobby.startedAt = GetServerTime()
+    self.Lobby.result, self.StoppedRound = nil, nil
     self:PublishLobby()
     self:StartModule(false)
     if not self.ActiveGame then
-        self:ReturnToLobby()
+        self:FinishRound("aborted", "error")
     end
     return true
 end
 
 function Games:ReturnToLobby()
-    if not self:IsHost() then
-        return false, "Only the host can end the game."
-    end
-    self:StopModule("ended")
-    self.Lobby.status = "waiting"
-    self.Lobby.epoch = self.Lobby.epoch + 1
-    for _, entry in ipairs(self.Lobby.members) do
-        entry.ready = false
-    end
-    self:PublishLobby()
-    return true
+    return self:FinishRound("aborted", "host_end")
 end
 
 function Games:RemoveMember(name)
@@ -217,12 +223,11 @@ function Games:RemoveMember(name)
     end
     for i, entry in ipairs(self.Lobby.members) do
         if entry.name == name then
-            table.remove(self.Lobby.members, i)
             if self.Lobby.status == "running" then
-                self:ReturnToLobby()
-            else
-                self:PublishLobby()
+                self:FinishRound("aborted", "player_left", nil, name)
             end
+            table.remove(self.Lobby.members, i)
+            self:PublishLobby()
             return
         end
     end
@@ -239,6 +244,7 @@ function Games:ValidSnapshot(data, sender)
         or not integer(data.revision, 0, 2147483647)
         or not integer(data.run, 0, 2147483647)
         or not integer(data.epoch, 0, 2147483647)
+        or not integer(data.startedAt, 0, 9999999999)
         or (data.status ~= "waiting" and data.status ~= "running")
         or type(data.members) ~= "table"
         or #data.members < 1
@@ -247,6 +253,9 @@ function Games:ValidSnapshot(data, sender)
         return false
     end
     if data.status == "running" and (data.gameID == "" or data.run == 0) then
+        return false
+    end
+    if data.result ~= nil and (data.status ~= "waiting" or not self:ValidResult(data.result, data)) then
         return false
     end
     local roster, names = self:Roster(), {}
@@ -286,10 +295,20 @@ function Games:AcceptSnapshot(data, sender)
     local relevant = old and old.id == data.id and old.host == sender
         or self.Pending and self.Pending.id == data.id and self.Pending.host == sender
     if not relevant then
+        -- A player who left immediately can still receive the host's final result.
+        local last = self.LastResult
+        if last and last.provisional and data.result and last.id == data.result.id and last.host == sender then
+            self:RecordResult(data.result)
+        end
         self:Changed()
         return
     end
     if old and data.revision < old.revision then
+        return
+    end
+    if self:IsRoundStopped() and data.status == "running" and data.run == old.run then
+        -- An older running heartbeat cannot reopen a locally interrupted match.
+        self.LastSnapshot = GetTime()
         return
     end
     if not member(data, self:PlayerName()) then
@@ -299,9 +318,20 @@ function Games:AcceptSnapshot(data, sender)
         return
     end
     self.Lobby, self.Pending, self.LastSnapshot = self.Copy(data), nil, GetTime()
+    if data.result then
+        self:RecordResult(data.result)
+        self:CallGame("OnResult", self.Copy(data.result))
+    end
+    if self.StoppedRound and self.StoppedRound.run < data.run then
+        self.StoppedRound = nil
+    end
     local changedGame = not old or old.gameID ~= data.gameID or old.gameVersion ~= data.gameVersion
     if data.status == "waiting" then
-        self:StopModule("lobby")
+        self.PendingAbort = nil
+        self:StopModule(data.result and data.result.status or "lobby")
+        if old and old.status == "running" and data.result and data.result.status == "aborted" then
+            self.UI:HideAll()
+        end
         local own = self:LocalMember()
         local version = game and game.version or ""
         if own.version ~= version then
@@ -319,7 +349,13 @@ function Games:AcceptSnapshot(data, sender)
 end
 
 function Games:SendGameAction(event, payload)
-    if not self.Lobby or self.Lobby.status ~= "running" or not text(event, 40) or event == "" then
+    if
+        not self.Lobby
+        or self.Lobby.status ~= "running"
+        or self:IsRoundStopped()
+        or not text(event, 40)
+        or event == ""
+    then
         return false, "No running game or invalid event."
     end
     if not self:ValidData(payload) then
@@ -329,23 +365,39 @@ function Games:SendGameAction(event, payload)
         self:CallGame("OnMessage", event, self.Copy(payload), self:PlayerName(), "action")
         return true
     end
-    return self:Send(
-        "GAME_ACTION",
-        { target = self.Lobby.host, id = self.Lobby.id, run = self.Lobby.run, event = event, payload = payload }
-    )
+    return self:Send("GAME_ACTION", {
+        target = self.Lobby.host,
+        id = self.Lobby.id,
+        run = self.Lobby.run,
+        gameID = self.Lobby.gameID,
+        gameVersion = self.Lobby.gameVersion,
+        event = event,
+        payload = payload,
+    })
 end
 
 function Games:SendGameState(event, payload, target)
-    if not self:IsHost() or self.Lobby.status ~= "running" or not text(event, 40) or event == "" then
+    if
+        not self:IsHost()
+        or self.Lobby.status ~= "running"
+        or self:IsRoundStopped()
+        or not text(event, 40)
+        or event == ""
+    then
         return false, "Only the running game's host can publish state."
     end
     if target and not member(self.Lobby, target) then
         return false, "Player is not in this game."
     end
-    local ok, err = self:Send(
-        "GAME_STATE",
-        { target = target, id = self.Lobby.id, run = self.Lobby.run, event = event, payload = payload }
-    )
+    local ok, err = self:Send("GAME_STATE", {
+        target = target,
+        id = self.Lobby.id,
+        run = self.Lobby.run,
+        gameID = self.Lobby.gameID,
+        gameVersion = self.Lobby.gameVersion,
+        event = event,
+        payload = payload,
+    })
     if ok and (not target or target == self:PlayerName()) then
         self:CallGame("OnMessage", event, self.Copy(payload), self:PlayerName(), "state")
     end
@@ -431,7 +483,14 @@ function Games:Receive(kind, data, sender)
             entry.ready, entry.version = data.ready, data.version
         end
         self:PublishLobby()
-    elseif lobby.status == "running" and data.run == lobby.run and member(lobby, sender) then
+    elseif
+        lobby.status == "running"
+        and not self:IsRoundStopped()
+        and data.run == lobby.run
+        and data.gameID == lobby.gameID
+        and data.gameVersion == lobby.gameVersion
+        and member(lobby, sender)
+    then
         if kind == "GAME_SYNC" and self:IsHost() then
             self:CallGame("OnSyncRequested", sender)
         elseif text(data.event, 40) and data.event ~= "" then
@@ -475,6 +534,9 @@ end
 
 function Games:Tick()
     local now = GetTime()
+    if self.PendingAbort and self.Lobby and self.Lobby.status == "running" and self:IsRoundStopped() then
+        pcall(self.SendControl, self, "ABORT", self.PendingAbort)
+    end
     for host, listing in pairs(self.Listings) do
         if now - listing.seen > 60 then
             self.Listings[host] = nil

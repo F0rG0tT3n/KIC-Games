@@ -83,13 +83,20 @@ function UI:Initialize()
     self.frame = frame
     local title = label(frame, "KIC-Games", 22, -20, 400, "GameFontNormalLarge")
     title:SetTextColor(unpack(GOLD))
-    label(frame, "Party games for the time between adventures", 22, -47, 540, "GameFontHighlightSmall")
+    label(frame, "Party games for the time between adventures", 22, -47, 510, "GameFontHighlightSmall")
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -4, -4)
     self.homeButton = button(frame, "Launcher", 100, 742, -34, function()
         UI:ShowHome()
     end)
     self.homeButton:Hide()
+    self.resultsButton = button(frame, "Results", 90, 536, -34, function()
+        UI:ShowResults()
+    end)
+    self.abortButton = button(frame, "|cffff6060Stop match|r", 110, 628, -34, function()
+        Games:AbortGame()
+    end)
+    self.abortButton:Hide()
     self.home = CreateFrame("Frame", nil, frame)
     self.home:SetAllPoints()
 
@@ -160,20 +167,99 @@ function UI:Initialize()
     end)
     self.endGame = button(
         lobbyPanel,
-        "End game",
+        "Stop match",
         145,
         281,
         -393,
         action(function()
-            return Games:ReturnToLobby()
+            return Games:AbortGame()
         end)
     )
 
     self.footer = label(frame, "", 22, -551, 850, "GameFontHighlightSmall")
     self.gameContainer = panel(frame, 860, 450, 20, -80)
     self.gameContainer:Hide()
+    self:CreateResultsWindow()
     self:CreateMinimapButton()
     self:Refresh()
+end
+
+function UI:HideAll()
+    if self.frame then
+        self.frame:Hide()
+    end
+    if self.resultsFrame then
+        self.resultsFrame:Hide()
+    end
+end
+
+function UI:CreateResultsWindow()
+    local frame = panel(UIParent, 640, 470, 0, 0)
+    frame:ClearAllPoints()
+    frame:SetPoint("CENTER")
+    frame:SetFrameStrata("DIALOG")
+    frame:SetClampedToScreen(true)
+    frame:EnableMouse(true)
+    _G.KICGamesResultsWindow = frame
+    UISpecialFrames[#UISpecialFrames + 1] = "KICGamesResultsWindow"
+    label(frame, "KIC-Games - Results", 20, -20, 560, "GameFontNormalLarge")
+    label(frame, "Last 20 matches. Interrupted matches never count as a loss.", 20, -48, 580, "GameFontHighlightSmall")
+    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", -4, -4)
+    self.resultSummary = label(frame, "", 20, -76, 580)
+    self.resultList = scroll(frame, 571, 323, 20, -116)
+    self.resultText = label(self.resultList, "", 0, 0, 560)
+    self.resultText:SetSpacing(4)
+    frame:Hide()
+    self.resultsFrame = frame
+end
+
+function UI:ShowResults()
+    self:RefreshResults()
+    self.resultsFrame:Show()
+end
+
+function UI:RefreshResults()
+    if not self.resultsFrame then
+        return
+    end
+    local stats, lines = Games:GetResultStats(), {}
+    self.resultSummary:SetText(
+        string.format(
+            "Completed: %d | Interrupted: %d | Wins: %d | Losses: %d | Draws: %d",
+            stats.completed,
+            stats.aborted,
+            stats.wins,
+            stats.losses,
+            stats.draws
+        )
+    )
+    for _, result in ipairs(Games:GetResults()) do
+        local game = Games.Registry[result.gameID]
+        lines[#lines + 1] = (game and game.title or result.gameID)
+            .. " - "
+            .. (result.status == "aborted" and "Interrupted" or "Completed")
+            .. " (round "
+            .. result.run
+            .. ")"
+        lines[#lines + 1] = result.summary
+        if result.status == "aborted" then
+            lines[#lines + 1] = "Reason: " .. result.reason .. (result.abortedBy and (" / " .. result.abortedBy) or "")
+        end
+        for _, entry in ipairs(result.entries) do
+            local detail = (entry.rank and ("#" .. entry.rank .. "  ") or "") .. entry.player
+            if entry.score ~= nil then
+                detail = detail .. "  |  " .. tostring(entry.score)
+            end
+            if entry.outcome then
+                detail = detail .. "  |  " .. entry.outcome
+            end
+            lines[#lines + 1] = detail
+        end
+        lines[#lines + 1] = " "
+    end
+    self.resultText:SetText(#lines > 0 and table.concat(lines, "\n") or "No matches yet.")
+    self.resultList:SetHeight(math.max(310, self.resultText:GetStringHeight() + 8))
 end
 
 function UI:GetGameContainer()
@@ -305,6 +391,9 @@ function UI:Refresh()
 
     local lobby, pending = Games.Lobby, Games.Pending
     local running = lobby and lobby.status == "running"
+    local interrupted = running and Games:IsRoundStopped()
+    self.abortButton:SetShown(running and not interrupted)
+    self:RefreshResults()
     self.create:SetShown(not lobby)
     enable(self.create, Games:GroupChannel() ~= nil and not pending)
     self.leave:SetShown(lobby ~= nil or pending ~= nil)
@@ -314,10 +403,10 @@ function UI:Refresh()
     self.ready:SetShown(lobby ~= nil and not running)
     self.start:SetShown(lobby ~= nil and not running)
     self.showGame:SetShown(running and Games.ActiveGame ~= nil)
-    self.endGame:SetShown(running and Games:IsHost())
+    self.endGame:SetShown(running and not interrupted)
     if lobby then
         local game = Games.Registry[lobby.gameID]
-        self.lobbyTitle:SetText(running and "GAME IN PROGRESS" or "YOUR LOBBY")
+        self.lobbyTitle:SetText(interrupted and "MATCH INTERRUPTED" or (running and "GAME IN PROGRESS" or "YOUR LOBBY"))
         self.lobbyInfo:SetText(
             "Host: "
                 .. lobby.host
@@ -351,10 +440,13 @@ function UI:Refresh()
         local canStart, reason = Games:CanStart()
         enable(self.start, canStart)
         self.hint:SetText(
-            running and "Use Open game to return to the match. The host can end it here."
+            interrupted and "Match stopped locally. Waiting for the host to finalize the lobby."
                 or (
-                    Games:IsHost() and (canStart and "Everyone is ready. You can start." or reason)
-                    or "Mark yourself ready when the selected game is installed."
+                    running and "Any participant can stop the match immediately. No confirmation needed."
+                    or (
+                        Games:IsHost() and (canStart and "Everyone is ready. You can start." or reason)
+                        or "Mark yourself ready when the selected game is installed."
+                    )
                 )
         )
     else

@@ -1,4 +1,4 @@
-# KIC-Games API v1
+# KIC-Games API v2
 
 ## Register a module
 
@@ -55,7 +55,8 @@ KICGames:RegisterGame({
     end,
 
     OnStop = function(context, reason)
-        -- Cancel module timers and release resources here.
+        -- Release module-owned resources here.
+        -- context:NewTicker / context:After timers are already cancelled.
         -- The returned UI frame is hidden automatically.
     end,
 })
@@ -71,16 +72,19 @@ module-table `self`. Hook failures are caught and shown in the local chat frame.
 
 | Hook | Arguments after context | Purpose |
 | --- | --- | --- |
-| `CreateUI` | `parent` | Optional. Build inside the 860 x 450 game area; return the root frame so it can be hidden on stop. |
+| `CreateUI` | `parent` | Required. Build the module's own UI inside the 860 x 450 game area; return its root frame. |
 | `OnStart` | `session, restored` | Required. Start a round. `restored` is true for a guest recovering an already-running match. |
 | `OnMessage` | `event, data, sender, kind` | Optional. `action` reaches only the host; `state` originates only from the host. |
 | `OnSyncRequested` | `player` | Optional, required for recoverable games. Host sends a full module state to this participant. |
-| `OnPlayersChanged` | `session` | Optional. Active roster-change notification; v1 normally ends the round on departures. |
-| `OnStop` | `reason` | Optional. Tear down timers/UI references. |
+| `OnPlayersChanged` | `session` | Optional. Active roster-change notification; departures normally interrupt the round. |
+| `OnResult` | `result` | Optional. Receive an authoritative result if the module is still active when it arrives. |
+| `OnStop` | `reason` | Optional. Always release module-owned timers/UI references here, including immediate interruption. |
 
-`reason` may be `ended`, `left`, `closed`, `group_changed`, `host_timeout`,
-`removed`, `lobby`, `restart` or `error`. On a host, a departure ends the round
-with `ended`. Do not infer gameplay outcomes solely from the teardown reason.
+`reason` may be `completed`, `aborted`, `left`, `closed`, `group_changed`,
+`host_timeout`, `removed`, `lobby`, `restart` or `error`. A cancelled guest may
+already have stopped before the host's result arrives; `OnResult` is therefore
+not guaranteed on abrupt interruption. Use `OnStop` for cleanup and the shared
+result APIs for history. Never infer a win/loss solely from the teardown reason.
 
 ## Context
 
@@ -91,10 +95,17 @@ with `ended`. Do not infer gameplay outcomes solely from the teardown reason.
 | `context:GetSession()` | Detached session copy, or nil after this round ends. |
 | `context:SendAction(event, data)` | Route an input to the host. A host's own input is delivered locally through the same hook. |
 | `context:SendState(event, data, target)` | Host only. Broadcast state, or deliver to one canonical participant name. Broadcast includes the host locally. |
-| `context:EndGame()` | Host only. End the round and reset readiness in the lobby. |
+| `context:FinishGame(result)` | Host only. Finalize a normal result, return everyone to the lobby and reset readiness. |
+| `context:EndGame(result)` | Alias for `FinishGame`. Manual interruption uses `AbortGame`. |
+| `context:AbortGame()` | Any participant. Stop locally immediately; request shared interruption. |
+| `context:NewTicker(seconds, callback)` | Create a repeating timer that is cancelled on stop. Callback receives context. |
+| `context:After(seconds, callback)` | Create a cancellable one-shot timer with the same lifecycle guard. |
 | `context:Show()` | Reopen the active game UI. |
 
 Send methods return `true` if accepted locally, or `false, reason` if rejected.
+Timer methods return a WoW timer handle, or `nil, reason`; delays must be greater
+than zero and at most 3600 seconds. Framework-managed callbacks do not run after
+their module instance ends, even if an old callback was already queued.
 Acceptance does not guarantee delivery by the WoW server. Modules requiring
 delivery acknowledgment must implement sequence numbers and acknowledgments.
 Targeting uses a recipient field on the group channel, so it supports cross-realm
@@ -116,6 +127,8 @@ still observe the wire data; this is not confidential communication.
     revision = 3,
     run = 0, -- increments on each start
     epoch = 0, -- invalidates old readiness requests on selection/end
+    startedAt = 0, -- server timestamp set on start
+    result = nil, -- final result present while waiting after a round
     members = {
         { name = "Character-Realm", ready = true, version = "1" },
     },
@@ -125,6 +138,49 @@ still observe the wire data; this is not confidential communication.
 Do not mutate `KICGames.Lobby` or rely on its internal shape changing without an
 API version update. The host's game rules must validate every incoming action;
 membership validation does not make another player's input trustworthy.
+
+## Results and interruption
+
+The game decides its rules, scores and winners. Only the host can finalize a
+completed result. For example, using actual canonical names from the session:
+
+```lua
+context:FinishGame({
+    summary = "The final round is complete.", -- at most 160 bytes
+    entries = {
+        { player = "Anna-Realm", score = 100, rank = 1, outcome = "win" },
+        { player = "Bela-Realm", score = 80, rank = 2, outcome = "loss" },
+    },
+})
+```
+
+`entries` is optional. Every participant is included in the final result;
+supplied entries enrich those participants. Unknown/duplicate players, nonfinite
+scores, invalid ranks and unknown outcomes are rejected. Score and rank are
+optional, ties are allowed, and outcome must be `win`, `loss` or `draw` if given.
+The framework does not invent outcomes from scores. Shared history sorts by
+supplied rank and then player name.
+
+Every game inherits the framework's **Stop match** button and `/kicgames stop`.
+Any participant may interrupt; there is no vote or confirmation. The local UI
+closes and module timers stop without waiting for acknowledgment. The control
+message uses a separate prefix and ALERT priority, independent of a module's
+NORMAL multipart queue. WoW can still delay delivery to other clients.
+
+The host records `status = "aborted"` and a reason/initiator; interrupted matches
+have no scores, ranks, wins or losses. The lobby remains open with readiness
+reset. A guest stores a provisional interrupted result until the host's final
+snapshot arrives. A finalized result wins over a late cancellation. Old running
+snapshots and old module contexts cannot resume a locally stopped round.
+
+`KICGames:GetResults(gameID)` returns copies of the most recent 20 local match
+records, optionally filtered by game ID. `KICGames:GetResultStats(gameID)` counts
+completed/interrupted matches and explicit local wins/losses/draws in that
+retained history. Those are not lifetime totals. Result fields include `id`,
+`sessionID`, `run`, `host`, `gameID`, `gameVersion`, `startedAt`, `endedAt`,
+`status`, `reason`, `summary`, `entries` and optional `abortedBy`/`provisional`.
+Repeated snapshots are deduplicated by match ID. Only matches containing the
+local player are stored. The framework owns history persistence and presentation.
 
 ## Payload and performance rules
 
@@ -136,13 +192,16 @@ membership validation does not make another player's input trustworthy.
   packets and ChatThrottleLib queues/retries client throttling.
 - For shared simulation, transmit choices and occasional compact snapshots.
   Sending every animation frame will build up a queue and delay gameplay.
+- Network envelopes include game ID and version as well as session and round;
+  equal event names in different games cannot reach each other's message handlers.
 - The framework protects the session/round and host authority. Game modules own
   state sequencing, resync contents, randomness, rule validation and timers.
 - Initialize guest UI before state arrives; show a waiting state until the host's
   snapshot is received. A fresh module cannot reconstruct a game from lobby
   membership alone.
 - Reuse UI frames or explicitly release them; WoW frames are not garbage collected.
-  Cancel timers in `OnStop`. Old context send methods are disabled after their round.
+  Prefer context-managed timers. Cancel any other timers in `OnStop`. Old context
+  methods are disabled after their module instance ends.
 
 ## Other public entry points
 
@@ -150,4 +209,10 @@ membership validation does not make another player's input trustworthy.
 `KICGames:IsHost()`, `KICGames:CreateLobby()`, `KICGames:Discover()`,
 `KICGames:JoinLobby(host, id)`, `KICGames:SelectGame(id)`,
 `KICGames:Ready(boolean)`, `KICGames:CanStart()`, `KICGames:StartGame()`,
-`KICGames:ReturnToLobby()` and `KICGames:LeaveLobby()` are available to integrations.
+`KICGames:ReturnToLobby()` (host interruption), `KICGames:AbortGame()`,
+`KICGames:FinishGame(result)`, `KICGames:GetResults(gameID)`,
+`KICGames:GetResultStats(gameID)` and `KICGames:LeaveLobby()` are available to integrations.
+
+API v2 requires a module-owned `CreateUI` and adds result/timer/interruption APIs.
+The network prefixes changed from v1 so incompatible framework versions do not
+share a lobby. Separate modules continue to declare `## Dependencies: KIC-Games`.

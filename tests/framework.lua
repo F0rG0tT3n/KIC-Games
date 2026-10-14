@@ -1,6 +1,7 @@
--- Run from D:\WowAddons: lua KIC-Games/tests/framework.lua
+-- Run from the repository root: lua tests/framework.lua
 -- Loads the actual bundled libraries and addon in isolated WoW client environments.
-local root = "KIC-Games/KIC-Games/"
+local script = (arg[0] or "tests/framework.lua"):gsub("\\", "/")
+local root = (script:match("^(.*)/tests/[^/]+$") or ".") .. "/KIC-Games/"
 local now, clients, packets = 100, {}, {}
 local tests = 0
 local function check(condition, message)
@@ -63,8 +64,7 @@ local function client(name, realm)
         roster = {},
         grouped = true,
         channel = "PARTY",
-        tokens = 10,
-        lastRefill = now,
+        buckets = {},
         throttleCount = 0,
     }
     clients[#clients + 1] = c
@@ -123,6 +123,10 @@ local function client(name, realm)
     end
     function methods:SetText(value)
         self.text = value
+    end
+    function methods:GetStringHeight()
+        local _, lines = (self.text or ""):gsub("\n", "\n")
+        return (lines + 1) * 18
     end
     function methods:GetCenter()
         return 0, 0
@@ -195,7 +199,20 @@ local function client(name, realm)
     env.C_Timer = {
         NewTicker = function(_, fn)
             c.tick = fn
-            return {}
+            return {
+                callback = fn,
+                Cancel = function(timer)
+                    timer.cancelled = true
+                end,
+            }
+        end,
+        NewTimer = function(_, fn)
+            return {
+                callback = fn,
+                Cancel = function(timer)
+                    timer.cancelled = true
+                end,
+            }
         end,
     }
     env.C_ChatInfo = {
@@ -208,13 +225,15 @@ local function client(name, realm)
         end,
         SendAddonMessage = function(prefix, body, channel)
             check(#body <= 255, "Transport exceeded WoW's 255-byte limit")
-            c.tokens = math.min(10, c.tokens + now - c.lastRefill)
-            c.lastRefill = now
-            if c.tokens < 1 then
+            local bucket = c.buckets[prefix] or { tokens = 10, lastRefill = now }
+            c.buckets[prefix] = bucket
+            bucket.tokens = math.min(10, bucket.tokens + now - bucket.lastRefill)
+            bucket.lastRefill = now
+            if bucket.tokens < 1 then
                 c.throttleCount = c.throttleCount + 1
                 return 3
             end
-            c.tokens = c.tokens - 1
+            bucket.tokens = bucket.tokens - 1
             packets[#packets + 1] = { prefix = prefix, body = body, channel = channel, sender = c.name }
             return 0
         end,
@@ -378,7 +397,7 @@ local previousThrottles = a.throttleCount
 for _ = 1, 18 do
     A:PublishLobby()
 end
-pump(30)
+pump(80)
 check(a.throttleCount > previousThrottles, "Throttle retry path was not exercised")
 check(B.Lobby.revision == A.Lobby.revision, "Throttled snapshots were dropped")
 
@@ -441,6 +460,9 @@ check(not B.Pending, "Unanswered join request never expired")
 check(not pcall(function()
     A:RegisterGame(A.Registry.fixture)
 end), "Duplicate game registration was accepted")
+check(not pcall(function()
+    A:RegisterGame({ id = "missing_ui", title = "Missing UI", version = "1", OnStart = function() end })
+end), "Module without its own UI factory was accepted")
 local silentHost, timedGuest = client("Carla", "RealmOne"), client("Dori", "RealmTwo")
 silentHost.roster, timedGuest.roster = { timedGuest.name }, { silentHost.name }
 silentHost.games:CreateLobby()
@@ -452,4 +474,185 @@ now = now + 96
 timedGuest.games:Tick()
 check(not timedGuest.games.Lobby, "Nonresponsive host did not expire")
 check(not timedGuest.games.Listings[silentHost.name], "Stale discovery entry did not expire")
+
+-- API v2: shared results, module isolation, managed resources and urgent interruption.
+local e, f = client("Ema", "RealmOne"), client("Ferenc", "RealmTwo")
+e.roster, f.roster = { f.name }, { e.name }
+register(e, "1")
+register(f, "1")
+local E, F = e.games, f.games
+E:CreateLobby()
+pump()
+F:JoinLobby(e.name, E.Lobby.id)
+pump()
+E:SelectGame("fixture")
+pump()
+local function startRound()
+    check(E:Ready(true) and F:Ready(true), "API v2 participants failed to ready")
+    pump(15)
+    check(E:StartGame(), "API v2 match failed to start")
+    pump(15)
+    check(E.ActiveGame and F.ActiveGame, "API v2 module failed to activate")
+end
+startRound()
+local calls = 0
+local ticker = e.context:NewTicker(1, function()
+    calls = calls + 1
+end)
+local delayed = f.context:After(10, function()
+    calls = calls + 1
+end)
+ticker.callback()
+check(calls == 1, "Managed timer callback did not run")
+local resultHooks = 0
+E.Registry.fixture.OnResult = function(_, result)
+    resultHooks = resultHooks + 1
+    check(result.status == "completed" or result.status == "aborted", "Invalid lifecycle result")
+end
+local messageCount = #e.messages
+F:Send("GAME_ACTION", {
+    target = e.name,
+    id = E.Lobby.id,
+    run = E.Lobby.run,
+    gameID = "another_game",
+    gameVersion = "1",
+    event = "move",
+    payload = {},
+})
+pump()
+check(#e.messages == messageCount, "Another game's namespace reached this module")
+check(not f.context:FinishGame({}), "Guest finalized an authoritative result")
+check(
+    not e.context:FinishGame({ entries = { keyed = { player = e.name, score = 1 } } }),
+    "Non-array result entries were accepted"
+)
+check(
+    not e.context:FinishGame({ entries = { { player = "NotInMatch-Realm", score = 1 } } }),
+    "Unknown result player was accepted"
+)
+check(
+    not e.context:FinishGame({ entries = { { player = e.name, score = math.huge } } }),
+    "Nonfinite score was accepted"
+)
+local oldContext = e.context
+check(
+    e.context:FinishGame({
+        summary = "Fixture finished",
+        entries = {
+            { player = e.name, score = 12, rank = 1, outcome = "win" },
+            { player = f.name, score = 7, rank = 2, outcome = "loss" },
+        },
+    }),
+    "Normal module completion failed"
+)
+check(ticker.cancelled, "Host timers survived completion")
+pump(20)
+check(delayed.cancelled, "Guest timers survived completion")
+ticker.callback()
+delayed.callback()
+check(calls == 1, "Stale timer callback ran after completion")
+check(not oldContext:SendAction("late", {}), "Completed context remained usable")
+check(E.LastResult.id == F.LastResult.id and F.LastResult.status == "completed", "Shared result diverged")
+check(
+    E.LastResult.entries[1].score == 12 and F.LastResult.entries[2].outcome == "loss",
+    "Scores/ranks/outcomes were lost"
+)
+check(E:GetResultStats().wins == 1 and F:GetResultStats().losses == 1, "Completed results were not counted correctly")
+check(#E:GetResults("fixture") == 1 and #E:GetResults("other_game") == 0, "Game-specific history filtering failed")
+E:PublishLobby()
+pump(15)
+check(
+    #E:GetResults() == 1 and #F:GetResults() == 1 and resultHooks == 1,
+    "Result heartbeat duplicated history or hooks"
+)
+local detached = F:GetResults()
+detached[1].summary = "modified"
+check(F.LastResult.summary == "Fixture finished", "Result getter leaked mutable framework state")
+F:InitializeResults()
+check(#F:GetResults() == 1, "Results did not survive saved-variable initialization")
+
+startRound()
+local runningSnapshot = E:GetSession()
+local guestTimer = f.context:NewTicker(1, function()
+    error("Cancelled timer should never run")
+end)
+F.UI:ShowResults()
+local sendControl = F.SendControl
+F.SendControl = function()
+    error("Simulated local transport failure")
+end
+f.env.SlashCmdList.KICGAMES("stop")
+check(
+    not F.ActiveGame and not F.UI.frame:IsShown() and not F.UI.resultsFrame:IsShown(),
+    "Guest abort waited for network or left windows open"
+)
+check(guestTimer.cancelled, "Abort did not cancel a module's timers")
+check(E.ActiveGame ~= nil, "Test did not check local stopping before network delivery")
+F:AcceptSnapshot(runningSnapshot, e.name)
+check(not F.ActiveGame, "A delayed running snapshot reopened the interrupted game")
+F.SendControl = sendControl
+F:Tick()
+pump(20)
+check(
+    not E.ActiveGame and E.Lobby.status == "waiting" and F.Lobby.status == "waiting",
+    "Guest abort did not stop the shared match"
+)
+check(
+    E.LastResult.status == "aborted" and F.LastResult.abortedBy == f.name and not F.LastResult.provisional,
+    "Host did not reconcile interruption results"
+)
+check(E:GetResultStats().losses == 0 and F:GetResultStats().losses == 1, "An interruption was counted as a loss")
+for _, entry in ipairs(E.LastResult.entries) do
+    check(entry.score == nil and entry.outcome == nil, "Interrupted result retained scores or outcomes")
+end
+check(not E.Lobby.members[1].ready and not E.Lobby.members[2].ready, "Interrupted round retained readiness")
+
+startRound()
+local activeRun = E.Lobby.run
+-- A current party member outside the minigame cannot stop it.
+e.roster[#e.roster + 1] = stranger.name
+stranger.roster = { e.name, f.name }
+stranger.games:SendControl("ABORT", { id = E.Lobby.id, run = activeRun })
+pump()
+check(E.ActiveGame ~= nil, "A nonparticipant interrupted the game")
+F:SendControl("ABORT", { id = E.Lobby.id, run = activeRun - 1 })
+pump()
+check(E.ActiveGame ~= nil, "A previous round's interrupt stopped a new game")
+e.roster = { f.name }
+
+-- Queue a large multipart transfer. ALERT interrupt uses a separate prefix/pipe.
+local large = { chunks = { string.rep("x", 3900), string.rep("y", 3900) } }
+check(e.context:SendState("busy", large), "Could not queue large transfer for interrupt test")
+check(E:AbortGame(), "Host quick abort failed")
+check(not E.ActiveGame and not E.UI.frame:IsShown(), "Host abort did not stop locally at once")
+pump(5)
+check(not F.ActiveGame and not F.UI.frame:IsShown(), "Urgent interrupt waited behind normal multipart traffic")
+pump(70)
+check(
+    E.LastResult.id == F.LastResult.id and not F.LastResult.provisional,
+    "Backlogged multipart traffic corrupted final reconciliation"
+)
+check(resultHooks == 3, "Finalization hooks ran an incorrect number of times")
+
+F.UI:ShowResults()
+check(
+    F.UI.resultsFrame:IsShown() and F.UI.resultText.text:find("Interrupted", 1, true),
+    "Shared result UI did not render history"
+)
+-- Bounded persistent history and invalid persisted values.
+local historySeed = E.Copy(E.LastResult)
+for i = 1, 25 do
+    local item = E.Copy(historySeed)
+    item.run = 100 + i
+    item.id = item.sessionID .. ":" .. item.run
+    E:RecordResult(item)
+end
+check(#E:GetResults() == 20, "Result history was not bounded")
+E.DB.results[#E.DB.results + 1] = { status = "corrupt" }
+E:InitializeResults()
+check(#E:GetResults() == 20, "Invalid saved results broke initialization")
+local notPlayed = E.Copy(historySeed)
+notPlayed.entries = { { player = f.name } }
+notPlayed.host = f.name
+check(not E:RecordResult(notPlayed), "A match without the local player entered history")
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))
