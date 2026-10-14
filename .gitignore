@@ -1,0 +1,16 @@
+# Generated install packages
+*.zip
+
+# Local editor files and credentials
+.vs/
+.idea/
+*.user
+*.log
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+secrets/
+credentials/

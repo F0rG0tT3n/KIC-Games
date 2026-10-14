@@ -1,0 +1,8 @@
+{
+  "AceComm-3.0.lua": "5d8cb6fd2a5661ed85f9f67c82b09fe81d05ebb5c9a4a0e8ca02c3a90a1a118e",
+  "AceSerializer-3.0.lua": "af2d55fd5ded8cca07608d20c40cc8aa776afbd417f936f5078c8b0054e713ff",
+  "CallbackHandler-1.0.lua": "24f7342068e0d1b8d38ee1b8c7ceeea625bea079a01f0222e341660c7b104432",
+  "ChatThrottleLib.lua": "3491b6c98cae1634a9f0494b436e86df1632309fb68181c25240b53c4d86dde8",
+  "LibStub.lua": "26401bc42c26d1d1b6f7ad9410aa464edcbe4d32d74ebadeeecd8c0110236f7d",
+  "LICENSE-Ace3.txt": "afe050a430bafdbca7da69d95897751239f4fab415784a419a3cdc2519eee9b2"
+}
