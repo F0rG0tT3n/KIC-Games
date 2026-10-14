@@ -1,7 +1,7 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.4.0. Intended for waiting for the group to fill and the time between dungeons.
+0.4.1. Intended for waiting for the group to fill and the time between dungeons.
 Includes **Tetris**, the first singleplayer module, with colorful WoW icons,
 13 class presets, a saved high score and chat sharing. See [Tetris](TETRIS.md).
 

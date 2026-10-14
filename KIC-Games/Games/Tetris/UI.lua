@@ -42,7 +42,9 @@ function T:Paint(cell, kind, ghost)
     else
         local c = self.Colors[kind]
         cell.bg:SetColorTexture(c[1], c[2], c[3], ghost and 0.3 or 1)
-        cell.icon:SetTexture(self.icons[kind])
+        if cell.icon:SetTexture(self.icons[kind]) == false then
+            cell.icon:SetTexture(self.fallbackIcon)
+        end
         cell.icon:SetAlpha(ghost and 0.18 or 1)
         cell.icon:Show()
     end
@@ -104,6 +106,7 @@ function T:SelectPreset(token)
     end
     self:Storage().preset = token
     self.icons = self:GetIcons(token)
+    self.fallbackIcon = self.FallbackIcons[token]
     for _, preset in ipairs(self.Presets) do
         self.presetButtons[preset.token]:SetText(
             (token == preset.token and "> " or "") .. "|cff" .. preset.color .. preset.name .. "|r"

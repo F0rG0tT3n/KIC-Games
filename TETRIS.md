@@ -23,8 +23,11 @@ shown beside the board. Pieces come from shuffled seven-piece bags.
 
 Choose any of the 13 **class icon presets** during play. Your selection is saved;
 the default is your own class. Presets are cosmetic and use the same rules and
-high score. Each preset uses seven spell textures supplied by WoW. An unavailable
-texture uses WoW's question-mark fallback. Selecting another preset does not
+high score. Each preset uses seven fixed spell texture FileDataIDs supplied by WoW,
+independent of spell availability or the spell cache. All 91 slots were checked
+against the [WoW archive file list](https://github.com/wowdev/wow-listfile).
+If the client rejects a texture, the renderer uses that class's icon instead.
+Selecting another preset does not
 restart the game.
 
 ## Score and speed
@@ -69,7 +72,7 @@ their normal WoW behavior. Combat-specific handling is outside this addon scope.
 ## Module layout
 
 `Games/Tetris/Engine.lua` contains standalone rules; `Presets.lua` contains spell
-IDs and colors; `UI.lua` handles rendering and input; `Module.lua` registers the
+texture IDs and colors; `UI.lua` handles rendering and input; `Module.lua` registers the
 game and connects persistence, completion and chat sharing to the framework.
 They are bundled in the existing addon folder, so one KIC-Games installation or
 junction is enough. The multiplayer protocol remains API v3.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1 - 2026-10-14
+
+- Replaced spell-dependent icon lookup in all 13 Tetris class presets with 91 audited texture FileDataIDs.
+- Fixed retired Arcane Shot, Lightning Bolt and Chain Lightning lookups and pinned the familiar Aimed Shot icon.
+- Added class-icon fallback when a client rejects a texture; removed the question-mark fallback.
+- Added coverage for every preset without spell APIs and rejected-texture rendering.
+
 ## 0.4.0 - 2026-10-14
 
 - Bundled Tetris as an independent singleplayer module with colorful WoW spell icons and 13 saved class presets.

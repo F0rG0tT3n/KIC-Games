@@ -185,7 +185,6 @@ local function client(name, realm)
         "RegisterForDrag",
         "SetScrollChild",
         "SetHighlightTexture",
-        "SetTexture",
         "SetTexCoord",
         "StartMoving",
         "StopMovingOrSizing",
@@ -193,6 +192,13 @@ local function client(name, realm)
         "AddLine",
     }) do
         methods[method] = function() end
+    end
+    function methods:SetTexture(value)
+        if env.rejectTexture == value then
+            return false
+        end
+        self.textureValue = value
+        return true
     end
     local function widget(parent)
         local w = setmetatable(
@@ -941,6 +947,23 @@ local before = #packets
 check(G:StartSingleplayer("tetris"), "Bundled Tetris could not start")
 check(T.running and T.root:IsVisible() and T.root.keyboardEnabled, "Tetris UI or keyboard did not start")
 check(#T.cells == 200 and #T.Presets == 13, "Missing board cells or class presets")
+-- Spell lookup must be completely unnecessary, even when it returns question marks.
+t.env.C_Spell.GetSpellTexture = function()
+    error("Tetris must not resolve spell textures")
+end
+for _, preset in ipairs(T.Presets) do
+    T:SelectPreset(preset.token)
+    check(T.icons.I == preset.icons[1], "Preset still depends on spell lookup")
+    check(T.nextCells[1][1].icon.textureValue ~= 134400, "Preview displayed a question mark")
+end
+T:SelectPreset("HUNTER")
+t.env.rejectTexture = T.icons.I
+T:Paint(T.cells[1], "I")
+check(
+    T.cells[1].icon.textureValue == T.FallbackIcons.HUNTER,
+    "Rejected Hunter texture did not fall back to the class icon"
+)
+t.env.rejectTexture = nil
 T:KeyDown("P")
 T:KeyDown("P")
 check(T.paused, "Keyboard repeat toggled pause twice")

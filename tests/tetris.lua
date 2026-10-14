@@ -1,11 +1,28 @@
 -- Pure engine checks; no WoW APIs required. Run: lua tests/tetris.lua
 local Games = {}
 assert(loadfile("KIC-Games/Games/Tetris/Engine.lua"))("KIC-Games", Games)
+assert(loadfile("KIC-Games/Games/Tetris/Presets.lua"))("KIC-Games", Games)
 local E, tests = Games.Tetris.Engine, 0
 local function check(value, message)
     assert(value, message)
     tests = tests + 1
 end
+local assets = assert(loadfile("tests/tetris-icon-files.lua"))()
+local T = Games.Tetris
+check(#T.Presets == 13, "Class icon preset missing")
+for _, preset in ipairs(T.Presets) do
+    local resolved = T:GetIcons(preset.token) -- No WoW or spell API exists in this test.
+    check(#preset.icons == 7, "Class preset must have seven textures")
+    for _, kind in ipairs(E.Kinds) do
+        check(
+            type(resolved[kind]) == "number" and assets[resolved[kind]] ~= nil,
+            preset.token .. " has an unverified or missing " .. kind .. " icon"
+        )
+        check(resolved[kind] ~= 134400, "Question-mark texture is forbidden")
+    end
+    check(assets[T.FallbackIcons[preset.token]] ~= nil, "Class fallback is missing from the asset list")
+end
+check(T:GetIcons("unknown").I == T:GetIcons("MAGE").I, "Invalid preset did not use Mage textures")
 local function new()
     return E.New(function(n)
         return n
@@ -112,4 +129,4 @@ for _ = 1, 100 do
         end
     end
 end
-print(string.format("PASS: %d Tetris engine assertions", tests))
+print(string.format("PASS: %d Tetris engine and icon assertions", tests))
