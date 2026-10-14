@@ -1,7 +1,7 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.2.0. Intended for waiting for the group to fill and the time between dungeons.
+0.3.0. Intended for waiting for the group to fill and the time between dungeons.
 No game is bundled in this first version.
 
 ## Install and open
@@ -18,22 +18,47 @@ installable folder at its root.
 - `/kicgames stop` or `/kicgames abort`: interrupt the current match and close the windows immediately.
 - `/kicgames results`: view the shared result history.
 
-## Using a lobby
+## Singleplayer and Multiplayer tabs
+
+The launcher has separate **Singleplayer** and **Multiplayer** tabs, each with
+its own filtered game library. The last selected tab is remembered.
+
+Singleplayer modules start using **Play**, without a party, lobby discovery or
+network traffic. They still get shared results, timer cleanup and **Stop match**.
+Finishing a solo game releases its session so you can immediately host or join
+a multiplayer lobby. Modules identify their mode when they register; no games
+are bundled yet.
+
+## Using a multiplayer lobby
 
 1. Join a WoW group. Every participant must install KIC-Games.
-2. Open the launcher and click **Create lobby**.
-3. Other group members open the launcher, click **Refresh**, then click your
-   lobby. Members join voluntarily; no visible group-chat message is sent.
-4. Once game modules exist, the host selects one from **Games**. Every player
-   needs the selected module with exactly the same game protocol version.
-5. Everyone clicks **Ready**, including the host. The host clicks **Start game**.
+2. Open **Multiplayer**, choose an installed game, and click **Host game**.
+   Any party member can host; party leadership is not required.
+3. The **Party lobbies** list shows every discovered host, the selected game,
+   current player count/capacity, and whether it is waiting, counting down, or
+   running. Click a waiting lobby to join. **Refresh** discovers existing lobbies.
+4. Every participant needs the selected module with matching mode and game
+   protocol version. The host may choose another multiplayer game in the library.
+5. Everyone clicks **Ready**, including the host. As soon as the game's minimum
+   player count is met and all joined participants are ready, the framework
+   automatically displays **3, 2, 1** and launches the game. No extra host click.
 6. **Launcher** returns to the library without ending the match. **Open game**
    reopens the match. Every participant can use **Stop match** to interrupt it.
 
-With the framework alone, players can create and join an empty lobby. Game
-selection, ready and start become available once an actual game is installed.
-Changing the game resets readiness. Starting a new round also requires everyone
-to ready again.
+The libraries are empty until actual game modules are installed; **Host game**
+requires a selected multiplayer module. Multiple party members can host
+independent lobbies, but a client joins only one session at a time.
+
+Withdrawing readiness, a participant departing, someone joining during the
+countdown, selecting another game, or **Stop match** cancels the pending start.
+Changing membership or the game resets readiness. Selecting the current game
+again leaves readiness and countdown unchanged. A cancelled countdown records
+no result because a match has not started yet.
+
+The countdown uses a common server timestamp. Remote visibility and actual module
+launch still depend on message delivery; a delayed client waits for the host's
+authoritative running state. Countdown tokens reject stale cancellation/start
+packets. Join-request IDs ensure an earlier roster cannot acknowledge a new join.
 
 ## Dungeon group ready: stop immediately
 
@@ -45,7 +70,7 @@ queue, so it cannot be trapped behind a large module-state transfer or break
 its multipart framing. Remote delivery still depends on WoW's communication
 limits. A delayed running snapshot cannot reopen an interrupted match.
 
-The lobby stays available for later; everyone must ready again before a new
+The multiplayer lobby stays available for later; everyone must ready again before a new
 round. A module's framework-managed timers stop automatically. Each module's
 `OnStop` callback also releases its own resources.
 
@@ -84,8 +109,8 @@ No result window automatically opens when players need to leave for a dungeon.
 - Group/channel changes close the affected local session. No combat hooks or
   combat recovery logic are included. Use this addon during downtime.
 - Minimap position and bounded result history are persisted; active sessions are not saved.
-- API/protocol v2 uses separate game and urgent-control prefixes. All participants
-  need the updated framework; v1 clients are not compatible with this version.
+- API/protocol v3 uses separate game and urgent-control prefixes. All participants
+  need the updated framework; v1/v2 clients are not compatible with this version.
 
 ## Developing games
 
@@ -103,6 +128,7 @@ stopping, managed timers, sender checks and transport.
 - `Communication.lua`: bounded serialization, sender/channel validation, AceComm.
 - `Lobby.lua`: host/guest session state and game-message routing.
 - `Results.lua`: normal completion, quick interruption and bounded shared results.
+- `Countdown.lua`: all-ready scheduling, shared countdown and cancellation.
 - `UI.lua`: library, lobby browser, participants and minimap launcher.
 - `Libs/`: bundled Ace3 libraries; no separate Ace3 addon installation required.
 
@@ -116,7 +142,9 @@ The checks load the real bundled libraries and addon files with mocked WoW APIs,
 including the UI creation paths. They exercise cross-realm sessions, version
 checks, game lifecycle, multipart payloads, throttle retries, stale snapshots,
 rejoining, departures, scoped messages, result validation/deduplication,
-managed timer cleanup and urgent interruption during a large transfer. Real WoW rendering and actual
+managed timer cleanup, urgent interruption during a large transfer, independent
+hosts, tabs, singleplayer without networking, the displayed 3-2-1 sequence,
+countdown cancellation and join acknowledgment. Real WoW rendering and actual
 server delivery still need an in-game check with at least two clients.
 
 ## Third-party libraries

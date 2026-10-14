@@ -51,7 +51,7 @@ local function scroll(parent, width, height, x, y)
     local child = CreateFrame("Frame", nil, frame)
     child:SetSize(width, 1)
     frame:SetScrollChild(child)
-    return child
+    return child, frame
 end
 
 local function enable(widget, condition)
@@ -63,7 +63,7 @@ local function enable(widget, condition)
 end
 
 function UI:Initialize()
-    local frame = panel(UIParent, 900, 590, 0, 0)
+    local frame = panel(UIParent, 900, 630, 0, 0)
     frame:ClearAllPoints()
     frame:SetPoint("CENTER")
     frame:SetFrameStrata("DIALOG")
@@ -99,10 +99,18 @@ function UI:Initialize()
     self.abortButton:Hide()
     self.home = CreateFrame("Frame", nil, frame)
     self.home:SetAllPoints()
+    self.tab = Games.DB.launcherTab == "singleplayer" and "singleplayer" or "multiplayer"
+    self.singleTab = button(self.home, "Singleplayer", 165, 20, -80, function()
+        UI:SelectTab("singleplayer")
+    end)
+    self.multiTab = button(self.home, "Multiplayer", 165, 190, -80, function()
+        UI:SelectTab("multiplayer")
+    end)
 
-    local library = panel(self.home, 355, 252, 20, -80)
-    label(library, "GAMES", 14, -14, 290, "GameFontNormal")
-    self.library = scroll(library, 303, 199, 14, -40)
+    local library = panel(self.home, 355, 252, 20, -120)
+    self.libraryPanel = library
+    self.libraryTitle = label(library, "MULTIPLAYER GAMES", 14, -14, 290, "GameFontNormal")
+    self.library, self.libraryScroll = scroll(library, 303, 199, 14, -40)
     self.emptyGames = label(
         self.library,
         "Your game library is empty.\n\nKIC-Games is the launcher and multiplayer framework. Games will appear here when their modules are installed.\n\nYou can already create a lobby and invite party members to join it.",
@@ -111,7 +119,8 @@ function UI:Initialize()
         292
     )
 
-    local browser = panel(self.home, 355, 186, 20, -344)
+    local browser = panel(self.home, 355, 186, 20, -384)
+    self.browserPanel = browser
     label(browser, "PARTY LOBBIES", 14, -14, 205, "GameFontNormal")
     button(browser, "Refresh", 90, 248, -9, function()
         Games:Discover()
@@ -120,22 +129,27 @@ function UI:Initialize()
     self.emptyLobbies =
         label(self.browser, "No lobbies found.\n\nCreate one, or ask a party member with KIC-Games to host.", 0, 0, 290)
 
-    local lobbyPanel = panel(self.home, 485, 450, 395, -80)
+    local lobbyPanel = panel(self.home, 485, 450, 395, -120)
+    self.lobbyPanel = lobbyPanel
     self.lobbyTitle = label(lobbyPanel, "YOUR LOBBY", 16, -14, 450, "GameFontNormal")
     self.lobbyInfo = label(lobbyPanel, "", 16, -45, 450)
     self.selectedGame = label(lobbyPanel, "", 16, -107, 450, "GameFontNormalLarge")
-    self.gameInfo = label(lobbyPanel, "", 16, -138, 450, "GameFontHighlightSmall")
+    self.selectedGame:SetHeight(38)
+    self.gameInfo = label(lobbyPanel, "", 16, -153, 450, "GameFontHighlightSmall")
+    self.gameInfo:SetHeight(30)
     self.players = label(lobbyPanel, "", 16, -193, 450)
-    self.players:SetSpacing(12)
+    self.players:SetSpacing(8)
+    self.countdownText = label(lobbyPanel, "", 16, -308, 450, "GameFontNormalLarge")
+    self.countdownText:SetJustifyH("CENTER")
     self.hint = label(lobbyPanel, "", 16, -340, 450, "GameFontHighlightSmall")
     self.create = button(
         lobbyPanel,
-        "Create lobby",
+        "Host game",
         135,
         16,
         -393,
         action(function()
-            return Games:CreateLobby()
+            return Games:CreateLobby(UI.selectedMulti)
         end)
     )
     self.leave = button(lobbyPanel, "Leave lobby", 125, 16, -393, function()
@@ -149,19 +163,11 @@ function UI:Initialize()
         -393,
         action(function()
             local own = Games:LocalMember()
-            return Games:Ready(own and not own.ready)
+            return Games:Ready(Games.Lobby.status ~= "countdown" and own and not own.ready)
         end)
     )
-    self.start = button(
-        lobbyPanel,
-        "Start game",
-        145,
-        281,
-        -393,
-        action(function()
-            return Games:StartGame()
-        end)
-    )
+    self.start = button(lobbyPanel, "Auto start", 145, 281, -393, function() end)
+    self.start:Disable()
     self.showGame = button(lobbyPanel, "Open game", 120, 151, -393, function()
         UI:ShowGame()
     end)
@@ -176,12 +182,86 @@ function UI:Initialize()
         end)
     )
 
-    self.footer = label(frame, "", 22, -551, 850, "GameFontHighlightSmall")
+    self.singlePanel = panel(self.home, 485, 450, 395, -120)
+    label(self.singlePanel, "PLAY SOLO", 16, -14, 450, "GameFontNormal")
+    self.soloTitle = label(self.singlePanel, "", 16, -58, 450, "GameFontNormalLarge")
+    self.soloDescription = label(self.singlePanel, "", 16, -100, 450)
+    self.soloDescription:SetHeight(90)
+    self.soloHint = label(self.singlePanel, "", 16, -220, 450)
+    self.soloPlay = button(
+        self.singlePanel,
+        "Play",
+        145,
+        16,
+        -393,
+        action(function()
+            return Games:StartSingleplayer(UI.selectedSolo)
+        end)
+    )
+    self.soloOpen = button(self.singlePanel, "Open game", 145, 16, -393, function()
+        UI:ShowGame()
+    end)
+    self.soloLeave = button(self.singlePanel, "Leave current lobby", 190, 16, -350, function()
+        Games:LeaveLobby()
+    end)
+    self.footer = label(frame, "", 22, -591, 850, "GameFontHighlightSmall")
     self.gameContainer = panel(frame, 860, 450, 20, -80)
     self.gameContainer:Hide()
     self:CreateResultsWindow()
     self:CreateMinimapButton()
+    frame:SetScript("OnUpdate", function()
+        UI:UpdateCountdown()
+    end)
     self:Refresh()
+end
+
+function UI:SelectTab(mode)
+    if mode ~= "singleplayer" and mode ~= "multiplayer" then
+        return
+    end
+    local changed = self.tab ~= mode
+    self.tab, Games.DB.launcherTab = mode, mode
+    self:Refresh()
+    if changed and mode == "multiplayer" then
+        Games:Discover()
+    end
+end
+
+function UI:UpdateCountdown()
+    if not self.countdownText then
+        return
+    end
+    local remaining = Games:CountdownRemaining()
+    local display = remaining ~= nil and not Games:IsRoundStopped() and remaining or false
+    if self.lastCountdownDisplay == display then
+        return
+    end
+    self.lastCountdownDisplay = display
+    self.countdownText:SetShown(display ~= false)
+    if remaining ~= nil then
+        self.countdownText:SetText(remaining > 0 and ("Game starts in " .. remaining .. "...") or "Starting...")
+    end
+end
+
+function UI:RefreshSingleplayer()
+    local game = Games.Registry[self.selectedSolo]
+    local lobby = Games.Lobby
+    local running = lobby and lobby.mode == "singleplayer" and lobby.status == "running"
+    self.soloTitle:SetText(game and game.title or "Choose a singleplayer game")
+    self.soloDescription:SetText(
+        game and (game.description or "") or "Installed solo games will appear in the library."
+    )
+    self.soloHint:SetText(
+        lobby and lobby.mode == "multiplayer" and "You are in a multiplayer lobby. Leave it before playing solo."
+            or "Singleplayer games work without a party. Results and quick stopping are shared with the framework."
+    )
+    self.soloPlay:SetShown(not running)
+    enable(
+        self.soloPlay,
+        game and not Games.Pending and (not lobby or (lobby.mode == "singleplayer" and lobby.status == "waiting"))
+    )
+    self.soloOpen:SetShown(running and Games.ActiveGame ~= nil)
+    self.soloLeave:SetShown(Games.Pending ~= nil or (lobby and lobby.mode == "multiplayer"))
 end
 
 function UI:HideAll()
@@ -302,7 +382,28 @@ function UI:Refresh()
         self:ShowHome()
         return
     end
-    local games = Games:GetGames()
+    local games = Games:GetGames(self.tab)
+    local soloGames, multiGames = Games:GetGames("singleplayer"), Games:GetGames("multiplayer")
+    self.singleTab:SetText("Singleplayer (" .. #soloGames .. ")")
+    self.multiTab:SetText("Multiplayer (" .. #multiGames .. ")")
+    enable(self.singleTab, self.tab ~= "singleplayer")
+    enable(self.multiTab, self.tab ~= "multiplayer")
+    self.browserPanel:SetShown(self.tab == "multiplayer")
+    self.lobbyPanel:SetShown(self.tab == "multiplayer")
+    self.singlePanel:SetShown(self.tab == "singleplayer")
+    self.libraryPanel:SetHeight(self.tab == "singleplayer" and 450 or 252)
+    self.libraryScroll:SetHeight(self.tab == "singleplayer" and 397 or 199)
+    self.libraryTitle:SetText(self.tab == "singleplayer" and "SINGLEPLAYER GAMES" or "MULTIPLAYER GAMES")
+    self.emptyGames:SetText(
+        self.tab == "singleplayer" and "No singleplayer games installed yet.\n\nInstalled solo games will appear here."
+            or "No multiplayer games installed yet.\n\nInstalled party games will appear here."
+    )
+    if not Games.Registry[self.selectedSolo] then
+        self.selectedSolo = soloGames[1] and soloGames[1].id
+    end
+    if not Games.Registry[self.selectedMulti] then
+        self.selectedMulti = multiGames[1] and multiGames[1].id
+    end
     self.emptyGames:SetShown(#games == 0)
     for _, row in ipairs(self.gameRows) do
         row:Hide()
@@ -315,12 +416,20 @@ function UI:Refresh()
             row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
             row.title = label(row, "", 6, -5, 288, "GameFontNormal")
             row.detail = label(row, "", 6, -28, 288, "GameFontHighlightSmall")
+            row.title:SetHeight(18)
+            row.detail:SetHeight(32)
             self.gameRows[i] = row
         end
         local registeredID = game.id
         row:ClearAllPoints()
         row:SetPoint("TOPLEFT", 0, -(i - 1) * 68)
         row.title:SetText(game.title)
+        local selectedID = self.tab == "singleplayer" and self.selectedSolo or self.selectedMulti
+        if game.id == selectedID then
+            row.title:SetTextColor(unpack(GOLD))
+        else
+            row.title:SetTextColor(0.8, 0.8, 0.8)
+        end
         row.detail:SetText(
             string.format(
                 "%d-%d players | v%s\n%s",
@@ -333,19 +442,32 @@ function UI:Refresh()
         row:SetScript(
             "OnClick",
             action(function()
-                return Games:SelectGame(registeredID)
+                if UI.tab == "singleplayer" then
+                    UI.selectedSolo = registeredID
+                    UI:Refresh()
+                    return true
+                end
+                UI.selectedMulti = registeredID
+                if Games:IsHost() and Games.Lobby.mode == "multiplayer" then
+                    return Games:SelectGame(registeredID)
+                end
+                UI:Refresh()
+                return true
             end)
         )
-        enable(row, Games:IsHost() and Games.Lobby.status == "waiting")
+        enable(
+            row,
+            self.tab == "singleplayer"
+                or not Games.Lobby
+                or (Games:IsHost() and Games.Lobby.mode == "multiplayer" and Games.Lobby.status ~= "running")
+        )
         row:Show()
     end
     self.library:SetHeight(math.max(185, #games * 68))
 
     local listings = {}
     for host, listing in pairs(Games.Listings) do
-        if host ~= Games:PlayerName() then
-            listings[#listings + 1] = listing
-        end
+        listings[#listings + 1] = listing
     end
     table.sort(listings, function(a, b)
         return a.host < b.host
@@ -362,58 +484,92 @@ function UI:Refresh()
             row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
             row.title = label(row, "", 6, -3, 290, "GameFontNormal")
             row.detail = label(row, "", 6, -24, 290, "GameFontHighlightSmall")
+            row.title:SetHeight(18)
+            row.detail:SetHeight(30)
             self.listingRows[i] = row
         end
         local host, id = listing.host, listing.id
         local game = Games.Registry[listing.gameID]
         row:ClearAllPoints()
         row:SetPoint("TOPLEFT", 0, -(i - 1) * 60)
-        row.title:SetText(host)
+        row.title:SetText(
+            (game and game.title or (listing.gameTitle ~= "" and listing.gameTitle or "Choosing a game"))
+                .. "  "
+                .. listing.count
+                .. "/"
+                .. listing.max
+        )
         row.detail:SetText(
             string.format(
-                "%s | %d players\n%s",
-                game and game.title or (listing.gameID ~= "" and listing.gameID or "Choosing a game"),
-                listing.count,
-                listing.status == "running" and (listing.rejoin and "Click to rejoin" or "Game in progress")
-                    or "Click to join"
+                "Host: %s\n%s",
+                host,
+                listing.status == "countdown" and "Starting - click to join"
+                    or (
+                        listing.status == "running" and (listing.rejoin and "Click to rejoin" or "Game in progress")
+                        or "Waiting - click to join"
+                    )
             )
         )
         row:SetScript(
             "OnClick",
             action(function()
+                if Games.Lobby and Games.Lobby.host == host and Games.Lobby.id == id then
+                    return true
+                end
                 return Games:JoinLobby(host, id)
             end)
         )
-        enable(row, not Games.Lobby and not Games.Pending and (listing.status == "waiting" or listing.rejoin))
+        local joined = Games.Lobby and Games.Lobby.host == host and Games.Lobby.id == id
+        enable(
+            row,
+            joined
+                or (
+                    not Games.Lobby
+                    and not Games.Pending
+                    and (listing.status ~= "running" or listing.rejoin)
+                    and (listing.count < listing.max or listing.rejoin)
+                )
+        )
         row:Show()
     end
     self.browser:SetHeight(math.max(112, #listings * 60))
 
-    local lobby, pending = Games.Lobby, Games.Pending
+    local current, pending = Games.Lobby, Games.Pending
+    local lobby = current and current.mode == "multiplayer" and current or nil
     local running = lobby and lobby.status == "running"
-    local interrupted = running and Games:IsRoundStopped()
-    self.abortButton:SetShown(running and not interrupted)
+    local counting = lobby and lobby.status == "countdown"
+    local interrupted = (running or counting) and Games:IsRoundStopped()
+    self.abortButton:SetShown(
+        current and (current.status == "running" or current.status == "countdown") and not Games:IsRoundStopped()
+    )
+    self:UpdateCountdown()
+    self:RefreshSingleplayer()
     self:RefreshResults()
     self.create:SetShown(not lobby)
-    enable(self.create, Games:GroupChannel() ~= nil and not pending)
+    enable(self.create, Games:GroupChannel() ~= nil and not current and not pending and self.selectedMulti ~= nil)
     self.leave:SetShown(lobby ~= nil or pending ~= nil)
     if pending then
         self.create:Hide()
     end
     self.ready:SetShown(lobby ~= nil and not running)
-    self.start:SetShown(lobby ~= nil and not running)
+    self.start:SetShown(lobby ~= nil and not running and not counting)
     self.showGame:SetShown(running and Games.ActiveGame ~= nil)
-    self.endGame:SetShown(running and not interrupted)
+    self.endGame:SetShown((running or counting) and not interrupted)
     if lobby then
         local game = Games.Registry[lobby.gameID]
-        self.lobbyTitle:SetText(interrupted and "MATCH INTERRUPTED" or (running and "GAME IN PROGRESS" or "YOUR LOBBY"))
+        self.lobbyTitle:SetText(
+            interrupted and "MATCH INTERRUPTED"
+                or (counting and "STARTING GAME" or (running and "GAME IN PROGRESS" or "YOUR LOBBY"))
+        )
         self.lobbyInfo:SetText(
             "Host: "
                 .. lobby.host
                 .. "\n\n"
                 .. (Games:IsHost() and "You are hosting this lobby." or "You joined this lobby.")
         )
-        self.selectedGame:SetText(game and game.title or (lobby.gameID ~= "" and lobby.gameID or "No game selected"))
+        self.selectedGame:SetText(
+            game and game.title or (lobby.gameTitle ~= "" and lobby.gameTitle or "No game selected")
+        )
         self.gameInfo:SetText(
             game and (game.description or "")
                 or (
@@ -435,17 +591,17 @@ function UI:Refresh()
         end
         self.players:SetText(table.concat(lines, "\n"))
         local own = Games:LocalMember()
-        self.ready:SetText(own and own.ready and "Not ready" or "Ready")
+        self.ready:SetText((counting or (own and own.ready)) and "Not ready" or "Ready")
         enable(self.ready, Games:Compatible(lobby))
         local canStart, reason = Games:CanStart()
-        enable(self.start, canStart)
         self.hint:SetText(
             interrupted and "Match stopped locally. Waiting for the host to finalize the lobby."
                 or (
-                    running and "Any participant can stop the match immediately. No confirmation needed."
+                    (running or counting)
+                        and "Any participant can stop the match immediately. No confirmation needed."
                     or (
-                        Games:IsHost() and (canStart and "Everyone is ready. You can start." or reason)
-                        or "Mark yourself ready when the selected game is installed."
+                        Games:IsHost() and (canStart and "Everyone is ready. Starting automatically." or reason)
+                        or "When everyone is ready, the game starts after 3, 2, 1."
                     )
                 )
         )
@@ -453,16 +609,24 @@ function UI:Refresh()
         self.lobbyTitle:SetText(pending and "JOINING LOBBY" or "PLAY WITH YOUR PARTY")
         self.lobbyInfo:SetText(
             pending and ("Waiting for " .. pending.host .. "...")
-                or "Create a lobby, or join one from the list on the left."
+                or "Choose a multiplayer game, then click Host game. Or join a party lobby on the left."
         )
-        self.selectedGame:SetText("")
-        self.gameInfo:SetText("")
+        local selected = Games.Registry[self.selectedMulti]
+        self.selectedGame:SetText(selected and selected.title or "Choose a multiplayer game")
+        self.gameInfo:SetText(
+            selected and (selected.description or "") or "Select an installed game in the library to host it."
+        )
         self.players:SetText(
-            "Every player needs KIC-Games and the selected game module.\n\nUp to five players can join a lobby.\n\nParty members join voluntarily; creating a lobby does not send a normal chat message."
+            "Anyone in the party can host.\n\nEvery participant needs the selected game module.\n\nReady up together for an automatic 3, 2, 1 start."
         )
         self.hint:SetText(
-            Games:GroupChannel() and "Ready to create or join a lobby."
-                or "Join a WoW party to use multiplayer lobbies."
+            current
+                    and current.mode == "singleplayer"
+                    and "A solo game is active. Use Singleplayer to reopen it, or Stop match to finish it."
+                or (
+                    Games:GroupChannel() and "Ready to create or join a lobby."
+                    or "Join a WoW party to use multiplayer lobbies."
+                )
         )
     end
     self.footer:SetText(

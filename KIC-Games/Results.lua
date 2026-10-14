@@ -225,7 +225,12 @@ end
 
 function Games:IsRoundStopped()
     local stopped, lobby = self.StoppedRound, self.Lobby
-    return stopped and lobby and stopped.id == lobby.id and stopped.run == lobby.run or false
+    return stopped
+            and lobby
+            and stopped.id == lobby.id
+            and stopped.run == (lobby.status == "countdown" and lobby.run + 1 or lobby.run)
+            and (not stopped.token or stopped.token == lobby.countdownToken)
+        or false
 end
 
 function Games:StopRoundLocally(reason, hide)
@@ -261,7 +266,12 @@ function Games:FinishRound(status, reason, details, abortedBy)
     if status == "aborted" then
         self.UI:HideAll()
     end
-    self:PublishLobby()
+    if self.Lobby.mode == "singleplayer" then
+        self.Lobby, self.StoppedRound = nil, nil
+        self:Changed()
+    else
+        self:PublishLobby()
+    end
     return true
 end
 
@@ -271,14 +281,26 @@ end
 
 function Games:AbortGame()
     local lobby = self.Lobby
-    if not lobby or lobby.status ~= "running" or self:IsRoundStopped() then
+    if not lobby or (lobby.status ~= "running" and lobby.status ~= "countdown") or self:IsRoundStopped() then
         self.UI:HideAll()
         return false, "No running match."
     end
     -- Stop locally before even attempting transport. A send failure must not trap the UI.
-    local packet = { id = lobby.id, run = lobby.run }
+    local packet = {
+        id = lobby.id,
+        run = lobby.status == "countdown" and lobby.run + 1 or lobby.run,
+        token = lobby.countdownToken,
+    }
     self.UI:HideAll()
-    if self:IsHost() then
+    if lobby.status == "countdown" then
+        if self:IsHost() then
+            self:CancelCountdown(true, true)
+        else
+            self.StoppedRound = { id = lobby.id, run = lobby.run + 1, token = lobby.countdownToken }
+            self.PendingAbort = packet
+            self:Changed()
+        end
+    elseif self:IsHost() then
         self:FinishRound("aborted", "player_abort", nil, self:PlayerName())
     else
         local result = self:BuildResult("aborted", "player_abort", nil, self:PlayerName())
@@ -289,14 +311,27 @@ function Games:AbortGame()
         self:StopRoundLocally("aborted", true)
         self.PendingAbort = packet
     end
-    pcall(self.SendControl, self, "ABORT", packet)
+    if lobby.mode == "multiplayer" then
+        pcall(self.SendControl, self, "ABORT", packet)
+    end
     self.UI:HideAll()
     return true
 end
 
 function Games:ReceiveControl(kind, data, sender)
+    if kind ~= "ABORT" then
+        self:ReceiveCountdown(kind, data, sender)
+        return
+    end
     local lobby = self.Lobby
-    if kind ~= "ABORT" or not lobby or lobby.status ~= "running" or data.id ~= lobby.id or data.run ~= lobby.run then
+    if
+        not lobby
+        or lobby.mode ~= "multiplayer"
+        or (lobby.status ~= "running" and lobby.status ~= "countdown")
+        or data.id ~= lobby.id
+        or data.run ~= (lobby.status == "countdown" and lobby.run + 1 or lobby.run)
+        or (data.token ~= nil and data.token ~= lobby.countdownToken)
+    then
         return
     end
     local participant = false
@@ -309,7 +344,15 @@ function Games:ReceiveControl(kind, data, sender)
     if not participant then
         return
     end
-    if self:IsHost() then
+    if lobby.status == "countdown" then
+        if self:IsHost() then
+            self:CancelCountdown(true, true)
+        elseif not self:IsRoundStopped() then
+            self.StoppedRound = { id = lobby.id, run = lobby.run + 1, token = lobby.countdownToken }
+            self:Changed()
+        end
+        self.UI:HideAll()
+    elseif self:IsHost() then
         self:FinishRound("aborted", "player_abort", nil, sender)
         self.UI:HideAll()
     elseif not self:IsRoundStopped() then

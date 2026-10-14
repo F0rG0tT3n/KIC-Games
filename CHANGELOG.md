@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 - 2026-10-14
+
+- Added separate Singleplayer and Multiplayer tabs and filtered game libraries.
+- Added party-independent local launch and results for singleplayer modules.
+- Added selected-game hosting, visible independent party hosts, title/capacity/status listings and click-to-join.
+- Replaced the manual multiplayer start step with an automatic synchronized 3-2-1 countdown when everyone is ready.
+- Cancelled countdowns safely on unready, roster/game changes or quick interruption.
+- Added countdown tokens and correlated join requests to reject delayed state and stale leave/join messages.
+- Added API v3 documentation and regression checks for tabs, simultaneous hosts, solo sessions and countdown races.
+
 ## 0.2.0 - 2026-10-14
 
 - Added one-click match interruption for every participant, shared across all games.

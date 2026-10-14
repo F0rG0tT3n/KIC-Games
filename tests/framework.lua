@@ -197,14 +197,22 @@ local function client(name, realm)
         end,
     }
     env.C_Timer = {
-        NewTicker = function(_, fn)
+        NewTicker = function(period, fn)
             c.tick = fn
-            return {
+            local timer = {
                 callback = fn,
+                at = now + period,
+                period = period,
                 Cancel = function(timer)
                     timer.cancelled = true
                 end,
             }
+            -- Countdown ticks follow the mock clock; module timers are manually controlled.
+            if period <= 0.2 then
+                c.scheduled = c.scheduled or {}
+                c.scheduled[#c.scheduled + 1] = timer
+            end
+            return timer
         end,
         NewTimer = function(_, fn)
             return {
@@ -261,6 +269,12 @@ local function pump(seconds)
     for _ = 1, math.ceil((seconds or 8) * 10) do
         now = now + 0.1
         for _, c in ipairs(clients) do
+            for _, timer in ipairs(c.scheduled or {}) do
+                if not timer.cancelled and now >= timer.at then
+                    timer.at = now + timer.period
+                    timer.callback()
+                end
+            end
             for _, frame in ipairs(c.frames) do
                 if frame.shown and frame.scripts.OnUpdate then
                     frame.scripts.OnUpdate(frame, 0.1)
@@ -490,9 +504,8 @@ pump()
 local function startRound()
     check(E:Ready(true) and F:Ready(true), "API v2 participants failed to ready")
     pump(15)
-    check(E:StartGame(), "API v2 match failed to start")
-    pump(15)
-    check(E.ActiveGame and F.ActiveGame, "API v2 module failed to activate")
+    check(E.Lobby.status == "running", "All-ready participants did not start automatically")
+    check(E.ActiveGame and F.ActiveGame, "Game module failed to activate")
 end
 startRound()
 local calls = 0
@@ -655,4 +668,235 @@ local notPlayed = E.Copy(historySeed)
 notPlayed.entries = { { player = f.name } }
 notPlayed.host = f.name
 check(not E:RecordResult(notPlayed), "A match without the local player entered history")
+
+-- Tabs, selected-game hosting by any party member, and automatic synchronized countdowns.
+local g, h, i = client("Gabi", "RealmOne"), client("Hugo", "RealmTwo"), client("Imre", "RealmThree")
+g.roster, h.roster, i.roster = { h.name, i.name }, { g.name, i.name }, { g.name, h.name }
+register(g, "1")
+register(h, "1")
+register(i, "1")
+local G, H, I = g.games, h.games, i.games
+G.UI.create.scripts.OnClick()
+H.UI.create.scripts.OnClick()
+pump(15)
+check(G.Lobby.gameID == "fixture" and H.Lobby.gameID == "fixture", "Host game did not create the selected game lobby")
+check(I.Listings[g.name] and I.Listings[h.name], "Independent party hosts did not appear together")
+check(
+    I.Listings[g.name].gameTitle == "Test fixture" and I.Listings[g.name].max == 5,
+    "Lobby list lost game title or capacity"
+)
+check(G.UI.listingRows[1].enabled, "Host's own lobby was not shown as joined")
+I.UI.listingRows[1].scripts.OnClick()
+pump(15)
+check(I.Lobby and I.Lobby.host == g.name, "Lobby list click did not join the selected party host")
+check(not I:CreateLobby("fixture"), "A joined participant created a second simultaneous local session")
+
+now = math.ceil(now) + 0.05
+G:Ready(true)
+I:Ready(true)
+pump(0.2)
+check(G.Lobby.status == "countdown" and I.Lobby.status == "countdown", "All ready did not begin a shared countdown")
+check(G:CountdownRemaining() == 3 and I:CountdownRemaining() == 3, "Countdown did not begin at 3")
+check(G.UI.countdownText.text == "Game starts in 3..." and not G.ActiveGame, "UI skipped countdown before module start")
+pump(1)
+check(G:CountdownRemaining() == 2 and I:CountdownRemaining() == 2, "Shared countdown missed 2")
+pump(1)
+check(G:CountdownRemaining() == 1 and I:CountdownRemaining() == 1, "Shared countdown missed 1")
+pump(1)
+check(
+    G.ActiveGame and I.ActiveGame and g.started == 1 and i.started == 1,
+    "Automatic countdown did not launch each module exactly once"
+)
+check(H.Lobby.status == "waiting" and #H.Lobby.members == 1, "Another host's lobby was affected by the countdown")
+G:AbortGame()
+pump(15)
+
+now = math.ceil(now) + 0.05
+G:Ready(true)
+I:Ready(true)
+pump(0.2)
+local oldCountdown = G:GetSession()
+local oldTimer = G.CountdownTimer
+I:Ready(false)
+pump(0.4)
+check(G.Lobby.status == "waiting" and I.Lobby.status == "waiting", "Not ready failed to cancel countdown")
+pump(4)
+check(not G.ActiveGame and g.started == 1 and not G.CountdownTimer, "A cancelled countdown timer launched a game")
+I:AcceptSnapshot(oldCountdown, g.name)
+check(I.Lobby.status == "waiting", "Delayed countdown snapshot resurrected cancelled start")
+check(I.Listings[g.name].status == "waiting", "Delayed snapshot regressed the public lobby list")
+
+now = math.ceil(now) + 0.05
+I:Ready(true)
+pump(0.2)
+check(G.Lobby.status == "countdown", "Readying again did not restart the countdown")
+local newTimer = G.CountdownTimer
+oldTimer.callback()
+check(G.CountdownTimer == newTimer and not newTimer.cancelled, "Stale timer cancelled the replacement countdown")
+G:SelectGame("fixture")
+check(
+    G.Lobby.status == "countdown" and G.CountdownTimer == newTimer,
+    "Selecting the current game unnecessarily reset its countdown"
+)
+for _, gameFramework in ipairs({ G, I }) do
+    local alternate = gameFramework.Copy(gameFramework.Registry.fixture)
+    alternate.id, alternate.title = "alternate_fixture", "Alternate fixture"
+    gameFramework:RegisterGame(alternate)
+end
+G:SelectGame("alternate_fixture")
+pump(5)
+check(
+    G.Lobby.status == "waiting" and not G.ActiveGame and not G.Lobby.members[1].ready,
+    "Changing the game did not cancel countdown and reset readiness"
+)
+
+now = math.ceil(now) + 0.05
+G:Ready(true)
+I:Ready(true)
+pump(0.2)
+local historyCount, cancelled = #G:GetResults(), G:GetSession()
+H:SendControl("ABORT", { id = G.Lobby.id, run = G.Lobby.run + 1, token = G.Lobby.countdownToken })
+pump(0.2)
+check(G.Lobby.status == "countdown", "Party member outside this lobby cancelled its countdown")
+I:AbortGame()
+check(not I.UI.frame:IsShown(), "Countdown stop did not immediately close the guest's window")
+I:AcceptSnapshot(cancelled, g.name)
+check(not I.UI.frame:IsShown(), "A delayed countdown reopened the stopped UI")
+pump(4)
+check(
+    G.Lobby.status == "waiting" and not G.ActiveGame and not G.UI.frame:IsShown(),
+    "Shared quick stop did not cancel countdown"
+)
+check(#G:GetResults() == historyCount, "A cancelled countdown recorded a match that never started")
+I:ReceiveControl("COUNTDOWN", {
+    id = cancelled.id,
+    run = cancelled.run,
+    token = cancelled.countdownToken,
+    epoch = cancelled.epoch,
+    at = cancelled.countdownAt,
+}, g.name)
+check(I.Lobby.status == "waiting", "Delayed countdown control packet restarted the lobby")
+
+now = math.ceil(now) + 0.05
+G:Ready(true)
+I:Ready(true)
+pump(0.2)
+I:LeaveLobby()
+pump(5)
+check(
+    G.Lobby.status == "waiting" and #G.Lobby.members == 1 and not G.CountdownTimer,
+    "Departure during countdown left a running start timer"
+)
+check(not G:CanStart(), "Multiplayer game ignored its minimum player count")
+
+-- A new participant joining during countdown cancels it before the roster changes.
+I:Discover()
+pump(5)
+check(I:JoinLobby(g.name, G.Lobby.id), "Countdown join scenario could not rejoin its host")
+pump(15)
+check(I.Lobby ~= nil, "Delayed roster snapshots prevented rejoining the host")
+now = math.ceil(now) + 0.05
+check(G:Ready(true), "Join-during-countdown host could not ready")
+check(I:Ready(true), "Join-during-countdown guest could not ready")
+pump(0.2)
+check(G.Lobby.status == "countdown", "Join-during-countdown scenario did not begin: " .. G.Lobby.status)
+H:LeaveLobby()
+pump(0.2)
+check(H:JoinLobby(g.name, G.Lobby.id), "A new participant could not request a countdown lobby")
+pump(5)
+check(
+    G.Lobby.status == "waiting" and #G.Lobby.members == 3 and not G.ActiveGame,
+    "Joining during countdown did not cancel the pending start"
+)
+for _, participant in ipairs(G.Lobby.members) do
+    check(not participant.ready, "A changed roster retained ready state")
+end
+H:LeaveLobby()
+I:LeaveLobby()
+pump(5)
+
+-- Singleplayer modules have their own tab, local transport and shared lifecycle/results.
+local j = client("Juli", "RealmSolo")
+j.grouped = false
+local J, soloContext, soloMessages = j.games, nil, 0
+J:RegisterGame({
+    id = "solo_fixture",
+    title = "Solo fixture",
+    version = "1",
+    mode = "singleplayer",
+    CreateUI = function(_, parent)
+        return j.env.CreateFrame("Frame", nil, parent)
+    end,
+    OnStart = function(ctx, session)
+        soloContext = ctx
+        check(
+            session.mode == "singleplayer" and #session.members == 1,
+            "Solo start did not receive a local one-player session"
+        )
+        ctx:SendState("local_state", {})
+    end,
+    OnMessage = function()
+        soloMessages = soloMessages + 1
+    end,
+})
+J:RegisterGame({
+    id = "party_fixture",
+    title = "Party fixture",
+    version = "1",
+    CreateUI = function(_, parent)
+        return j.env.CreateFrame("Frame", nil, parent)
+    end,
+    OnStart = function() end,
+})
+check(#J:GetGames("singleplayer") == 1 and #J:GetGames("multiplayer") == 1, "Game modes were not separated")
+J.UI.singleTab.scripts.OnClick()
+check(
+    J.UI.tab == "singleplayer" and not J.UI.browserPanel:IsShown() and J.UI.singlePanel:IsShown(),
+    "Singleplayer tab kept multiplayer panels visible"
+)
+check(
+    J.UI.gameRows[1].title.text == "Solo fixture" and J.UI.soloPlay.enabled,
+    "Singleplayer tab did not show an available offline game"
+)
+local queued = #packets
+J.UI.soloPlay.scripts.OnClick()
+check(
+    J.ActiveGame and J.Lobby.mode == "singleplayer" and soloMessages == 1,
+    "Solo game failed to launch without a group"
+)
+check(#packets == queued and not J.CountdownTimer, "Solo game advertised or ran a multiplayer countdown")
+check(
+    soloContext:FinishGame({
+        summary = "Solo completed",
+        entries = { { player = j.name, score = 10, rank = 1, outcome = "win" } },
+    }),
+    "Singleplayer result failed to finalize"
+)
+check(not J.Lobby and J:GetResultStats().wins == 1, "Solo completion blocked the launcher or lost results")
+j.grouped, j.roster = true, { g.name }
+queued = #packets
+check(J:StartSingleplayer("solo_fixture"), "Grouped player could not start a solo game")
+J:GroupChanged()
+check(J.ActiveGame ~= nil, "Group changes interrupted an independent solo game")
+J:AbortGame()
+check(
+    #packets == queued and not J.ActiveGame and J:GetResultStats().aborted == 1,
+    "Solo quick stop broadcast to the party or lost its local result"
+)
+J.UI:SelectTab("multiplayer")
+check(
+    J.UI.browserPanel:IsShown() and not J.UI.singlePanel:IsShown() and J.UI.gameRows[1].title.text == "Party fixture",
+    "Multiplayer tab did not restore party lobby panels and multiplayer games"
+)
+check(not pcall(function()
+    J:RegisterGame({
+        id = "bad_solo",
+        title = "Bad solo",
+        version = "1",
+        mode = "singleplayer",
+        maxPlayers = 2,
+        CreateUI = function() end,
+        OnStart = function() end,
+    })
+end), "Singleplayer game accepted multiplayer player limits")
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))

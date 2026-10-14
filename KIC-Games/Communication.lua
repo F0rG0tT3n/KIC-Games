@@ -81,7 +81,10 @@ function Games:SendControl(kind, data)
     if not self.Comm or not channel then
         return false, "Join a group first."
     end
-    if kind ~= "ABORT" or not self:ValidData(data) then
+    if
+        (kind ~= "ABORT" and kind ~= "COUNTDOWN" and kind ~= "COUNTDOWN_CANCEL" and kind ~= "UNREADY")
+        or not self:ValidData(data)
+    then
         return false, "Invalid control message."
     end
     local message = Serializer:Serialize(self.API_VERSION, kind, data)

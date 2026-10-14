@@ -1,10 +1,10 @@
 local addonName, Games = ...
 _G.KICGames = Games
 
-Games.VERSION = "0.2.0"
-Games.API_VERSION = 2
-Games.PREFIX = "KICGames2"
-Games.CONTROL_PREFIX = "KICGames2Ctl"
+Games.VERSION = "0.3.0"
+Games.API_VERSION = 3
+Games.PREFIX = "KICGames3"
+Games.CONTROL_PREFIX = "KICGames3Ctl"
 Games.Registry = {}
 Games.Listings = {}
 Games.MAX_PLAYERS = 5
@@ -90,8 +90,10 @@ function Games:RegisterGame(game)
     assert(type(game.version) == "string" and #game.version > 0 and #game.version <= 32, "Game version required")
     assert(type(game.OnStart) == "function", "Game OnStart callback required")
     assert(type(game.CreateUI) == "function", "Every game module must provide its own CreateUI callback")
-    game.minPlayers = game.minPlayers or 2
-    game.maxPlayers = game.maxPlayers or 5
+    game.mode = game.mode or "multiplayer"
+    assert(game.mode == "singleplayer" or game.mode == "multiplayer", "Invalid game mode")
+    game.minPlayers = game.minPlayers or (game.mode == "singleplayer" and 1 or 2)
+    game.maxPlayers = game.maxPlayers or (game.mode == "singleplayer" and 1 or 5)
     assert(
         game.minPlayers >= 1
             and game.minPlayers % 1 == 0
@@ -100,6 +102,10 @@ function Games:RegisterGame(game)
             and game.maxPlayers <= self.MAX_PLAYERS,
         "Games support 1-5 players"
     )
+    assert(
+        game.mode ~= "singleplayer" or (game.minPlayers == 1 and game.maxPlayers == 1),
+        "Singleplayer games require exactly one player"
+    )
     for _, hook in ipairs({ "OnStop", "OnMessage", "OnSyncRequested", "OnPlayersChanged", "OnResult" }) do
         assert(game[hook] == nil or type(game[hook]) == "function", "Invalid callback: " .. hook)
     end
@@ -107,10 +113,12 @@ function Games:RegisterGame(game)
     self:Changed()
 end
 
-function Games:GetGames()
+function Games:GetGames(mode)
     local list = {}
     for _, game in pairs(self.Registry) do
-        list[#list + 1] = game
+        if not mode or game.mode == mode then
+            list[#list + 1] = game
+        end
     end
     table.sort(list, function(a, b)
         return a.title < b.title
@@ -128,7 +136,7 @@ end
 
 function Games:Compatible(lobby)
     local game = self.Registry[lobby.gameID]
-    return game and game.version == lobby.gameVersion
+    return game and game.version == lobby.gameVersion and game.mode == lobby.mode
 end
 
 function Games:CallGame(hook, ...)
@@ -283,7 +291,7 @@ function Games:StartModule(restored)
         return
     end
     self.UI:ShowGame()
-    if not self:IsHost() then
+    if not self:IsHost() and lobby.mode == "multiplayer" then
         self:Send("GAME_SYNC", {
             id = lobby.id,
             run = lobby.run,

@@ -1,4 +1,4 @@
-# KIC-Games API v2
+# KIC-Games API v3
 
 ## Register a module
 
@@ -22,6 +22,7 @@ KICGames:RegisterGame({
     title = "My Game",
     description = "A short description",
     version = "1",
+    mode = "multiplayer", -- default; use singleplayer for solo modules
     minPlayers = 2,
     maxPlayers = 5,
 
@@ -64,6 +65,28 @@ KICGames:RegisterGame({
 
 This is an API illustration, not an installed playable game. Never register
 placeholder games merely to populate the launcher.
+
+## Game modes and launch flow
+
+`mode` is `multiplayer` by default, or `singleplayer`. The launcher filters its
+two tabs by this field. A singleplayer module defaults to `minPlayers = 1` and
+`maxPlayers = 1`; if supplied, both must be exactly 1. It starts through
+`KICGames:StartSingleplayer(gameID)`, requires no party, and sends no network
+packets. Its action/state callbacks, results, managed timers and quick stop
+use the same module contract as multiplayer. Finishing releases the solo session.
+
+For multiplayer, `KICGames:CreateLobby(gameID)` creates and advertises a lobby
+with the selected game in one operation. Any party member may host. A game's
+minimum player count and compatible versions still apply. Once all members are
+ready, the framework automatically starts a shared 3-2-1 countdown. Modules
+should initialize gameplay only in `OnStart`, after the countdown.
+
+`KICGames:StartGame()` is now an idempotent countdown request on an eligible
+multiplayer lobby, not an immediate launch. The framework owns the start timer.
+Guests launch after the host's authoritative running state arrives. Unready,
+joining/leaving, game changes and quick stopping cancel the pending start;
+late countdown callbacks cannot cancel a replacement timer or start a game.
+Normal module hooks do not run for a cancelled countdown, and no result is stored.
 
 ## Hooks
 
@@ -120,14 +143,19 @@ still observe the wire data; this is not confidential communication.
 {
     id = "unique host session id",
     host = "Character-Realm",
-    channel = "PARTY", -- RAID or INSTANCE_CHAT also possible
+    mode = "multiplayer", -- singleplayer uses the same local session shape
+    channel = "PARTY", -- RAID, INSTANCE_CHAT, or nil for a solo session
     gameID = "my_game",
     gameVersion = "1",
-    status = "waiting", -- or running
+    status = "waiting", -- countdown or running also possible
     revision = 3,
     run = 0, -- increments on each start
     epoch = 0, -- invalidates old readiness requests on selection/end
     startedAt = 0, -- server timestamp set on start
+    countdownToken = 0, -- increases on every countdown/cancellation
+    countdownAt = nil, -- shared server deadline, present during countdown
+    gameTitle = "My Game",
+    maxPlayers = 5,
     result = nil, -- final result present while waiting after a round
     members = {
         { name = "Character-Realm", ready = true, version = "1" },
@@ -172,6 +200,8 @@ have no scores, ranks, wins or losses. The lobby remains open with readiness
 reset. A guest stores a provisional interrupted result until the host's final
 snapshot arrives. A finalized result wins over a late cancellation. Old running
 snapshots and old module contexts cannot resume a locally stopped round.
+Stopping during the countdown cancels the pending start without creating a
+match result. A solo game finishes or stops locally using the same result schema.
 
 `KICGames:GetResults(gameID)` returns copies of the most recent 20 local match
 records, optionally filtered by game ID. `KICGames:GetResultStats(gameID)` counts
@@ -205,8 +235,8 @@ local player are stored. The framework owns history persistence and presentation
 
 ## Other public entry points
 
-`KICGames.API_VERSION`, `KICGames.VERSION`, `KICGames:GetGames()`,
-`KICGames:IsHost()`, `KICGames:CreateLobby()`, `KICGames:Discover()`,
+`KICGames.API_VERSION`, `KICGames.VERSION`, `KICGames:GetGames(mode)`,
+`KICGames:IsHost()`, `KICGames:CreateLobby(gameID)`, `KICGames:StartSingleplayer(gameID)`, `KICGames:Discover()`,
 `KICGames:JoinLobby(host, id)`, `KICGames:SelectGame(id)`,
 `KICGames:Ready(boolean)`, `KICGames:CanStart()`, `KICGames:StartGame()`,
 `KICGames:ReturnToLobby()` (host interruption), `KICGames:AbortGame()`,
@@ -216,3 +246,7 @@ local player are stored. The framework owns history persistence and presentation
 API v2 requires a module-owned `CreateUI` and adds result/timer/interruption APIs.
 The network prefixes changed from v1 so incompatible framework versions do not
 share a lobby. Separate modules continue to declare `## Dependencies: KIC-Games`.
+
+API v3 adds explicit modes, server-timestamp countdowns and join-request
+acknowledgment. Its network prefixes isolate it from v1/v2. Module authors do
+not need to implement lobby discovery, ready checks or countdown messages.
