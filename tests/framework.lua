@@ -56,6 +56,22 @@ local function client(name, realm)
     env.GetCursorPosition = function()
         return 0, 0
     end
+    env.UnitClass = function()
+        return "Mage", "MAGE"
+    end
+    env.C_Spell = {
+        GetSpellTexture = function(id)
+            return id
+        end,
+    }
+    env.GetCurrentKeyBoardFocus = function()
+        return env.keyboardFocus
+    end
+    env.ChatFrameUtil = {
+        OpenChat = function(value)
+            env.chatDraft = value
+        end,
+    }
     local c = {
         name = name .. "-" .. realm,
         frames = frames,
@@ -112,6 +128,18 @@ local function client(name, realm)
     function methods:IsShown()
         return self.shown
     end
+    function methods:IsVisible()
+        return self.shown and (not self.parent or self.parent:IsVisible())
+    end
+    function methods:GetFrameLevel()
+        return 1
+    end
+    function methods:EnableKeyboard(value)
+        self.keyboardEnabled = value
+    end
+    function methods:SetPropagateKeyboardInput(value)
+        self.propagate = value
+    end
     function methods:SetShown(value)
         self.shown = not not value
     end
@@ -136,6 +164,9 @@ local function client(name, realm)
     end
     for _, method in ipairs({
         "SetPoint",
+        "SetColorTexture",
+        "SetAlpha",
+        "SetFrameLevel",
         "ClearAllPoints",
         "SetSize",
         "SetHeight",
@@ -324,7 +355,10 @@ local function register(c, version)
     })
 end
 
-check(#A:GetGames() == 0 and A.UI.emptyGames:IsShown(), "Empty library must not include a fake game")
+check(
+    #A:GetGames("singleplayer") == 1 and A.Registry.tetris and #A:GetGames("multiplayer") == 0,
+    "Bundled Tetris must only appear in singleplayer"
+)
 A.UI:Toggle()
 check(A.UI.frame:IsShown(), "Slash/minimap launcher failed to open")
 a.env.SlashCmdList.KICGAMES("")
@@ -848,7 +882,7 @@ J:RegisterGame({
     end,
     OnStart = function() end,
 })
-check(#J:GetGames("singleplayer") == 1 and #J:GetGames("multiplayer") == 1, "Game modes were not separated")
+check(#J:GetGames("singleplayer") == 2 and #J:GetGames("multiplayer") == 1, "Game modes were not separated")
 J.UI.singleTab.scripts.OnClick()
 check(
     J.UI.tab == "singleplayer" and not J.UI.browserPanel:IsShown() and J.UI.singlePanel:IsShown(),
@@ -859,6 +893,7 @@ check(
     "Singleplayer tab did not show an available offline game"
 )
 local queued = #packets
+J.UI.gameRows[1].scripts.OnClick()
 J.UI.soloPlay.scripts.OnClick()
 check(
     J.ActiveGame and J.Lobby.mode == "singleplayer" and soloMessages == 1,
@@ -899,4 +934,74 @@ check(not pcall(function()
         OnStart = function() end,
     })
 end), "Singleplayer game accepted multiplayer player limits")
+local t = client("TetrisPlayer", "TestRealm")
+t.grouped = false
+local G, T = t.games, t.games.Tetris
+local before = #packets
+check(G:StartSingleplayer("tetris"), "Bundled Tetris could not start")
+check(T.running and T.root:IsVisible() and T.root.keyboardEnabled, "Tetris UI or keyboard did not start")
+check(#T.cells == 200 and #T.Presets == 13, "Missing board cells or class presets")
+T:KeyDown("P")
+T:KeyDown("P")
+check(T.paused, "Keyboard repeat toggled pause twice")
+T.root.scripts.OnKeyUp(T.root, "P")
+T:KeyDown("P")
+T.root.scripts.OnKeyUp(T.root, "P")
+check(not T.paused, "Pause could not resume")
+local oldX = T.model.x
+T:KeyDown("LEFT")
+T:Advance(0.2)
+T.root.scripts.OnKeyUp(T.root, "LEFT")
+check(T.model.x < oldX - 1, "Held movement did not repeat")
+T:KeyDown("ENTER")
+check(T.root.propagate, "Non-game keyboard input was captured")
+T:SelectPreset("DRUID")
+check(G.DB.tetris.preset == "DRUID", "Preset was not saved")
+T:KeyDown("SPACE")
+T.root.scripts.OnKeyUp(T.root, "SPACE")
+check(G.DB.tetris.best.score > 0, "Drop score did not save the best")
+local best = G.DB.tetris.best.score
+T:ShareBest()
+check(t.env.chatDraft:find("/s KIC Tetris best:", 1, true) == 1 and T.paused, "Best share did not draft chat and pause")
+T:Pause(false)
+t.env.keyboardFocus = {}
+T:KeyDown("LEFT")
+check(T.paused and T.root.propagate, "Chat typing stole movement input")
+t.env.keyboardFocus = nil
+T:Pause(false)
+G.UI:ShowHome()
+local y = T.model.y
+T:Advance(0.2)
+check(T.paused and T.model.y == y, "Hidden game did not pause")
+G.UI:ShowGame()
+G:AbortGame()
+check(
+    not T.running and not T.root.keyboardEnabled and G.DB.tetris.best.score == best,
+    "Quick stop lost best or kept input"
+)
+check(#packets == before, "Singleplayer Tetris emitted multiplayer packets")
+local frameCount = #t.frames
+check(G:StartSingleplayer("tetris"), "Tetris restart failed")
+check(#t.frames == frameCount, "Tetris replay leaked UI frames")
+check(G.DB.tetris.preset == "DRUID" and G.DB.tetris.best.score == best, "Restart lost settings or best")
+T.model:AddScore(200)
+T.model.lines, T.model.level, T.model.gameover = 2, 1, true
+T:Advance(0)
+check(not G.ActiveGame and not G.Lobby and T.summary:IsShown(), "Game over did not release session and show summary")
+check(G:GetResults()[1].entries[1].score == T.model.score, "Tetris completion lost score")
+check(G.DB.tetris.best.lines == 2, "Best record lost line metadata")
+G.UI:HideAll()
+check(not T.summary:IsShown(), "Quick stop did not hide the game-over dialog")
+t.env.SlashCmdList.KICTETRIS("share")
+check(t.env.chatDraft:find("Druid icons", 1, true), "Share command did not use saved record")
+local saved = G.DB.tetris
+local reload = client("Reloaded", "TestRealm")
+reload.env.KICGamesDB = { tetris = saved }
+reload:event("ADDON_LOADED", "KIC-Games")
+check(reload.games.Tetris:Storage().best.score == T.model.score, "Reload lost SavedVariables high score")
+G.DB.tetris = { preset = "invalid", best = { score = 0 / 0, lines = -10, level = math.huge } }
+check(
+    T:Storage().best.score == 0 and T:Storage().best.level == 1 and G.DB.tetris.preset == "MAGE",
+    "Invalid saved values were not repaired"
+)
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))

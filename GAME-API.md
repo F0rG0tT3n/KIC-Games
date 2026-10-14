@@ -250,3 +250,14 @@ share a lobby. Separate modules continue to declare `## Dependencies: KIC-Games`
 API v3 adds explicit modes, server-timestamp countdowns and join-request
 acknowledgment. Its network prefixes isolate it from v1/v2. Module authors do
 not need to implement lobby discovery, ready checks or countdown messages.
+
+Bundled modules may live under the framework's `Games/` directory and load from
+its TOC; Tetris is the first example. They still use `RegisterGame` and own their
+rules and UI. Separate addons remain supported.
+
+A module's result dialog can call `KICGames.UI:RegisterAuxiliaryWindow(frame)`
+once when it creates the frame. The framework hides registered windows during
+quick stopping, launcher/game navigation and tab switches. Parent the dialog to
+the launcher frame so closing the main window also hides it. Reuse frames, since
+WoW does not garbage collect them. These local UI helpers do not change API v3's
+network protocol.

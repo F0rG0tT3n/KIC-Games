@@ -220,6 +220,9 @@ function UI:SelectTab(mode)
         return
     end
     local changed = self.tab ~= mode
+    if changed then
+        self:HideAuxiliaryWindows()
+    end
     self.tab, Games.DB.launcherTab = mode, mode
     self:Refresh()
     if changed and mode == "multiplayer" then
@@ -264,7 +267,19 @@ function UI:RefreshSingleplayer()
     self.soloLeave:SetShown(Games.Pending ~= nil or (lobby and lobby.mode == "multiplayer"))
 end
 
+function UI:RegisterAuxiliaryWindow(frame)
+    self.auxiliaryWindows = self.auxiliaryWindows or {}
+    self.auxiliaryWindows[#self.auxiliaryWindows + 1] = frame
+end
+
+function UI:HideAuxiliaryWindows()
+    for _, frame in ipairs(self.auxiliaryWindows or {}) do
+        frame:Hide()
+    end
+end
+
 function UI:HideAll()
+    self:HideAuxiliaryWindows()
     if self.frame then
         self.frame:Hide()
     end
@@ -295,6 +310,7 @@ function UI:CreateResultsWindow()
 end
 
 function UI:ShowResults()
+    self:HideAuxiliaryWindows()
     self:RefreshResults()
     self.resultsFrame:Show()
 end
@@ -347,6 +363,7 @@ function UI:GetGameContainer()
 end
 
 function UI:ShowHome()
+    self:HideAuxiliaryWindows()
     self.home:Show()
     self.gameContainer:Hide()
     self.homeButton:Hide()
@@ -357,6 +374,7 @@ function UI:ShowGame()
     if not Games.ActiveGame then
         return
     end
+    self:HideAuxiliaryWindows()
     self.home:Hide()
     self.gameContainer:Show()
     self.homeButton:Show()

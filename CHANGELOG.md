@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 - 2026-10-14
+
+- Bundled Tetris as an independent singleplayer module with colorful WoW spell icons and 13 saved class presets.
+- Added seven-piece bags, rotation kicks, ghost landing, five-piece previews, hold, soft/hard drop, levels and line scores.
+- Added account-wide saved best scores and editable chat drafts from the game, game-over dialog or `/kictetris share`.
+- Added automatic pause on hidden windows or edit-box focus and keyboard cleanup on immediate match interruption.
+- Added game-over results and replay, pooled UI frames, and shared cleanup of module auxiliary windows.
+- Added deterministic engine and randomized invariant checks plus framework integration coverage for Tetris.
+- Kept multiplayer communication and API at v3; no additional addon installation is required.
+
 ## 0.3.0 - 2026-10-14
 
 - Added separate Singleplayer and Multiplayer tabs and filtered game libraries.

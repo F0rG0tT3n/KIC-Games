@@ -1,8 +1,9 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.3.0. Intended for waiting for the group to fill and the time between dungeons.
-No game is bundled in this first version.
+0.4.0. Intended for waiting for the group to fill and the time between dungeons.
+Includes **Tetris**, the first singleplayer module, with colorful WoW icons,
+13 class presets, a saved high score and chat sharing. See [Tetris](TETRIS.md).
 
 ## Install and open
 
@@ -17,6 +18,8 @@ installable folder at its root.
 - `/kicgames leave`: leave your lobby, or close it if you are the host.
 - `/kicgames stop` or `/kicgames abort`: interrupt the current match and close the windows immediately.
 - `/kicgames results`: view the shared result history.
+- `/kictetris`: start Tetris, or reopen your current Tetris game.
+- `/kictetris share`: draft your saved best score in chat; press Enter to send.
 
 ## Singleplayer and Multiplayer tabs
 
@@ -26,8 +29,8 @@ its own filtered game library. The last selected tab is remembered.
 Singleplayer modules start using **Play**, without a party, lobby discovery or
 network traffic. They still get shared results, timer cleanup and **Stop match**.
 Finishing a solo game releases its session so you can immediately host or join
-a multiplayer lobby. Modules identify their mode when they register; no games
-are bundled yet.
+a multiplayer lobby. Modules identify their mode when they register. Select
+**Tetris** in **Singleplayer**, then click **Play**.
 
 ## Using a multiplayer lobby
 
@@ -45,8 +48,8 @@ are bundled yet.
 6. **Launcher** returns to the library without ending the match. **Open game**
    reopens the match. Every participant can use **Stop match** to interrupt it.
 
-The libraries are empty until actual game modules are installed; **Host game**
-requires a selected multiplayer module. Multiple party members can host
+The multiplayer library is empty until a multiplayer module is installed;
+**Host game** requires a selected multiplayer module. Multiple party members can host
 independent lobbies, but a client joins only one session at a time.
 
 Withdrawing readiness, a participant departing, someone joining during the
@@ -130,12 +133,14 @@ stopping, managed timers, sender checks and transport.
 - `Results.lua`: normal completion, quick interruption and bounded shared results.
 - `Countdown.lua`: all-ready scheduling, shared countdown and cancellation.
 - `UI.lua`: library, lobby browser, participants and minimap launcher.
+- `Games/Tetris/`: independent rules engine, class presets, game UI and module lifecycle.
 - `Libs/`: bundled Ace3 libraries; no separate Ace3 addon installation required.
 
 Run the isolated-client integration checks from the repository root:
 
 ```powershell
 lua tests/framework.lua
+lua tests/tetris.lua
 ```
 
 The checks load the real bundled libraries and addon files with mocked WoW APIs,
@@ -144,7 +149,10 @@ checks, game lifecycle, multipart payloads, throttle retries, stale snapshots,
 rejoining, departures, scoped messages, result validation/deduplication,
 managed timer cleanup, urgent interruption during a large transfer, independent
 hosts, tabs, singleplayer without networking, the displayed 3-2-1 sequence,
-countdown cancellation and join acknowledgment. Real WoW rendering and actual
+countdown cancellation and join acknowledgment. They also check Tetris launching,
+presets, saved records, chat drafts, focus, pauses and quick stopping. Pure engine
+checks cover bags, rotation, bounds, holding, drops, line clearing, scoring,
+gravity, locking, top-out and randomized board invariants. Real WoW rendering and actual
 server delivery still need an in-game check with at least two clients.
 
 ## Third-party libraries
