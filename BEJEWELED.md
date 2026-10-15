@@ -49,8 +49,9 @@ After five active seconds without scoring, two gems in a valid swap bounce and
 glow until you interact. Interaction postpones the suggestion for five seconds;
 pausing freezes the clock, and scoring resets it. The
 signal never swaps gems or spends points.
-Three-in-a-row clears give a brief glow, four adds sparks, and five or more adds
-a stronger flash and more sparks. Above the board, beneath Back to Launcher,
+Sparkles and a brief flash now begin while the matched gems are still visible.
+Three-in-a-row uses a small burst, four adds more sparks, and five or more gives
+a stronger board flash and a larger burst. Above the board, beneath Back to Launcher,
 each run length from three through eight has its own callout, with points beneath
 it. Cascades add Combo, Super Combo or Mega Combo labels. Crossings of triples
 still use the three-gem visual tier.

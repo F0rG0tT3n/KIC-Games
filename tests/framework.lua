@@ -3320,7 +3320,16 @@ do
         b.scoreIdleTime = 5
         check(b:MatchSoundEvent() == expected, "Match strength used total cleared cells or the wrong axis")
         now = now + 0.2
-        for _ = 1, 3 do
+        b:Advance(0.1)
+        check(
+            b.model.score == score
+                and b.matchEffect
+                and b.matchEffect.time == 0
+                and b.effectFlash.alpha > 0
+                and b.effectParticles[1]:IsShown(),
+            "Sparkle and flash did not begin while matched gems were still visible"
+        )
+        for _ = 1, 2 do
             b:Advance(0.1)
         end
         check(
@@ -3350,13 +3359,13 @@ do
         check(
             b.matchEffect
                 and b.matchEffect.tier == tier
-                and #b.matchEffect.particles == (tier == 5 and 24 or tier == 4 and 8 or 0)
+                and #b.matchEffect.particles == (tier == 5 and 32 or tier == 4 and 12 or 4)
                 and b.cells[(firstMatch.y - 1) * 8 + firstMatch.x].spark.alpha > 0
                 and b.scoreIdleTime == 0,
             "Match effect intensity or score-based hint reset is wrong"
         )
         check(
-            tier == 5 or not b.effectParticles[24]:IsShown(),
+            tier == 5 or not b.effectParticles[32]:IsShown(),
             "A lower-tier match kept old epic particles or did not reset the hint timer"
         )
     end

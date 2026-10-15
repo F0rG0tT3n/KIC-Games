@@ -69,12 +69,14 @@ function B:StartMatchEffect(tier, length, matched, cascade, points)
     for _, particle in ipairs(self.effectParticles) do
         particle:Hide()
     end
-    local duration = tier == 5 and 0.85 or tier == 4 and 0.6 or 0.35
+    local duration = tier == 5 and 1.05 or tier == 4 and 0.75 or 0.45
     local color = effectColors[tier]
     local effect =
         { tier = tier, duration = duration, labelDuration = duration + 0.45, time = 0, cells = {}, particles = {} }
     for _, c in ipairs(matched) do
-        effect.cells[key(c.x, c.y)] = true
+        local index = key(c.x, c.y)
+        effect.cells[index] = true
+        self.cells[index].spark:SetColorTexture(color[1], color[2], color[3], 1)
     end
     self.matchEffect = effect
     self.effectBanner:SetText(matchTitles[length])
@@ -88,7 +90,8 @@ function B:StartMatchEffect(tier, length, matched, cascade, points)
     local detailColor = cascade > 1 and Theme.Colors.gold or color
     self.effectDetail:SetTextColor(detailColor[1], detailColor[2], detailColor[3], 1)
     self.effectDetail:Show()
-    local count = tier == 5 and 24 or tier == 4 and 8 or 0
+    self.effectFlash:SetColorTexture(color[1], color[2], color[3], 1)
+    local count = tier == 5 and 32 or tier == 4 and 12 or 4
     for i = 1, count do
         local c = matched[(i - 1) % #matched + 1]
         local angle = i * 2.399963 -- Evenly dispersed without changing the game RNG.
@@ -110,11 +113,11 @@ function B:UpdateMatchEffect(dt)
     local textFade =
         math.max(0, math.min(1, (effect.labelDuration - effect.time) / (effect.labelDuration - effect.duration * 0.4)))
     for i in pairs(effect.cells) do
-        self.cells[i].spark:SetAlpha(fade * (effect.tier == 5 and 0.65 or 0.42))
+        self.cells[i].spark:SetAlpha(fade * (effect.tier == 5 and 0.85 or effect.tier == 4 and 0.7 or 0.55))
     end
     self.effectBanner:SetAlpha(textFade)
     self.effectDetail:SetAlpha(textFade)
-    self.effectFlash:SetAlpha(effect.tier == 5 and fade * 0.18 or 0)
+    self.effectFlash:SetAlpha(fade * (effect.tier == 5 and 0.32 or effect.tier == 4 and 0.16 or 0.08))
     for i, point in ipairs(effect.particles) do
         local particle = self.effectParticles[i]
         local spread = progress * self.step * (effect.tier == 5 and 1.7 or 0.9)
@@ -518,15 +521,20 @@ function B:Advance(dt)
         end
     elseif self.model.phase == "clearing" then
         redraw = true
+        if self.effectPending ~= self.model.pending then
+            local _, tier, length = self:MatchSoundEvent()
+            local cascade, matched = self.model.cascade, self.model.pending
+            self:StartMatchEffect(tier, length, matched, cascade, #matched * 50 * cascade)
+            self.effectPending = matched
+        end
         self.phaseTime = self.phaseTime + dt
         if self.phaseTime >= 0.3 then
-            local event, tier, length = self:MatchSoundEvent()
-            local cascade, matched = self.model.cascade, self.model.pending
+            local event, cascade = self:MatchSoundEvent(), self.model.cascade
             self.model:Step()
             self.scoreIdleTime = 0
             self.hintNextAt = 5
             self.hint = nil
-            self:StartMatchEffect(tier, length, matched, cascade, self.model.lastGain)
+            self.effectPending = nil
             self:SaveBest()
             Games.Audio:Play("bejeweled", event, nil, cascade)
             self.phaseTime = 0
@@ -671,10 +679,10 @@ function B:CreateUI(parent)
     self.effectFlash:SetBlendMode("ADD")
     self.effectFlash:SetAlpha(0)
     self.effectParticles = {}
-    for i = 1, 24 do
+    for i = 1, 32 do
         local particle = self.effectLayer:CreateTexture(nil, "OVERLAY")
         particle:SetTexture("Interface\\Buttons\\WHITE8X8")
-        particle:SetSize(i % 3 == 0 and 7 or 4, i % 3 == 0 and 7 or 4)
+        particle:SetSize(i % 3 == 0 and 12 or 8, i % 3 == 0 and 12 or 8)
         particle:SetBlendMode("ADD")
         particle:Hide()
         self.effectParticles[i] = particle

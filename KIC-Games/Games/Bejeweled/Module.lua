@@ -103,7 +103,7 @@ Games:RegisterGame({
         B.running, B.paused = true, false
         B.selected, B.hint, B.swap, B.fall = nil, nil, nil, nil
         B.phaseTime, B.message = 0, "Select a gem, then a neighbor."
-        B.scoreIdleTime, B.hintNextAt, B.hintPulseTime, B.matchEffect = 0, 5, 0, nil
+        B.scoreIdleTime, B.hintNextAt, B.hintPulseTime, B.matchEffect, B.effectPending = 0, 5, 0, nil, nil
         B.effectBanner:Hide()
         B.effectDetail:Hide()
         B.effectFlash:SetAlpha(0)
@@ -123,6 +123,7 @@ Games:RegisterGame({
         B.running = false
         B.swap, B.fall, B.selected, B.hint = nil, nil, nil, nil
         B.matchEffect = nil
+        B.effectPending = nil
         B.effectBanner:Hide()
         B.effectDetail:Hide()
         B.effectFlash:SetAlpha(0)
