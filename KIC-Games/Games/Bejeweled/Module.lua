@@ -22,17 +22,10 @@ function B:Storage()
 end
 function B:ApplyPreset(token)
     local shared = Games.IconPresets
-    local preset = shared.ByToken[token]
-    if not preset then
-        return
-    end
-    self.icons = {}
-    for i, icon in ipairs(preset.icons) do
-        self.icons[i] = icon
-    end
-    self.fallbackIcon = shared.FallbackIcons[token]
+    self.icons = Games:GetPieceIcons("bejeweled")
+    self.fallbackIcon = shared.FallbackIcons[token] or shared.FallbackIcons.MAGE
     if self.presetLabel then
-        self.presetLabel:SetText(preset.name .. " icons")
+        self.presetLabel:SetText(token .. " icons")
     end
     self:Render()
 end
@@ -77,6 +70,7 @@ function B:Complete()
     if not self.running then
         return
     end
+    Games.Audio:Play("bejeweled", "gameOver")
     self:SaveBest()
     local m, context = self.model, self.context
     local details = string.format("%d points, %d gems, %d moves", m.score, m.cleared, m.moves)

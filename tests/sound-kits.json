@@ -1,0 +1,17 @@
+{
+  "source": "https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_SharedXML/Mainline/SoundKitConstants.lua",
+  "checked": "2026-10-15",
+  "kits": {
+    "823": "IG_MINIMAP_ZOOM_IN",
+    "838": "IG_ABILITY_ICON_DROP",
+    "841": "IG_CHARACTER_INFO_TAB",
+    "846": "IG_QUEST_LOG_ABANDON_QUEST",
+    "865": "IG_BACKPACK_COIN_OK",
+    "878": "IG_QUEST_LIST_COMPLETE",
+    "1204": "PUT_DOWN_GEMS",
+    "1212": "PUT_DOWN_SMALL_CHAIN",
+    "1221": "PICK_UP_GEMS",
+    "10590": "JEWEL_CRAFTING_FINALIZE",
+    "73279": "UI_ORDERHALL_TALENT_SELECT"
+  }
+}

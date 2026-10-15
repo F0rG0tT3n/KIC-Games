@@ -38,35 +38,173 @@ function Games:RecordGameLaunch(id)
     end
     self.DB.recentGames = history
 end
+local function finite(value)
+    return type(value) == "number" and value == value and value > -math.huge and value < math.huge
+end
 function Games:GetSettings()
     if type(self.DB.settings) ~= "table" then
         self.DB.settings = {}
     end
-    return self.DB.settings
+    local s = self.DB.settings
+    if
+        s.schemaVersion == 2
+        and (
+            type(s.manualSpecs) ~= "table"
+            or type(s.manualClass) ~= "string"
+            or (s.graphicsTheme ~= "original" and s.graphicsTheme ~= "class")
+            or (s.soundTheme ~= "arcade" and s.soundTheme ~= "class")
+            or not finite(s.soundVolume)
+            or not finite(s.windowScale)
+        )
+    then
+        s.schemaVersion = nil
+    end
+    if s.schemaVersion ~= 2 then
+        if #self.Profiles.classes == 0 then
+            self.Profiles:Refresh()
+        end
+        local _, player = UnitClass("player")
+        local legacy = type(self.DB.tetris) == "table" and self.DB.tetris.preset
+        local token = s.manualClass or s.classPreset or legacy or player or "MAGE"
+        if not self.Profiles.byClass[token] then
+            token = player or "MAGE"
+        end
+        s.manualClass = token
+        s.manualSpecs = type(s.manualSpecs) == "table" and s.manualSpecs or {}
+        local class = self.Profiles.byClass[token]
+        local spec = self.Profiles.bySpec[s.manualSpecID]
+        s.manualSpecID = spec and spec.class == token and spec.id or class and class.specs[1] and class.specs[1].id
+        s.manualSpecs[token] = s.manualSpecID
+        s.graphicsTheme = s.graphicsTheme == "original" and "original" or "class"
+        s.followCharacter = s.followCharacter == true
+        s.soundTheme = s.soundTheme == "class" and "class" or "arcade"
+        s.soundsEnabled = s.soundsEnabled ~= false
+        s.soundVolume = finite(s.soundVolume) and math.max(0, math.min(1, s.soundVolume)) or 0.6
+        s.windowScale = finite(s.windowScale)
+                and math.max(0.75, math.min(1.5, math.floor(s.windowScale * 20 + 0.5) / 20))
+            or 1
+        -- Legacy dimensions remain in SavedVariables for lossless migration, but
+        -- Options 2.0 never applies them or exposes another sizing control.
+        s.schemaVersion = 2
+    end
+    s.soundVolume = math.max(0, math.min(1, s.soundVolume))
+    s.windowScale = math.max(0.75, math.min(1.5, math.floor(s.windowScale * 20 + 0.5) / 20))
+    s.followCharacter = s.followCharacter == true
+    s.soundsEnabled = s.soundsEnabled ~= false
+    return s
+end
+function Games:GetSelectedProfile()
+    local s = self:GetSettings()
+    if s.followCharacter then
+        local token, spec = self.Profiles:Character()
+        if self.Profiles.byClass[token] then
+            return token, spec
+        end
+    end
+    local token = s.manualClass
+    if not self.Profiles.byClass[token] then
+        local _, player = UnitClass("player")
+        token = self.Profiles.byClass[player] and player or "MAGE"
+    end
+    local class, spec = self.Profiles.byClass[token], self.Profiles.bySpec[s.manualSpecID]
+    return token, spec and spec.class == token and spec.id or class and class.specs[1] and class.specs[1].id
 end
 function Games:GetClassPreset()
-    local settings = self:GetSettings()
-    if not self.IconPresets.ByToken[settings.classPreset] then
-        local legacy = type(self.DB.tetris) == "table" and self.DB.tetris.preset
-        local _, token = UnitClass("player")
-        settings.classPreset = self.IconPresets.ByToken[legacy] and legacy
-            or self.IconPresets.ByToken[token] and token
-            or "MAGE"
-    end
-    return settings.classPreset
+    local token = self:GetSelectedProfile()
+    return token
 end
-function Games:SetClassPreset(token)
-    if not self.IconPresets.ByToken[token] then
-        return false
-    end
-    self:GetSettings().classPreset = token
+function Games:ApplyCosmetics()
+    local token = self:GetClassPreset()
     for _, module in ipairs({ self.Tetris, self.Bejeweled }) do
         if module and module.ApplyPreset then
             module:ApplyPreset(token)
         end
     end
-    if self.UI.RefreshOptions then
+    if self.Audio then
+        self.Audio:StopAll()
+    end
+    if self.UI and self.UI.RefreshOptions then
         self.UI:RefreshOptions()
+    end
+end
+function Games:SetManualClass(token)
+    local s, class = self:GetSettings(), self.Profiles.byClass[token]
+    if not class or s.followCharacter then
+        return false
+    end
+    s.manualClass, s.classPreset = token, token
+    local remembered = self.Profiles.bySpec[s.manualSpecs[token]]
+    s.manualSpecID = remembered and remembered.class == token and remembered.id or class.specs[1] and class.specs[1].id
+    s.manualSpecs[token] = s.manualSpecID
+    self:ApplyCosmetics()
+    return true
+end
+function Games:SetClassPreset(token)
+    if not self.Profiles.byClass[token] then
+        return false
+    end
+    self:GetSettings().followCharacter = false
+    return self:SetManualClass(token)
+end
+function Games:SetManualSpec(id)
+    local s, spec = self:GetSettings(), self.Profiles.bySpec[id]
+    if s.followCharacter or not spec or spec.class ~= s.manualClass then
+        return false
+    end
+    s.manualSpecID, s.manualSpecs[s.manualClass] = id, id
+    self:ApplyCosmetics()
+    return true
+end
+function Games:SetOption(key, value)
+    local s = self:GetSettings()
+    if key == "graphicsTheme" then
+        if value ~= "original" and value ~= "class" then
+            return false
+        end
+    elseif key == "soundTheme" then
+        if value ~= "arcade" and value ~= "class" then
+            return false
+        end
+    elseif key == "followCharacter" or key == "soundsEnabled" then
+        value = value == true
+    elseif key == "soundVolume" then
+        if not finite(value) then
+            return false
+        end
+        value = math.max(0, math.min(1, value))
+    else
+        return false
+    end
+    s[key] = value
+    if key == "graphicsTheme" or key == "followCharacter" then
+        self:ApplyCosmetics()
+    else
+        if self.Audio then
+            self.Audio:StopAll()
+        end
+        if self.UI and self.UI.RefreshOptions then
+            self.UI:RefreshOptions()
+        end
     end
     return true
 end
+local events = CreateFrame("Frame")
+for _, event in ipairs({
+    "PLAYER_LOGIN",
+    "PLAYER_ENTERING_WORLD",
+    "PLAYER_SPECIALIZATION_CHANGED",
+    "ACTIVE_TALENT_GROUP_CHANGED",
+}) do
+    events:RegisterEvent(event)
+end
+events:SetScript("OnEvent", function(_, event, unit)
+    if not Games.DB or event == "PLAYER_SPECIALIZATION_CHANGED" and unit and unit ~= "player" then
+        return
+    end
+    Games.Profiles:Refresh()
+    if Games:GetSettings().followCharacter then
+        Games:ApplyCosmetics()
+    elseif Games.UI and Games.UI.RefreshOptions then
+        Games.UI:RefreshOptions()
+    end
+end)

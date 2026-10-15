@@ -1,11 +1,11 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.12.0. Intended for waiting for the group to fill and the time between dungeons.
-Includes **[Tetris](TETRIS.md)** with 13 class icon presets and
+0.13.0. Intended for waiting for the group to fill and the time between dungeons.
+Includes **[Tetris](TETRIS.md)** with Original and class/spec graphics and
 **[Bejeweled](BEJEWELED.md)** with animated gem swaps and cascades.
 Both singleplayer modules have saved high scores, editable chat sharing and
-shared WoW class icon presets from **Options**.
+shared graphics, audio and interface scale settings from **Options**.
 
 The Neon Arcade Launcher has a shared Home / Singleplayer / Multiplayer / Results /
 Options content area. Home shows the featured game and up to three recent games,
@@ -30,14 +30,24 @@ the addon window still open.
 The Launcher's top **Stop game** button also ends the active game while keeping
 the current Launcher page open.
 
-Choose your class once in **Options**; it updates both games immediately without
-resetting the board or score. Your previous Tetris class selection migrates on
-first load. Drag **Resize** at the bottom-right to adjust the window dimensions
-and library columns. Use **Options -> Smaller UI / Larger UI** to scale the whole
-UI and game board proportionally. Both dimensions and scale persist and clamp to
-the screen; **Reset Size** restores the base 1120x700 window and 100% scale when it
-fits. Options/Results opened during a game provide **Back to game**, preserving
-the active session; solo games stay paused until resumed.
+Options is a full Launcher page with **Graphics**, **Audio** and **Window** tabs.
+Graphics offers original colored gems/blocks or distinct class/spec spell sets,
+manual class/spec selection, **Follow My Character**, and a read-only live
+preview. The class/spec catalog comes from the Retail client APIs; curated artwork
+covers 40 specs, including Devourer. Changes preserve the active board and score.
+
+Audio has independent Arcade/Class-Spec themes, an enable toggle, volume and real
+event previews. Arcade SoundKits support independent volume on current Retail.
+Spell-file effects follow WoW's SFX volume; Off or 0% silences all addon effects.
+Some profiles/events use documented arcade fallbacks. No global audio CVars change.
+
+Window contains only **Interface Scale**, 75%-150% in 5% steps, plus Reset to 100%.
+The resize handle and separate size controls are removed. The base canvas is
+1120x700; scale and preferences persist, and small screens use an explicitly
+reported fit scale. Legacy saved dimensions remain as unused migration data.
+Options/Results opened during a game provide **Back to game**, preserving the
+active session; solo games stay paused until resumed. See the
+[Options 2.0 checkpoint](design/OPTIONS_2.md) for APIs, limitations and live tests.
 
 ## Install and open
 

@@ -1,0 +1,2476 @@
+{
+  "source": "https://github.com/wowdev/wow-listfile/releases/latest/download/community-listfile.csv",
+  "checked": "2026-10-15",
+  "profiles": [
+    {
+      "token": "WARRIOR",
+      "classID": 1,
+      "specID": 71,
+      "label": "Arms",
+      "icons": [
+        {
+          "spellID": 12294,
+          "name": "Mortal Strike",
+          "path": "interface/icons/ability_warrior_savageblow.blp",
+          "id": 132355
+        },
+        {
+          "spellID": 7384,
+          "name": "Overpower",
+          "path": "interface/icons/ability_meleedamage.blp",
+          "id": 132223
+        },
+        {
+          "spellID": 1464,
+          "name": "Slam",
+          "path": "interface/icons/ability_warrior_decisivestrike.blp",
+          "id": 132340
+        },
+        {
+          "spellID": 167105,
+          "name": "Colossus Smash",
+          "path": "interface/icons/inv_warbreaker.blp",
+          "id": 2065633
+        },
+        {
+          "spellID": 227847,
+          "name": "Bladestorm",
+          "path": "interface/icons/ability_warrior_bladestorm.blp",
+          "id": 236303
+        },
+        {
+          "spellID": 163201,
+          "name": "Execute",
+          "path": "interface/icons/inv_sword_48.blp",
+          "id": 135358
+        },
+        {
+          "spellID": 100,
+          "name": "Charge",
+          "path": "interface/icons/ability_warrior_charge.blp",
+          "id": 132337
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1267929,
+          "path": "sound/spells/spell_wr_mortalstrike_revamp_cast_01.ogg"
+        },
+        {
+          "id": 1267930,
+          "path": "sound/spells/spell_wr_mortalstrike_revamp_cast_02.ogg"
+        },
+        {
+          "id": 1267931,
+          "path": "sound/spells/spell_wr_mortalstrike_revamp_cast_03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "WARRIOR",
+      "classID": 1,
+      "specID": 72,
+      "label": "Fury",
+      "icons": [
+        {
+          "spellID": 23881,
+          "name": "Bloodthirst",
+          "path": "interface/icons/spell_nature_bloodlust.blp",
+          "id": 136012
+        },
+        {
+          "spellID": 85288,
+          "name": "Raging Blow",
+          "path": "interface/icons/warrior_wild_strike.blp",
+          "id": 589119
+        },
+        {
+          "spellID": 184367,
+          "name": "Rampage",
+          "path": "interface/icons/ability_warrior_rampage.blp",
+          "id": 132352
+        },
+        {
+          "spellID": 184364,
+          "name": "Enraged Regeneration",
+          "path": "interface/icons/ability_warrior_focusedrage.blp",
+          "id": 132345
+        },
+        {
+          "spellID": 1719,
+          "name": "Recklessness",
+          "path": "interface/icons/warrior_talent_icon_innerrage.blp",
+          "id": 458972
+        },
+        {
+          "spellID": 190411,
+          "name": "Whirlwind",
+          "path": "interface/icons/ability_whirlwind.blp",
+          "id": 132369
+        },
+        {
+          "spellID": 385059,
+          "name": "Odyn's Fury",
+          "path": "interface/icons/inv_sword_1h_artifactvigfus_d_01.blp",
+          "id": 1278409
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1276021,
+          "path": "sound/spells/spell_wr_bloodthirst_revamp_impact_01.ogg"
+        },
+        {
+          "id": 1276022,
+          "path": "sound/spells/spell_wr_bloodthirst_revamp_impact_02.ogg"
+        },
+        {
+          "id": 1276023,
+          "path": "sound/spells/spell_wr_bloodthirst_revamp_impact_03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "WARRIOR",
+      "classID": 1,
+      "specID": 73,
+      "label": "Protection",
+      "icons": [
+        {
+          "spellID": 23922,
+          "name": "Shield Slam",
+          "path": "interface/icons/inv_shield_05.blp",
+          "id": 134951
+        },
+        {
+          "spellID": 2565,
+          "name": "Shield Block",
+          "path": "interface/icons/ability_defend.blp",
+          "id": 132110
+        },
+        {
+          "spellID": 6572,
+          "name": "Revenge",
+          "path": "interface/icons/ability_warrior_revenge.blp",
+          "id": 132353
+        },
+        {
+          "spellID": 871,
+          "name": "Shield Wall",
+          "path": "interface/icons/ability_warrior_shieldwall.blp",
+          "id": 132362
+        },
+        {
+          "spellID": 12975,
+          "name": "Last Stand",
+          "path": "interface/icons/spell_holy_ashestoashes.blp",
+          "id": 135871
+        },
+        {
+          "spellID": 6343,
+          "name": "Thunder Clap",
+          "path": "interface/icons/spell_nature_thunderclap.blp",
+          "id": 136105
+        },
+        {
+          "spellID": 46968,
+          "name": "Shockwave",
+          "path": "interface/icons/ability_warrior_shockwave.blp",
+          "id": 236312
+        }
+      ],
+      "missing": [],
+      "sounds": [],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "PALADIN",
+      "classID": 2,
+      "specID": 65,
+      "label": "Holy",
+      "icons": [
+        {
+          "spellID": 20473,
+          "name": "Holy Shock",
+          "path": "interface/icons/spell_holy_searinglight.blp",
+          "id": 135972
+        },
+        {
+          "spellID": 85222,
+          "name": "Light of Dawn",
+          "path": "interface/icons/spell_paladin_lightofdawn.blp",
+          "id": 461859
+        },
+        {
+          "spellID": 53563,
+          "name": "Beacon of Light",
+          "path": "interface/icons/ability_paladin_beaconoflight.blp",
+          "id": 236247
+        },
+        {
+          "spellID": 82326,
+          "name": "Holy Light",
+          "path": "interface/icons/spell_holy_surgeoflight.blp",
+          "id": 135981
+        },
+        {
+          "spellID": 19750,
+          "name": "Flash of Light",
+          "path": "interface/icons/spell_holy_flashheal.blp",
+          "id": 135907
+        },
+        {
+          "spellID": 31884,
+          "name": "Avenging Wrath",
+          "path": "interface/icons/spell_holy_avenginewrath.blp",
+          "id": 135875
+        },
+        {
+          "id": 135891,
+          "path": "interface/icons/spell_holy_crusaderstrike.blp"
+        }
+      ],
+      "missing": [],
+      "sounds": [],
+      "missingSpellLookups": [
+        31842
+      ]
+    },
+    {
+      "token": "PALADIN",
+      "classID": 2,
+      "specID": 66,
+      "label": "Protection",
+      "icons": [
+        {
+          "spellID": 31935,
+          "name": "Avenger's Shield",
+          "path": "interface/icons/spell_holy_avengersshield.blp",
+          "id": 135874
+        },
+        {
+          "spellID": 53600,
+          "name": "Shield of the Righteous",
+          "path": "interface/icons/ability_paladin_shieldofvengeance.blp",
+          "id": 236265
+        },
+        {
+          "spellID": 86659,
+          "name": "Guardian of Ancient Kings",
+          "path": "interface/icons/spell_holy_heroism.blp",
+          "id": 135919
+        },
+        {
+          "spellID": 31850,
+          "name": "Ardent Defender",
+          "path": "interface/icons/spell_holy_ardentdefender.blp",
+          "id": 135870
+        },
+        {
+          "spellID": 26573,
+          "name": "Consecration",
+          "path": "interface/icons/spell_holy_innerfire.blp",
+          "id": 135926
+        },
+        {
+          "spellID": 204019,
+          "name": "Blessed Hammer",
+          "path": "interface/icons/paladin_retribution.blp",
+          "id": 535595
+        },
+        {
+          "spellID": 275779,
+          "name": "Judgment",
+          "path": "interface/icons/spell_holy_righteousfury.blp",
+          "id": 135959
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1360126,
+          "path": "sound/spells/spell_pa_avengersshield_impact_revamp_01.ogg"
+        },
+        {
+          "id": 1360127,
+          "path": "sound/spells/spell_pa_avengersshield_impact_revamp_02.ogg"
+        },
+        {
+          "id": 1360128,
+          "path": "sound/spells/spell_pa_avengersshield_impact_revamp_03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "PALADIN",
+      "classID": 2,
+      "specID": 70,
+      "label": "Retribution",
+      "icons": [
+        {
+          "spellID": 85256,
+          "name": "Templar's Verdict",
+          "path": "interface/icons/spell_paladin_templarsverdict.blp",
+          "id": 461860
+        },
+        {
+          "spellID": 53385,
+          "name": "Divine Storm",
+          "path": "interface/icons/ability_paladin_divinestorm.blp",
+          "id": 236250
+        },
+        {
+          "spellID": 184575,
+          "name": "Blade of Justice",
+          "path": "interface/icons/ability_paladin_bladeofjustice.blp",
+          "id": 1360757
+        },
+        {
+          "spellID": 35395,
+          "name": "Crusader Strike",
+          "path": "interface/icons/spell_holy_crusaderstrike.blp",
+          "id": 135891
+        },
+        {
+          "spellID": 255937,
+          "name": "Wake of Ashes",
+          "path": "interface/icons/inv_sword_2h_artifactashbringerfire_d_03.blp",
+          "id": 1112939
+        },
+        {
+          "spellID": 343527,
+          "name": "Execution Sentence",
+          "path": "interface/icons/spell_paladin_executionsentence.blp",
+          "id": 613954
+        },
+        {
+          "spellID": 24275,
+          "name": "Hammer of Wrath",
+          "path": "interface/icons/inv12_ability_paladin_hammerofwrath.blp",
+          "id": 7439209
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 638272,
+          "path": "sound/spells/spell_pa_templarsverdict_impact01.ogg"
+        },
+        {
+          "id": 638274,
+          "path": "sound/spells/spell_pa_templarsverdict_impact02.ogg"
+        },
+        {
+          "id": 638276,
+          "path": "sound/spells/spell_pa_templarsverdict_impact03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "HUNTER",
+      "classID": 3,
+      "specID": 253,
+      "label": "Beast Mastery",
+      "icons": [
+        {
+          "spellID": 34026,
+          "name": "Kill Command",
+          "path": "interface/icons/ability_hunter_killcommand.blp",
+          "id": 132176
+        },
+        {
+          "spellID": 217200,
+          "name": "Barbed Shot",
+          "path": "interface/icons/ability_hunter_barbedshot.blp",
+          "id": 2058007
+        },
+        {
+          "spellID": 19574,
+          "name": "Bestial Wrath",
+          "path": "interface/icons/ability_druid_ferociousbite.blp",
+          "id": 132127
+        },
+        {
+          "spellID": 120679,
+          "name": "Dire Beast",
+          "path": "interface/icons/ability_hunter_longevity.blp",
+          "id": 236186
+        },
+        {
+          "spellID": 115939,
+          "name": "Beast Cleave",
+          "path": "interface/icons/ability_hunter_sickem.blp",
+          "id": 461121
+        },
+        {
+          "spellID": 193530,
+          "name": "Aspect of the Wild",
+          "path": "interface/icons/spell_nature_protectionformnature.blp",
+          "id": 136074
+        },
+        {
+          "spellID": 982,
+          "name": "Revive Pet",
+          "path": "interface/icons/ability_hunter_beastsoothe.blp",
+          "id": 132163
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 569021,
+          "path": "sound/spells/spell_hu_killcommand_impact.ogg"
+        },
+        {
+          "id": 1303796,
+          "path": "sound/spells/spell_hu_killcommand_cast.ogg"
+        },
+        {
+          "id": 568075,
+          "path": "sound/spells/killcommand.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "HUNTER",
+      "classID": 3,
+      "specID": 254,
+      "label": "Marksmanship",
+      "icons": [
+        {
+          "spellID": 257044,
+          "name": "Rapid Fire",
+          "path": "interface/icons/ability_hunter_efficiency.blp",
+          "id": 461115
+        },
+        {
+          "spellID": 288613,
+          "name": "Trueshot",
+          "path": "interface/icons/ability_trueshot.blp",
+          "id": 132329
+        },
+        {
+          "spellID": 257620,
+          "name": "Multi-Shot",
+          "path": "interface/icons/ability_upgrademoonglaive.blp",
+          "id": 132330
+        },
+        {
+          "spellID": 185358,
+          "name": "Arcane Shot",
+          "path": "interface/icons/ability_impalingbolt.blp",
+          "id": 132218
+        },
+        {
+          "spellID": 212431,
+          "name": "Explosive Shot",
+          "path": "interface/icons/ability_hunter_explosiveshot.blp",
+          "id": 236178
+        },
+        {
+          "id": 132157,
+          "path": "interface/icons/ability_hunter_aimedshot.blp"
+        },
+        {
+          "id": 236179,
+          "path": "interface/icons/ability_hunter_focusedaim.blp"
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1313130,
+          "path": "sound/spells/spell_hu_aimedshot_impact.ogg"
+        },
+        {
+          "id": 1590095,
+          "path": "sound/spells/spell_hu_aimedshot_cast_01.ogg"
+        },
+        {
+          "id": 1590096,
+          "path": "sound/spells/spell_hu_aimedshot_cast_02.ogg"
+        }
+      ],
+      "missingSpellLookups": [
+        19434,
+        194386
+      ]
+    },
+    {
+      "token": "HUNTER",
+      "classID": 3,
+      "specID": 255,
+      "label": "Survival",
+      "icons": [
+        {
+          "spellID": 186270,
+          "name": "Raptor Strike",
+          "path": "interface/icons/ability_hunter_raptorstrike.blp",
+          "id": 1376046
+        },
+        {
+          "spellID": 259387,
+          "name": "Mongoose Bite",
+          "path": "interface/icons/ability_hunter_mongoosebite.blp",
+          "id": 1376044
+        },
+        {
+          "spellID": 259495,
+          "name": "Wildfire Bomb",
+          "path": "interface/icons/inv_wildfirebomb.blp",
+          "id": 2065634
+        },
+        {
+          "spellID": 187708,
+          "name": "Carve",
+          "path": "interface/icons/ability_hunter_carve.blp",
+          "id": 1376039
+        },
+        {
+          "spellID": 190925,
+          "name": "Harpoon",
+          "path": "interface/icons/ability_hunter_harpoon.blp",
+          "id": 1376040
+        },
+        {
+          "spellID": 269751,
+          "name": "Flanking Strike",
+          "path": "interface/icons/ability_hunter_invigeration.blp",
+          "id": 236184
+        },
+        {
+          "spellID": 360952,
+          "name": "Coordinated Assault",
+          "path": "interface/icons/inv__coordinatedassault.blp",
+          "id": 2032587
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1302244,
+          "path": "sound/spells/spell_hu_raptorstrike_cast01.ogg"
+        },
+        {
+          "id": 1302245,
+          "path": "sound/spells/spell_hu_raptorstrike_cast02.ogg"
+        },
+        {
+          "id": 1302246,
+          "path": "sound/spells/spell_hu_raptorstrike_cast03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "ROGUE",
+      "classID": 4,
+      "specID": 259,
+      "label": "Assassination",
+      "icons": [
+        {
+          "spellID": 32645,
+          "name": "Envenom",
+          "path": "interface/icons/ability_rogue_disembowel.blp",
+          "id": 132287
+        },
+        {
+          "spellID": 1329,
+          "name": "Mutilate",
+          "path": "interface/icons/ability_rogue_shadowstrikes.blp",
+          "id": 132304
+        },
+        {
+          "spellID": 703,
+          "name": "Garrote",
+          "path": "interface/icons/ability_rogue_garrote.blp",
+          "id": 132297
+        },
+        {
+          "spellID": 1943,
+          "name": "Rupture",
+          "path": "interface/icons/ability_rogue_rupture.blp",
+          "id": 132302
+        },
+        {
+          "spellID": 360194,
+          "name": "Deathmark",
+          "path": "interface/icons/ability_rogue_deathmark.blp",
+          "id": 4667421
+        },
+        {
+          "spellID": 385627,
+          "name": "Kingsbane",
+          "path": "interface/icons/inv_knife_1h_artifactgarona_d_01.blp",
+          "id": 1259291
+        },
+        {
+          "spellID": 5938,
+          "name": "Shiv",
+          "path": "interface/icons/inv_throwingknife_04.blp",
+          "id": 135428
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 568080,
+          "path": "sound/spells/mutilate_impact_chest.ogg"
+        },
+        {
+          "id": 1301172,
+          "path": "sound/spells/spell_ro_mutilate_impact_01.ogg"
+        },
+        {
+          "id": 1301173,
+          "path": "sound/spells/spell_ro_mutilate_impact_02.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "ROGUE",
+      "classID": 4,
+      "specID": 260,
+      "label": "Outlaw",
+      "icons": [
+        {
+          "spellID": 1752,
+          "name": "Sinister Strike",
+          "path": "interface/icons/spell_shadow_ritualofsacrifice.blp",
+          "id": 136189
+        },
+        {
+          "spellID": 2098,
+          "name": "Dispatch",
+          "path": "interface/icons/ability_rogue_waylay.blp",
+          "id": 236286
+        },
+        {
+          "spellID": 315341,
+          "name": "Between the Eyes",
+          "path": "interface/icons/inv_weapon_rifle_01.blp",
+          "id": 135610
+        },
+        {
+          "spellID": 315508,
+          "name": "Roll the Bones",
+          "path": "interface/icons/ability_rogue_rollthebones.blp",
+          "id": 1373910
+        },
+        {
+          "spellID": 13877,
+          "name": "Blade Flurry",
+          "path": "interface/icons/ability_warrior_punishingblow.blp",
+          "id": 132350
+        },
+        {
+          "spellID": 13750,
+          "name": "Adrenaline Rush",
+          "path": "interface/icons/spell_shadow_shadowworddominate.blp",
+          "id": 136206
+        },
+        {
+          "spellID": 185763,
+          "name": "Pistol Shot",
+          "path": "interface/icons/ability_rogue_pistolshot.blp",
+          "id": 1373908
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1360714,
+          "path": "sound/spells/spell_ro_pistolshot_cast_01.ogg"
+        },
+        {
+          "id": 1360715,
+          "path": "sound/spells/spell_ro_pistolshot_cast_02.ogg"
+        },
+        {
+          "id": 1360716,
+          "path": "sound/spells/spell_ro_pistolshot_cast_03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "ROGUE",
+      "classID": 4,
+      "specID": 261,
+      "label": "Subtlety",
+      "icons": [
+        {
+          "spellID": 185438,
+          "name": "Shadowstrike",
+          "path": "interface/icons/ability_rogue_shadowstrike.blp",
+          "id": 1373912
+        },
+        {
+          "spellID": 196819,
+          "name": "Eviscerate",
+          "path": "interface/icons/ability_rogue_eviscerate.blp",
+          "id": 132292
+        },
+        {
+          "spellID": 185313,
+          "name": "Shadow Dance",
+          "path": "interface/icons/ability_rogue_shadowdance.blp",
+          "id": 236279
+        },
+        {
+          "spellID": 212283,
+          "name": "Symbols of Death",
+          "path": "interface/icons/spell_shadow_rune.blp",
+          "id": 252272
+        },
+        {
+          "spellID": 121471,
+          "name": "Shadow Blades",
+          "path": "interface/icons/inv_knife_1h_grimbatolraid_d_03.blp",
+          "id": 376022
+        },
+        {
+          "spellID": 280719,
+          "name": "Secret Technique",
+          "path": "interface/icons/ability_rogue_sinistercalling.blp",
+          "id": 132305
+        },
+        {
+          "spellID": 53,
+          "name": "Backstab",
+          "path": "interface/icons/ability_backstab.blp",
+          "id": 132090
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 569471,
+          "path": "sound/spells/shadowstrike_impact_chest.ogg"
+        },
+        {
+          "id": 569384,
+          "path": "sound/spells/spell_shadowstrike_cast.ogg"
+        },
+        {
+          "id": 1305797,
+          "path": "sound/spells/spell_ro_shadowstrike_cast_revamp_01.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "PRIEST",
+      "classID": 5,
+      "specID": 256,
+      "label": "Discipline",
+      "icons": [
+        {
+          "spellID": 47540,
+          "name": "Penance",
+          "path": "interface/icons/spell_holy_penance.blp",
+          "id": 237545
+        },
+        {
+          "spellID": 81749,
+          "name": "Atonement",
+          "path": "interface/icons/ability_priest_atonement.blp",
+          "id": 458720
+        },
+        {
+          "spellID": 17,
+          "name": "Power Word: Shield",
+          "path": "interface/icons/spell_holy_powerwordshield.blp",
+          "id": 135940
+        },
+        {
+          "spellID": 33206,
+          "name": "Pain Suppression",
+          "path": "interface/icons/spell_holy_painsupression.blp",
+          "id": 135936
+        },
+        {
+          "spellID": 47536,
+          "name": "Rapture",
+          "path": "interface/icons/spell_holy_rapture.blp",
+          "id": 237548
+        },
+        {
+          "spellID": 204197,
+          "name": "Purge the Wicked",
+          "path": "interface/icons/ability_mage_firestarter.blp",
+          "id": 236216
+        },
+        {
+          "id": 135924,
+          "path": "interface/icons/spell_holy_holysmite.blp"
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1708153,
+          "path": "sound/spells/spell_pr_revamp_penance_impact_01.ogg"
+        },
+        {
+          "id": 1708154,
+          "path": "sound/spells/spell_pr_revamp_penance_impact_02.ogg"
+        },
+        {
+          "id": 1708155,
+          "path": "sound/spells/spell_pr_revamp_penance_impact_03.ogg"
+        }
+      ],
+      "missingSpellLookups": [
+        194509
+      ]
+    },
+    {
+      "token": "PRIEST",
+      "classID": 5,
+      "specID": 257,
+      "label": "Holy",
+      "icons": [
+        {
+          "spellID": 2050,
+          "name": "Holy Word: Serenity",
+          "path": "interface/icons/spell_holy_persuitofjustice.blp",
+          "id": 135937
+        },
+        {
+          "spellID": 34861,
+          "name": "Holy Word: Sanctify",
+          "path": "interface/icons/spell_holy_divineprovidence.blp",
+          "id": 237541
+        },
+        {
+          "spellID": 33076,
+          "name": "Prayer of Mending",
+          "path": "interface/icons/spell_holy_prayerofmendingtga.blp",
+          "id": 135944
+        },
+        {
+          "spellID": 47788,
+          "name": "Guardian Spirit",
+          "path": "interface/icons/spell_holy_guardianspirit.blp",
+          "id": 237542
+        },
+        {
+          "spellID": 14914,
+          "name": "Holy Fire",
+          "path": "interface/icons/spell_holy_searinglight.blp",
+          "id": 135972
+        },
+        {
+          "spellID": 64843,
+          "name": "Divine Hymn",
+          "path": "interface/icons/spell_holy_divinehymn.blp",
+          "id": 237540
+        },
+        {
+          "spellID": 204883,
+          "name": "Circle of Healing",
+          "path": "interface/icons/spell_holy_circleofrenewal.blp",
+          "id": 135887
+        }
+      ],
+      "missing": [],
+      "sounds": [],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "PRIEST",
+      "classID": 5,
+      "specID": 258,
+      "label": "Shadow",
+      "icons": [
+        {
+          "spellID": 8092,
+          "name": "Mind Blast",
+          "path": "interface/icons/spell_shadow_unholyfrenzy.blp",
+          "id": 136224
+        },
+        {
+          "spellID": 15407,
+          "name": "Mind Flay",
+          "path": "interface/icons/spell_shadow_siphonmana.blp",
+          "id": 136208
+        },
+        {
+          "spellID": 589,
+          "name": "Shadow Word: Pain",
+          "path": "interface/icons/spell_shadow_shadowwordpain.blp",
+          "id": 136207
+        },
+        {
+          "spellID": 34914,
+          "name": "Vampiric Touch",
+          "path": "interface/icons/spell_holy_stoicism.blp",
+          "id": 135978
+        },
+        {
+          "spellID": 335467,
+          "name": "Shadow Word: Madness",
+          "path": "interface/icons/inv12_ability_priest_powerwordmadness_eye.blp",
+          "id": 7569529
+        },
+        {
+          "spellID": 34433,
+          "name": "Shadowfiend",
+          "path": "interface/icons/spell_shadow_shadowfiend.blp",
+          "id": 136199
+        },
+        {
+          "id": 462324,
+          "path": "interface/icons/spell_shadow_mindflay.blp"
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 629052,
+          "path": "sound/spells/spell_pr_mindblast_impact.ogg"
+        },
+        {
+          "id": 1714480,
+          "path": "sound/spells/spell_pr_revamp_shadow_mindblast_impact_01.ogg"
+        },
+        {
+          "id": 1714481,
+          "path": "sound/spells/spell_pr_revamp_shadow_mindblast_impact_02.ogg"
+        }
+      ],
+      "missingSpellLookups": [
+        228260
+      ]
+    },
+    {
+      "token": "DEATHKNIGHT",
+      "classID": 6,
+      "specID": 250,
+      "label": "Blood",
+      "icons": [
+        {
+          "spellID": 49998,
+          "name": "Death Strike",
+          "path": "interface/icons/spell_deathknight_butcher2.blp",
+          "id": 237517
+        },
+        {
+          "spellID": 206930,
+          "name": "Heart Strike",
+          "path": "interface/icons/inv_weapon_shortblade_40.blp",
+          "id": 135675
+        },
+        {
+          "spellID": 50842,
+          "name": "Blood Boil",
+          "path": "interface/icons/spell_deathknight_bloodboil.blp",
+          "id": 237513
+        },
+        {
+          "spellID": 195182,
+          "name": "Marrowrend",
+          "path": "interface/icons/ability_deathknight_marrowrend.blp",
+          "id": 1376745
+        },
+        {
+          "spellID": 55233,
+          "name": "Vampiric Blood",
+          "path": "interface/icons/spell_shadow_lifedrain.blp",
+          "id": 136168
+        },
+        {
+          "spellID": 194844,
+          "name": "Bonestorm",
+          "path": "interface/icons/achievement_boss_lordmarrowgar.blp",
+          "id": 342917
+        },
+        {
+          "spellID": 49028,
+          "name": "Dancing Rune Weapon",
+          "path": "interface/icons/inv_sword_07.blp",
+          "id": 135277
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1272242,
+          "path": "sound/spells/spell_dk_deathstrike_cast01.ogg"
+        },
+        {
+          "id": 1272243,
+          "path": "sound/spells/spell_dk_deathstrike_cast02.ogg"
+        },
+        {
+          "id": 1272244,
+          "path": "sound/spells/spell_dk_deathstrike_cast03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "DEATHKNIGHT",
+      "classID": 6,
+      "specID": 251,
+      "label": "Frost",
+      "icons": [
+        {
+          "spellID": 49020,
+          "name": "Obliterate",
+          "path": "interface/icons/spell_deathknight_classicon.blp",
+          "id": 135771
+        },
+        {
+          "spellID": 49143,
+          "name": "Frost Strike",
+          "path": "interface/icons/spell_deathknight_empowerruneblade2.blp",
+          "id": 237520
+        },
+        {
+          "spellID": 49184,
+          "name": "Howling Blast",
+          "path": "interface/icons/spell_frost_arcticwinds.blp",
+          "id": 135833
+        },
+        {
+          "spellID": 51271,
+          "name": "Pillar of Frost",
+          "path": "interface/icons/ability_deathknight_pillaroffrost.blp",
+          "id": 458718
+        },
+        {
+          "spellID": 196770,
+          "name": "Remorseless Winter",
+          "path": "interface/icons/ability_deathknight_remorselesswinters2.blp",
+          "id": 538770
+        },
+        {
+          "spellID": 207230,
+          "name": "Frostscythe",
+          "path": "interface/icons/inv12_ability_deathknight_frostscythe.blp",
+          "id": 7439190
+        },
+        {
+          "spellID": 152279,
+          "name": "Breath of Sindragosa",
+          "path": "interface/icons/spell_deathknight_breathofsindragosa.blp",
+          "id": 1029007
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 986405,
+          "path": "sound/spells/spell_dk_obliterate_cast_01.ogg"
+        },
+        {
+          "id": 986407,
+          "path": "sound/spells/spell_dk_obliterate_cast_02.ogg"
+        },
+        {
+          "id": 986409,
+          "path": "sound/spells/spell_dk_obliterate_cast_03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "DEATHKNIGHT",
+      "classID": 6,
+      "specID": 252,
+      "label": "Unholy",
+      "icons": [
+        {
+          "spellID": 85948,
+          "name": "Festering Strike",
+          "path": "interface/icons/spell_deathknight_festering_strike.blp",
+          "id": 879926
+        },
+        {
+          "spellID": 55090,
+          "name": "Scourge Strike",
+          "path": "interface/icons/spell_deathknight_scourgestrike.blp",
+          "id": 237530
+        },
+        {
+          "spellID": 47541,
+          "name": "Death Coil",
+          "path": "interface/icons/spell_shadow_deathcoil.blp",
+          "id": 136145
+        },
+        {
+          "spellID": 275699,
+          "name": "Apocalypse",
+          "path": "interface/icons/artifactability_unholydeathknight_deathsembrace.blp",
+          "id": 1392565
+        },
+        {
+          "spellID": 42650,
+          "name": "Army of the Dead",
+          "path": "interface/icons/spell_deathknight_armyofthedead.blp",
+          "id": 237511
+        },
+        {
+          "spellID": 63560,
+          "name": "Dark Transformation",
+          "path": "interface/icons/achievement_boss_festergutrotface.blp",
+          "id": 342913
+        },
+        {
+          "spellID": 115989,
+          "name": "Unholy Blight",
+          "path": "interface/icons/spell_shadow_contagion.blp",
+          "id": 136132
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1273702,
+          "path": "sound/spells/spell_dk_scourgestrike_cast01.ogg"
+        },
+        {
+          "id": 1273703,
+          "path": "sound/spells/spell_dk_scourgestrike_cast02.ogg"
+        },
+        {
+          "id": 1273704,
+          "path": "sound/spells/spell_dk_scourgestrike_cast03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "SHAMAN",
+      "classID": 7,
+      "specID": 262,
+      "label": "Elemental",
+      "icons": [
+        {
+          "spellID": 51505,
+          "name": "Lava Burst",
+          "path": "interface/icons/spell_shaman_lavaburst.blp",
+          "id": 237582
+        },
+        {
+          "spellID": 188196,
+          "name": "Lightning Bolt",
+          "path": "interface/icons/spell_nature_lightning.blp",
+          "id": 136048
+        },
+        {
+          "spellID": 8042,
+          "name": "Earth Shock",
+          "path": "interface/icons/spell_nature_earthshock.blp",
+          "id": 136026
+        },
+        {
+          "spellID": 61882,
+          "name": "Earthquake",
+          "path": "interface/icons/spell_shaman_earthquake.blp",
+          "id": 451165
+        },
+        {
+          "spellID": 191634,
+          "name": "Stormkeeper",
+          "path": "interface/icons/ability_thunderking_lightningwhip.blp",
+          "id": 839977
+        },
+        {
+          "spellID": 188389,
+          "name": "Flame Shock",
+          "path": "interface/icons/spell_fire_flameshock.blp",
+          "id": 135813
+        },
+        {
+          "spellID": 117014,
+          "name": "Elemental Blast",
+          "path": "interface/icons/shaman_talent_elementalblast.blp",
+          "id": 651244
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 569666,
+          "path": "sound/spells/shaman_lavaburstimpact1.ogg"
+        },
+        {
+          "id": 569147,
+          "path": "sound/spells/shaman_lavaburstimpact2.ogg"
+        },
+        {
+          "id": 568527,
+          "path": "sound/spells/shaman_lavaburstimpact3.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "SHAMAN",
+      "classID": 7,
+      "specID": 263,
+      "label": "Enhancement",
+      "icons": [
+        {
+          "spellID": 17364,
+          "name": "Stormstrike",
+          "path": "interface/icons/ability_shaman_stormstrike.blp",
+          "id": 132314
+        },
+        {
+          "spellID": 60103,
+          "name": "Lava Lash",
+          "path": "interface/icons/ability_shaman_lavalash.blp",
+          "id": 236289
+        },
+        {
+          "spellID": 51533,
+          "name": "Feral Spirit",
+          "path": "interface/icons/spell_shaman_feralspirit.blp",
+          "id": 237577
+        },
+        {
+          "spellID": 187874,
+          "name": "Crash Lightning",
+          "path": "interface/icons/spell_shaman_crashlightning.blp",
+          "id": 1370984
+        },
+        {
+          "spellID": 197214,
+          "name": "Sundering",
+          "path": "interface/icons/ability_rhyolith_lavapool.blp",
+          "id": 524794
+        },
+        {
+          "spellID": 342240,
+          "name": "Ice Strike",
+          "path": "interface/icons/spell_frost_frostbolt.blp",
+          "id": 135845
+        },
+        {
+          "id": 136114,
+          "path": "interface/icons/spell_nature_windfury.blp"
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1369112,
+          "path": "sound/spells/spell_sh_stormstrike_revamp_cast01.ogg"
+        },
+        {
+          "id": 1369113,
+          "path": "sound/spells/spell_sh_stormstrike_revamp_cast02.ogg"
+        },
+        {
+          "id": 1369114,
+          "path": "sound/spells/spell_sh_stormstrike_revamp_cast03.ogg"
+        }
+      ],
+      "missingSpellLookups": [
+        8232
+      ]
+    },
+    {
+      "token": "SHAMAN",
+      "classID": 7,
+      "specID": 264,
+      "label": "Restoration",
+      "icons": [
+        {
+          "spellID": 61295,
+          "name": "Riptide",
+          "path": "interface/icons/spell_nature_riptide.blp",
+          "id": 252995
+        },
+        {
+          "spellID": 1064,
+          "name": "Chain Heal",
+          "path": "interface/icons/inv_1115_shaman_chainheal.blp",
+          "id": 6712961
+        },
+        {
+          "spellID": 73920,
+          "name": "Healing Rain",
+          "path": "interface/icons/spell_nature_giftofthewaterspirit.blp",
+          "id": 136037
+        },
+        {
+          "spellID": 98008,
+          "name": "Spirit Link Totem",
+          "path": "interface/icons/spell_shaman_spiritlink.blp",
+          "id": 237586
+        },
+        {
+          "spellID": 108280,
+          "name": "Healing Tide Totem",
+          "path": "interface/icons/ability_shaman_healingtide.blp",
+          "id": 538569
+        },
+        {
+          "spellID": 974,
+          "name": "Earth Shield",
+          "path": "interface/icons/spell_nature_skinofearth.blp",
+          "id": 136089
+        },
+        {
+          "spellID": 77472,
+          "name": "Healing Wave",
+          "path": "interface/icons/spell_nature_healingwavelesser.blp",
+          "id": 136043
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1937576,
+          "path": "sound/spells/spell_sh_resto_chainheal_impact01.ogg"
+        },
+        {
+          "id": 1937577,
+          "path": "sound/spells/spell_sh_resto_chainheal_impact02.ogg"
+        },
+        {
+          "id": 1937578,
+          "path": "sound/spells/spell_sh_resto_chainheal_impact03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "MAGE",
+      "classID": 8,
+      "specID": 62,
+      "label": "Arcane",
+      "icons": [
+        {
+          "spellID": 30451,
+          "name": "Arcane Blast",
+          "path": "interface/icons/spell_arcane_blast.blp",
+          "id": 135735
+        },
+        {
+          "spellID": 5143,
+          "name": "Arcane Missiles",
+          "path": "interface/icons/spell_nature_starfall.blp",
+          "id": 136096
+        },
+        {
+          "spellID": 44425,
+          "name": "Arcane Barrage",
+          "path": "interface/icons/ability_mage_arcanebarrage.blp",
+          "id": 236205
+        },
+        {
+          "spellID": 365350,
+          "name": "Arcane Surge",
+          "path": "interface/icons/ability_mage_arcanesurge.blp",
+          "id": 4667417
+        },
+        {
+          "spellID": 1449,
+          "name": "Arcane Explosion",
+          "path": "interface/icons/spell_nature_wispsplode.blp",
+          "id": 136116
+        },
+        {
+          "spellID": 321507,
+          "name": "Touch of the Magi",
+          "path": "interface/icons/inv_ability_mage_radiantspark.blp",
+          "id": 6035311
+        },
+        {
+          "spellID": 205025,
+          "name": "Presence of Mind",
+          "path": "interface/icons/spell_nature_enchantarmor.blp",
+          "id": 136031
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 568341,
+          "path": "sound/spells/alert_ma_arcanemissles.ogg"
+        },
+        {
+          "id": 568149,
+          "path": "sound/spells/mage_arcanebarrage_impact1.ogg"
+        },
+        {
+          "id": 568678,
+          "path": "sound/spells/arcaneexplosion.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "MAGE",
+      "classID": 8,
+      "specID": 63,
+      "label": "Fire",
+      "icons": [
+        {
+          "spellID": 133,
+          "name": "Fireball",
+          "path": "interface/icons/spell_fire_flamebolt.blp",
+          "id": 135812
+        },
+        {
+          "spellID": 11366,
+          "name": "Pyroblast",
+          "path": "interface/icons/spell_fire_fireball02.blp",
+          "id": 135808
+        },
+        {
+          "spellID": 108853,
+          "name": "Fire Blast",
+          "path": "interface/icons/spell_fire_fireball.blp",
+          "id": 135807
+        },
+        {
+          "spellID": 2120,
+          "name": "Flamestrike",
+          "path": "interface/icons/spell_fire_selfdestruct.blp",
+          "id": 135826
+        },
+        {
+          "spellID": 190319,
+          "name": "Combustion",
+          "path": "interface/icons/spell_fire_sealoffire.blp",
+          "id": 135824
+        },
+        {
+          "spellID": 257541,
+          "name": "Phoenix Flames",
+          "path": "interface/icons/artifactability_firemage_phoenixbolt.blp",
+          "id": 1392549
+        },
+        {
+          "spellID": 31661,
+          "name": "Dragon's Breath",
+          "path": "interface/icons/inv_misc_head_dragon_01.blp",
+          "id": 134153
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1686527,
+          "path": "sound/spells/spell_ma_revamp_fireblast_cast_01.ogg"
+        },
+        {
+          "id": 568461,
+          "path": "sound/spells/fireballimpacta.ogg"
+        },
+        {
+          "id": 1392377,
+          "path": "sound/spells/spell_ma_pyroblast_impact_01.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "MAGE",
+      "classID": 8,
+      "specID": 64,
+      "label": "Frost",
+      "icons": [
+        {
+          "spellID": 116,
+          "name": "Frostbolt",
+          "path": "interface/icons/spell_frost_frostbolt02.blp",
+          "id": 135846
+        },
+        {
+          "spellID": 30455,
+          "name": "Ice Lance",
+          "path": "interface/icons/spell_frost_frostblast.blp",
+          "id": 135844
+        },
+        {
+          "spellID": 44614,
+          "name": "Flurry",
+          "path": "interface/icons/ability_deathknight_chillstreak.blp",
+          "id": 1390940
+        },
+        {
+          "spellID": 84714,
+          "name": "Frozen Orb",
+          "path": "interface/icons/spell_frost_frozenorb.blp",
+          "id": 629077
+        },
+        {
+          "spellID": 190356,
+          "name": "Blizzard",
+          "path": "interface/icons/spell_frost_icestorm.blp",
+          "id": 135857
+        },
+        {
+          "spellID": 12472,
+          "name": "Icy Veins",
+          "path": "interface/icons/spell_frost_coldhearted.blp",
+          "id": 135838
+        },
+        {
+          "spellID": 205021,
+          "name": "Ray of Frost",
+          "path": "interface/icons/ability_mage_rayoffrost.blp",
+          "id": 1698700
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1631379,
+          "path": "sound/spells/spell_ma_revamp_frostbolt_cast_01.ogg"
+        },
+        {
+          "id": 1631383,
+          "path": "sound/spells/spell_ma_revamp_frostbolt_impact_01.ogg"
+        },
+        {
+          "id": 569378,
+          "path": "sound/spells/frostnova.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "WARLOCK",
+      "classID": 9,
+      "specID": 265,
+      "label": "Affliction",
+      "icons": [
+        {
+          "spellID": 172,
+          "name": "Corruption",
+          "path": "interface/icons/spell_shadow_abominationexplosion.blp",
+          "id": 136118
+        },
+        {
+          "spellID": 980,
+          "name": "Agony",
+          "path": "interface/icons/spell_shadow_curseofsargeras.blp",
+          "id": 136139
+        },
+        {
+          "spellID": 30108,
+          "name": "Unstable Affliction",
+          "path": "interface/icons/spell_shadow_unstableaffliction_3.blp",
+          "id": 136228
+        },
+        {
+          "spellID": 27243,
+          "name": "Seed of Corruption",
+          "path": "interface/icons/spell_shadow_seedofdestruction.blp",
+          "id": 136193
+        },
+        {
+          "spellID": 324536,
+          "name": "Malefic Rapture",
+          "path": "interface/icons/ability_warlock_everlastingaffliction.blp",
+          "id": 236296
+        },
+        {
+          "spellID": 48181,
+          "name": "Haunt",
+          "path": "interface/icons/ability_warlock_haunt.blp",
+          "id": 236298
+        },
+        {
+          "spellID": 63106,
+          "name": "Siphon Life",
+          "path": "interface/icons/spell_shadow_requiem.blp",
+          "id": 136188
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 569658,
+          "path": "sound/spells/unstableaffliction_impact_chest.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "WARLOCK",
+      "classID": 9,
+      "specID": 266,
+      "label": "Demonology",
+      "icons": [
+        {
+          "spellID": 105174,
+          "name": "Hand of Gul'dan",
+          "path": "interface/icons/ability_warlock_handofguldan.blp",
+          "id": 535592
+        },
+        {
+          "spellID": 104316,
+          "name": "Call Dreadstalkers",
+          "path": "interface/icons/spell_warlock_calldreadstalkers.blp",
+          "id": 1378282
+        },
+        {
+          "spellID": 264178,
+          "name": "Demonbolt",
+          "path": "interface/icons/inv__demonbolt.blp",
+          "id": 2032588
+        },
+        {
+          "spellID": 196277,
+          "name": "Implosion",
+          "path": "interface/icons/inv_implosion.blp",
+          "id": 2065588
+        },
+        {
+          "spellID": 265187,
+          "name": "Summon Demonic Tyrant",
+          "path": "interface/icons/inv_summondemonictyrant.blp",
+          "id": 2065628
+        },
+        {
+          "spellID": 111898,
+          "name": "Grimoire: Felguard",
+          "path": "interface/icons/spell_shadow_demonicpact.blp",
+          "id": 237562
+        },
+        {
+          "spellID": 264119,
+          "name": "Summon Vilefiend",
+          "path": "interface/icons/inv_argusfelstalkermount.blp",
+          "id": 1616211
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 999327,
+          "path": "sound/spells/spell_wl_demonbolt_impact_01.ogg"
+        },
+        {
+          "id": 999328,
+          "path": "sound/spells/spell_wl_demonbolt_impact_02.ogg"
+        },
+        {
+          "id": 999329,
+          "path": "sound/spells/spell_wl_demonbolt_impact_03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "WARLOCK",
+      "classID": 9,
+      "specID": 267,
+      "label": "Destruction",
+      "icons": [
+        {
+          "spellID": 116858,
+          "name": "Chaos Bolt",
+          "path": "interface/icons/ability_warlock_chaosbolt.blp",
+          "id": 236291
+        },
+        {
+          "spellID": 29722,
+          "name": "Incinerate",
+          "path": "interface/icons/spell_fire_burnout.blp",
+          "id": 135789
+        },
+        {
+          "spellID": 17962,
+          "name": "Conflagrate",
+          "path": "interface/icons/spell_fire_fireball.blp",
+          "id": 135807
+        },
+        {
+          "spellID": 5740,
+          "name": "Rain of Fire",
+          "path": "interface/icons/spell_shadow_rainoffire.blp",
+          "id": 136186
+        },
+        {
+          "spellID": 348,
+          "name": "Immolate",
+          "path": "interface/icons/spell_fire_immolation.blp",
+          "id": 135817
+        },
+        {
+          "spellID": 17877,
+          "name": "Shadowburn",
+          "path": "interface/icons/spell_shadow_scourgebuild.blp",
+          "id": 136191
+        },
+        {
+          "spellID": 196447,
+          "name": "Channel Demonfire",
+          "path": "interface/icons/spell_fire_ragnaros_lavaboltgreen.blp",
+          "id": 840407
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 2068263,
+          "path": "sound/spells/spell_wl_revamp_chaosbolt_impact_01.ogg"
+        },
+        {
+          "id": 2068264,
+          "path": "sound/spells/spell_wl_revamp_chaosbolt_impact_02.ogg"
+        },
+        {
+          "id": 2068265,
+          "path": "sound/spells/spell_wl_revamp_chaosbolt_impact_03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "MONK",
+      "classID": 10,
+      "specID": 268,
+      "label": "Brewmaster",
+      "icons": [
+        {
+          "spellID": 121253,
+          "name": "Keg Smash",
+          "path": "interface/icons/achievement_brewery_2.blp",
+          "id": 594274
+        },
+        {
+          "spellID": 115181,
+          "name": "Breath of Fire",
+          "path": "interface/icons/ability_monk_breathoffire.blp",
+          "id": 615339
+        },
+        {
+          "spellID": 205523,
+          "name": "Blackout Kick",
+          "path": "interface/icons/ability_monk_roundhousekick.blp",
+          "id": 574575
+        },
+        {
+          "spellID": 119582,
+          "name": "Purifying Brew",
+          "path": "interface/icons/inv_misc_beer_06.blp",
+          "id": 133701
+        },
+        {
+          "spellID": 322507,
+          "name": "Celestial Brew",
+          "path": "interface/icons/ability_monk_ironskinbrew.blp",
+          "id": 1360979
+        },
+        {
+          "spellID": 115203,
+          "name": "Fortifying Brew",
+          "path": "interface/icons/ability_monk_fortifyingale_new.blp",
+          "id": 615341
+        },
+        {
+          "spellID": 116847,
+          "name": "Rushing Jade Wind",
+          "path": "interface/icons/ability_monk_rushingjadewind.blp",
+          "id": 606549
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 612300,
+          "path": "sound/spells/spell_mk_kegsmash_01.ogg"
+        },
+        {
+          "id": 612302,
+          "path": "sound/spells/spell_mk_kegsmash_02.ogg"
+        },
+        {
+          "id": 612304,
+          "path": "sound/spells/spell_mk_kegsmash_03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "MONK",
+      "classID": 10,
+      "specID": 270,
+      "label": "Mistweaver",
+      "icons": [
+        {
+          "spellID": 124682,
+          "name": "Enveloping Mist",
+          "path": "interface/icons/spell_monk_envelopingmist.blp",
+          "id": 775461
+        },
+        {
+          "spellID": 115151,
+          "name": "Renewing Mist",
+          "path": "interface/icons/ability_monk_renewingmists.blp",
+          "id": 627487
+        },
+        {
+          "spellID": 116670,
+          "name": "Vivify",
+          "path": "interface/icons/ability_monk_vivify.blp",
+          "id": 1360980
+        },
+        {
+          "spellID": 115310,
+          "name": "Revival",
+          "path": "interface/icons/spell_monk_revival.blp",
+          "id": 1020466
+        },
+        {
+          "spellID": 116849,
+          "name": "Life Cocoon",
+          "path": "interface/icons/ability_monk_chicocoon.blp",
+          "id": 627485
+        },
+        {
+          "spellID": 115175,
+          "name": "Soothing Mist",
+          "path": "interface/icons/ability_monk_soothingmists.blp",
+          "id": 606550
+        },
+        {
+          "id": 1360978,
+          "path": "interface/icons/ability_monk_essencefont.blp"
+        }
+      ],
+      "missing": [],
+      "sounds": [],
+      "missingSpellLookups": [
+        191837
+      ]
+    },
+    {
+      "token": "MONK",
+      "classID": 10,
+      "specID": 269,
+      "label": "Windwalker",
+      "icons": [
+        {
+          "spellID": 107428,
+          "name": "Rising Sun Kick",
+          "path": "interface/icons/ability_monk_risingsunkick.blp",
+          "id": 642415
+        },
+        {
+          "spellID": 113656,
+          "name": "Fists of Fury",
+          "path": "interface/icons/monk_ability_fistoffury.blp",
+          "id": 627606
+        },
+        {
+          "spellID": 101546,
+          "name": "Spinning Crane Kick",
+          "path": "interface/icons/ability_monk_cranekick_new.blp",
+          "id": 606543
+        },
+        {
+          "spellID": 152175,
+          "name": "Whirling Dragon Punch",
+          "path": "interface/icons/ability_monk_hurricanestrike.blp",
+          "id": 988194
+        },
+        {
+          "spellID": 115080,
+          "name": "Touch of Death",
+          "path": "interface/icons/ability_monk_touchofdeath.blp",
+          "id": 606552
+        },
+        {
+          "spellID": 137639,
+          "name": "Storm, Earth, and Fire",
+          "path": "interface/icons/spell_nature_giftofthewild.blp",
+          "id": 136038
+        },
+        {
+          "spellID": 392983,
+          "name": "Strike of the Windlord",
+          "path": "interface/icons/inv_hand_1h_artifactskywall_d_01.blp",
+          "id": 1282595
+        }
+      ],
+      "missing": [],
+      "sounds": [],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "DRUID",
+      "classID": 11,
+      "specID": 102,
+      "label": "Balance",
+      "icons": [
+        {
+          "spellID": 190984,
+          "name": "Wrath",
+          "path": "interface/icons/spell_nature_wrathv2.blp",
+          "id": 535045
+        },
+        {
+          "spellID": 194153,
+          "name": "Starfire",
+          "path": "interface/icons/spell_arcane_starfire.blp",
+          "id": 135753
+        },
+        {
+          "spellID": 78674,
+          "name": "Starsurge",
+          "path": "interface/icons/spell_arcane_arcane03.blp",
+          "id": 135730
+        },
+        {
+          "spellID": 191034,
+          "name": "Starfall",
+          "path": "interface/icons/ability_druid_starfall.blp",
+          "id": 236168
+        },
+        {
+          "spellID": 8921,
+          "name": "Moonfire",
+          "path": "interface/icons/spell_nature_starfall.blp",
+          "id": 136096
+        },
+        {
+          "spellID": 93402,
+          "name": "Sunfire",
+          "path": "interface/icons/ability_mage_firestarter.blp",
+          "id": 236216
+        },
+        {
+          "spellID": 194223,
+          "name": "Celestial Alignment",
+          "path": "interface/icons/spell_nature_natureguardian.blp",
+          "id": 136060
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1597457,
+          "path": "sound/spells/spell_dr_revamp_starsurge_impact_01.ogg"
+        },
+        {
+          "id": 1597458,
+          "path": "sound/spells/spell_dr_revamp_starsurge_impact_02.ogg"
+        },
+        {
+          "id": 1597459,
+          "path": "sound/spells/spell_dr_revamp_starsurge_impact_03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "DRUID",
+      "classID": 11,
+      "specID": 103,
+      "label": "Feral",
+      "icons": [
+        {
+          "spellID": 1822,
+          "name": "Rake",
+          "path": "interface/icons/ability_druid_disembowel.blp",
+          "id": 132122
+        },
+        {
+          "spellID": 1079,
+          "name": "Rip",
+          "path": "interface/icons/ability_ghoulfrenzy.blp",
+          "id": 132152
+        },
+        {
+          "spellID": 22568,
+          "name": "Ferocious Bite",
+          "path": "interface/icons/ability_druid_ferociousbite.blp",
+          "id": 132127
+        },
+        {
+          "spellID": 5221,
+          "name": "Shred",
+          "path": "interface/icons/spell_shadow_vampiricaura.blp",
+          "id": 136231
+        },
+        {
+          "spellID": 106830,
+          "name": "Thrash",
+          "path": "interface/icons/spell_druid_thrash.blp",
+          "id": 451161
+        },
+        {
+          "spellID": 5217,
+          "name": "Tiger's Fury",
+          "path": "interface/icons/ability_mount_jungletiger.blp",
+          "id": 132242
+        },
+        {
+          "spellID": 285381,
+          "name": "Primal Wrath",
+          "path": "interface/icons/artifactability_feraldruid_ashamanesbite.blp",
+          "id": 1392547
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 3055167,
+          "path": "sound/spells/spell_dr_ferociousbite_revamp_impact.ogg"
+        },
+        {
+          "id": 3151159,
+          "path": "sound/spells/spell_dr_ferociousbite_revamp_cast.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "DRUID",
+      "classID": 11,
+      "specID": 104,
+      "label": "Guardian",
+      "icons": [
+        {
+          "spellID": 33917,
+          "name": "Mangle",
+          "path": "interface/icons/ability_druid_mangle2.blp",
+          "id": 132135
+        },
+        {
+          "spellID": 192081,
+          "name": "Ironfur",
+          "path": "interface/icons/ability_druid_ironfur.blp",
+          "id": 1378702
+        },
+        {
+          "spellID": 22842,
+          "name": "Frenzied Regeneration",
+          "path": "interface/icons/ability_bullrush.blp",
+          "id": 132091
+        },
+        {
+          "spellID": 6807,
+          "name": "Maul",
+          "path": "interface/icons/ability_druid_maul.blp",
+          "id": 132136
+        },
+        {
+          "spellID": 22812,
+          "name": "Barkskin",
+          "path": "interface/icons/spell_nature_stoneclawtotem.blp",
+          "id": 136097
+        },
+        {
+          "spellID": 61336,
+          "name": "Survival Instincts",
+          "path": "interface/icons/ability_druid_tigersroar.blp",
+          "id": 236169
+        },
+        {
+          "spellID": 102558,
+          "name": "Incarnation: Guardian of Ursoc",
+          "path": "interface/icons/spell_druid_incarnation.blp",
+          "id": 571586
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 569315,
+          "path": "sound/spells/mangle_impact.ogg"
+        },
+        {
+          "id": 568496,
+          "path": "sound/spells/spell_mangle_cast_01.ogg"
+        },
+        {
+          "id": 568676,
+          "path": "sound/spells/spell_mangle_cast_02.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "DRUID",
+      "classID": 11,
+      "specID": 105,
+      "label": "Restoration",
+      "icons": [
+        {
+          "spellID": 774,
+          "name": "Rejuvenation",
+          "path": "interface/icons/spell_nature_rejuvenation.blp",
+          "id": 136081
+        },
+        {
+          "spellID": 8936,
+          "name": "Regrowth",
+          "path": "interface/icons/spell_nature_resistnature.blp",
+          "id": 136085
+        },
+        {
+          "spellID": 33763,
+          "name": "Lifebloom",
+          "path": "interface/icons/inv_misc_herb_felblossom.blp",
+          "id": 134206
+        },
+        {
+          "spellID": 48438,
+          "name": "Wild Growth",
+          "path": "interface/icons/ability_druid_flourish.blp",
+          "id": 236153
+        },
+        {
+          "spellID": 18562,
+          "name": "Swiftmend",
+          "path": "interface/icons/inv_relics_idolofrejuvenation.blp",
+          "id": 134914
+        },
+        {
+          "spellID": 740,
+          "name": "Tranquility",
+          "path": "interface/icons/spell_nature_tranquility.blp",
+          "id": 136107
+        },
+        {
+          "spellID": 197721,
+          "name": "Flourish",
+          "path": "interface/icons/spell_druid_wildburst.blp",
+          "id": 538743
+        }
+      ],
+      "missing": [],
+      "sounds": [
+        {
+          "id": 1687852,
+          "path": "sound/spells/spell_dr_revamp_rejuvenation_impact01.ogg"
+        },
+        {
+          "id": 1687853,
+          "path": "sound/spells/spell_dr_revamp_rejuvenation_impact02.ogg"
+        },
+        {
+          "id": 1687854,
+          "path": "sound/spells/spell_dr_revamp_rejuvenation_impact03.ogg"
+        }
+      ],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "DEMONHUNTER",
+      "classID": 12,
+      "specID": 577,
+      "label": "Havoc",
+      "icons": [
+        {
+          "spellID": 162794,
+          "name": "Chaos Strike",
+          "path": "interface/icons/ability_demonhunter_chaosstrike.blp",
+          "id": 1305152
+        },
+        {
+          "spellID": 198013,
+          "name": "Eye Beam",
+          "path": "interface/icons/ability_demonhunter_eyebeam.blp",
+          "id": 1305156
+        },
+        {
+          "spellID": 188499,
+          "name": "Blade Dance",
+          "path": "interface/icons/ability_demonhunter_bladedance.blp",
+          "id": 1305149
+        },
+        {
+          "spellID": 195072,
+          "name": "Fel Rush",
+          "path": "interface/icons/ability_demonhunter_felrush.blp",
+          "id": 1247261
+        },
+        {
+          "spellID": 191427,
+          "name": "Metamorphosis",
+          "path": "interface/icons/ability_demonhunter_metamorphasisdps.blp",
+          "id": 1247262
+        },
+        {
+          "spellID": 258920,
+          "name": "Immolation Aura",
+          "path": "interface/icons/ability_demonhunter_immolation.blp",
+          "id": 1344649
+        },
+        {
+          "spellID": 258860,
+          "name": "Essence Break",
+          "path": "interface/icons/spell_shadow_ritualofsacrifice.blp",
+          "id": 136189
+        }
+      ],
+      "missing": [],
+      "sounds": [],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "DEMONHUNTER",
+      "classID": 12,
+      "specID": 581,
+      "label": "Vengeance",
+      "icons": [
+        {
+          "spellID": 204021,
+          "name": "Fiery Brand",
+          "path": "interface/icons/ability_demonhunter_fierybrand.blp",
+          "id": 1344647
+        },
+        {
+          "spellID": 228477,
+          "name": "Soul Cleave",
+          "path": "interface/icons/ability_demonhunter_soulcleave.blp",
+          "id": 1344653
+        },
+        {
+          "spellID": 247454,
+          "name": "Spirit Bomb",
+          "path": "interface/icons/inv_icon_shadowcouncilorb_purple.blp",
+          "id": 1097742
+        },
+        {
+          "spellID": 203720,
+          "name": "Demon Spikes",
+          "path": "interface/icons/ability_demonhunter_demonspikes.blp",
+          "id": 1344645
+        },
+        {
+          "spellID": 187827,
+          "name": "Metamorphosis",
+          "path": "interface/icons/ability_demonhunter_metamorphasistank.blp",
+          "id": 1247263
+        },
+        {
+          "spellID": 204596,
+          "name": "Sigil of Flame",
+          "path": "interface/icons/ability_demonhunter_sigilofinquisition.blp",
+          "id": 1344652
+        },
+        {
+          "spellID": 189110,
+          "name": "Infernal Strike",
+          "path": "interface/icons/ability_demonhunter_infernalstrike1.blp",
+          "id": 1344650
+        }
+      ],
+      "missing": [],
+      "sounds": [],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "DEMONHUNTER",
+      "classID": 12,
+      "specID": 1480,
+      "label": "Devourer",
+      "icons": [
+        {
+          "id": 7554200,
+          "path": "interface/icons/inv_12_dh_void_ability_consume.blp"
+        },
+        {
+          "id": 7554220,
+          "path": "interface/icons/inv_12_dh_void_ability_voidray.blp"
+        },
+        {
+          "id": 7554199,
+          "path": "interface/icons/inv_12_dh_void_ability_collapsingstar.blp"
+        },
+        {
+          "id": 7554201,
+          "path": "interface/icons/inv_12_dh_void_ability_devourerbite.blp"
+        },
+        {
+          "id": 7554202,
+          "path": "interface/icons/inv_12_dh_void_ability_empoweredreap.blp"
+        },
+        {
+          "id": 7554221,
+          "path": "interface/icons/inv_12_dh_void_ability_voidreaper.blp"
+        },
+        {
+          "id": 7554211,
+          "path": "interface/icons/inv_12_dh_void_ability_reapersslice.blp"
+        }
+      ],
+      "missing": [],
+      "sounds": []
+    },
+    {
+      "token": "EVOKER",
+      "classID": 13,
+      "specID": 1467,
+      "label": "Devastation",
+      "icons": [
+        {
+          "spellID": 356995,
+          "name": "Disintegrate",
+          "path": "interface/icons/ability_evoker_disintegrate.blp",
+          "id": 4622451
+        },
+        {
+          "spellID": 357208,
+          "name": "Fire Breath",
+          "path": "interface/icons/ability_evoker_firebreath.blp",
+          "id": 4622458
+        },
+        {
+          "spellID": 359073,
+          "name": "Eternity Surge",
+          "path": "interface/icons/ability_evoker_eternitysurge.blp",
+          "id": 4630444
+        },
+        {
+          "spellID": 357211,
+          "name": "Pyre",
+          "path": "interface/icons/ability_evoker_pyre.blp",
+          "id": 4622468
+        },
+        {
+          "spellID": 375087,
+          "name": "Dragonrage",
+          "path": "interface/icons/ability_evoker_dragonrage.blp",
+          "id": 4622452
+        },
+        {
+          "spellID": 361469,
+          "name": "Living Flame",
+          "path": "interface/icons/ability_evoker_livingflame.blp",
+          "id": 4622464
+        },
+        {
+          "spellID": 362969,
+          "name": "Azure Strike",
+          "path": "interface/icons/ability_evoker_azurestrike.blp",
+          "id": 4622447
+        }
+      ],
+      "missing": [],
+      "sounds": [],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "EVOKER",
+      "classID": 13,
+      "specID": 1468,
+      "label": "Preservation",
+      "icons": [
+        {
+          "spellID": 355936,
+          "name": "Dream Breath",
+          "path": "interface/icons/ability_evoker_dreambreath.blp",
+          "id": 4622454
+        },
+        {
+          "spellID": 367226,
+          "name": "Spiritbloom",
+          "path": "interface/icons/ability_evoker_spiritbloom2.blp",
+          "id": 4622476
+        },
+        {
+          "spellID": 364343,
+          "name": "Echo",
+          "path": "interface/icons/ability_evoker_echo.blp",
+          "id": 4622456
+        },
+        {
+          "spellID": 355913,
+          "name": "Emerald Blossom",
+          "path": "interface/icons/ability_evoker_emeraldblossom.blp",
+          "id": 4622457
+        },
+        {
+          "spellID": 363534,
+          "name": "Rewind",
+          "path": "interface/icons/ability_evoker_rewind.blp",
+          "id": 4622474
+        },
+        {
+          "spellID": 373861,
+          "name": "Temporal Anomaly",
+          "path": "interface/icons/ability_evoker_temporalanomaly.blp",
+          "id": 4630480
+        },
+        {
+          "spellID": 366155,
+          "name": "Reversion",
+          "path": "interface/icons/ability_evoker_reversion.blp",
+          "id": 4630467
+        }
+      ],
+      "missing": [],
+      "sounds": [],
+      "missingSpellLookups": []
+    },
+    {
+      "token": "EVOKER",
+      "classID": 13,
+      "specID": 1473,
+      "label": "Augmentation",
+      "icons": [
+        {
+          "spellID": 395160,
+          "name": "Eruption",
+          "path": "interface/icons/ability_evoker_eruption.blp",
+          "id": 5199630
+        },
+        {
+          "spellID": 395152,
+          "name": "Ebon Might",
+          "path": "interface/icons/spell_sarkareth.blp",
+          "id": 5061347
+        },
+        {
+          "spellID": 409311,
+          "name": "Prescience",
+          "path": "interface/icons/ability_evoker_prescience.blp",
+          "id": 5199639
+        },
+        {
+          "spellID": 396286,
+          "name": "Upheaval",
+          "path": "interface/icons/ability_evoker_upheaval.blp",
+          "id": 5199647
+        },
+        {
+          "spellID": 403631,
+          "name": "Breath of Eons",
+          "path": "interface/icons/ability_evoker_breathofeons.blp",
+          "id": 5199622
+        },
+        {
+          "spellID": 360827,
+          "name": "Blistering Scales",
+          "path": "interface/icons/ability_evoker_blisteringscales.blp",
+          "id": 5199621
+        },
+        {
+          "spellID": 369459,
+          "name": "Source of Magic",
+          "path": "interface/icons/ability_evoker_blue_01.blp",
+          "id": 4630412
+        }
+      ],
+      "missing": [],
+      "sounds": [],
+      "missingSpellLookups": []
+    }
+  ],
+  "spellSource": "https://nether.wowhead.com/tooltip/spell/{spellID}"
+}

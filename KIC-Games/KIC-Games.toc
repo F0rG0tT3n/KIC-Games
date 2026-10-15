@@ -2,7 +2,7 @@
 ## Title: KIC-Games
 ## Notes: Party game launcher and multiplayer lobby framework.
 ## Author: KIC
-## Version: 0.12.0
+## Version: 0.13.0
 ## Category: KIC
 ## IconTexture: Interface\Icons\INV_Misc_Dice_01
 ## SavedVariables: KICGamesDB
@@ -21,7 +21,11 @@ Artwork.lua
 Theme.lua
 GameplayUI.lua
 IconPresets.lua
+ProfileData.lua
+Profiles.lua
 Settings.lua
+Graphics.lua
+Audio.lua
 UI.lua
 Launcher.lua
 Options.lua

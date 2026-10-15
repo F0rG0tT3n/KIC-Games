@@ -11,6 +11,7 @@ end
 
 local function client(name, realm, saved)
     local frames, notices, env = {}, {}, {}
+    local c = { sounds = {}, stoppedSounds = {} }
     setmetatable(env, { __index = _G })
     env._G, env.unpack = env, table.unpack
     env.KICGamesDB = saved
@@ -60,9 +61,79 @@ local function client(name, realm, saved)
     env.IsMouseButtonDown = function()
         return env.mouseDown == true
     end
-    env.UnitClass = function()
-        return "Mage", "MAGE"
+    local specFixture = assert(loadfile("tests/spec-fixture.lua"))()
+    local apiClasses, apiSpecs = {}, {}
+    for _, row in ipairs(specFixture) do
+        local class = apiClasses[row.classID]
+        if not class then
+            class = { token = row.token, specs = {} }
+            apiClasses[row.classID] = class
+        end
+        class.specs[#class.specs + 1] = row
+        apiSpecs[row.id] = row
     end
+    local displayNames = {
+        WARRIOR = "Warrior",
+        PALADIN = "Paladin",
+        HUNTER = "Hunter",
+        ROGUE = "Rogue",
+        PRIEST = "Priest",
+        DEATHKNIGHT = "Death Knight",
+        SHAMAN = "Shaman",
+        MAGE = "Mage",
+        WARLOCK = "Warlock",
+        MONK = "Monk",
+        DRUID = "Druid",
+        DEMONHUNTER = "Demon Hunter",
+        EVOKER = "Evoker",
+    }
+    env.playerClass, env.playerSpec = "MAGE", 62
+    env.UnitClass = function()
+        return env.playerClass, env.playerClass
+    end
+    env.GetNumClasses = function()
+        return #apiClasses
+    end
+    env.GetClassInfo = function(index)
+        local row = apiClasses[index]
+        return displayNames[row.token] or row.token, row.token, index
+    end
+    env.GetSpecializationInfoForClassID = function(id, index)
+        local row = apiClasses[id].specs[index]
+        if row then
+            return row.id, row.name, "", row.icon, "DAMAGER"
+        end
+    end
+    env.C_SpecializationInfo = {
+        GetNumSpecializationsForClassID = function(id)
+            return #apiClasses[id].specs
+        end,
+        GetSpecialization = function()
+            return env.playerSpec and 1
+        end,
+        GetSpecializationInfo = function()
+            return env.playerSpec
+        end,
+    }
+    local apiClassFixture, apiSpecFixture = apiClasses, apiSpecs
+
+    env.C_Sound = {
+        PlaySoundWithOptions = function(params)
+            c.sounds[#c.sounds + 1] = { kit = params.soundKitID, volume = params.volumeOverride }
+            return true, #c.sounds
+        end,
+    }
+    env.PlaySoundFile = function(file, channel)
+        if env.rejectSound == file then
+            return false
+        end
+        c.sounds[#c.sounds + 1] = { file = file, channel = channel }
+        return true, #c.sounds
+    end
+    env.StopSound = function(handle)
+        c.stoppedSounds[#c.stoppedSounds + 1] = handle
+    end
+
     env.C_Spell = {
         GetSpellTexture = function(id)
             return id
@@ -76,7 +147,9 @@ local function client(name, realm, saved)
             env.chatDraft = value
         end,
     }
-    local c = {
+    c.name = name .. "-" .. realm
+    c.apiClasses, c.apiSpecs = apiClassFixture, apiSpecFixture
+    local clientFields = {
         name = name .. "-" .. realm,
         frames = frames,
         env = env,
@@ -87,6 +160,9 @@ local function client(name, realm, saved)
         buckets = {},
         throttleCount = 0,
     }
+    for key, value in pairs(clientFields) do
+        c[key] = value
+    end
     clients[#clients + 1] = c
     env.IsInGroup = function(category)
         return c.grouped and (not category or c.channel == "INSTANCE_CHAT")
@@ -281,10 +357,25 @@ local function client(name, realm, saved)
     function methods:SetMinMaxValues(minimum, maximum)
         self.minimum, self.maximum = minimum, maximum
     end
+    function methods:SetThumbTexture(texture)
+        self.thumbTexture = texture
+    end
+    function methods:SetOrientation(value)
+        self.orientation = value
+    end
     function methods:SetValue(value)
         self.value = math.max(self.minimum or 0, math.min(value, self.maximum or value))
         if self.scripts.OnValueChanged then
             self.scripts.OnValueChanged(self, self.value)
+        end
+        if self.thumbTexture then
+            local fraction = (self.value - (self.minimum or 0)) / math.max(1, (self.maximum or 1) - (self.minimum or 0))
+            self.thumbTexture:ClearAllPoints()
+            if self.orientation == "VERTICAL" then
+                self.thumbTexture:SetPoint("CENTER", self, "TOP", 0, -self:GetHeight() * fraction)
+            else
+                self.thumbTexture:SetPoint("CENTER", self, "LEFT", self:GetWidth() * fraction, 0)
+            end
         end
     end
     function methods:SetVerticalScroll(value)
@@ -1150,7 +1241,7 @@ t.env.C_Spell.GetSpellTexture = function()
 end
 for _, preset in ipairs(T.Presets) do
     T:SelectPreset(preset.token)
-    check(T.icons.I == preset.icons[1], "Preset still depends on spell lookup")
+    check(T.icons.I == G:GetPieceIcons("tetris")[1], "Preset still depends on spell lookup")
     check(T.nextCells[1][1].icon.textureValue ~= 134400, "Preview displayed a question mark")
 end
 T:SelectPreset("HUNTER")
@@ -1244,6 +1335,9 @@ check(Q:StartSingleplayer("bejeweled"), "Bejeweled did not start from the regist
 check(Bj.running and Bj.root:IsVisible() and #Bj.cells == 64, "Bejeweled board did not initialize")
 check(not Bj.root.keyboardEnabled, "Mouse game unnecessarily captured keyboard input")
 local jewelAssets = assert(loadfile(root .. "../tests/tetris-icon-files.lua"))()
+for id, path in pairs(assert(loadfile("tests/options-icon-files.lua"))()) do
+    jewelAssets[id] = path
+end
 local seenGems = {}
 check(#Bj.Gems == 7, "Bejeweled does not have seven gem kinds")
 for i, gem in ipairs(Bj.Gems) do
@@ -1372,7 +1466,7 @@ S.Tetris:Advance(0.1)
 check(S.Tetris.paused and S.UI.optionsFrame:IsShown(), "Options did not pause Tetris")
 S.UI.classButtons.SHAMAN.scripts.OnClick()
 check(
-    S:GetClassPreset() == "SHAMAN" and S.Tetris.icons.I == S.IconPresets.ByToken.SHAMAN.icons[1],
+    S:GetClassPreset() == "SHAMAN" and S.Tetris.icons.I == S:GetPieceIcons("tetris")[1],
     "Class menu did not update Tetris"
 )
 check(S.Tetris.model == originalModel and not S.Tetris.presetButtons, "Options reset game or left the old class picker")
@@ -1395,7 +1489,7 @@ for _, preset in ipairs(S.IconPresets.Presets) do
     S.UI.classButtons[preset.token].scripts.OnClick()
     for i, kind in ipairs(S.IconPresets.Kinds) do
         check(
-            S.Bejeweled.icons[i] == S.Tetris.icons[kind] and S.Bejeweled.icons[i] == preset.icons[i],
+            S.Bejeweled.icons[i] == S.Tetris.icons[kind] and S.Bejeweled.icons[i] == S:GetPieceIcons("bejeweled")[i],
             "Games disagree on shared class icons"
         )
     end
@@ -1413,17 +1507,10 @@ check(
     "Result overlays did not follow window scaling"
 )
 S.UI:ShowGame()
-sharedClient.env.cursorX, sharedClient.env.cursorY, sharedClient.env.mouseDown = 100, 100, true
-S.UI.resizeGrip.scripts.OnMouseDown(nil, "LeftButton")
-sharedClient.env.cursorX = 100 + S.UI.BASE_WIDTH * 0.1
-S.UI.resizeGrip.scripts.OnUpdate()
 check(
-    S.UI.frame:GetWidth() > S.UI.BASE_WIDTH and S.UI.frame:GetScale() == 1.4,
-    "Resize grip did not reflow the window while preserving UI scale"
+    not S.UI.resizeGrip and not S.UI.scaleUp and not S.UI.scaleDown and not S.UI.resetSize,
+    "Obsolete resizing controls remain visible in Options 2.0"
 )
-sharedClient.env.mouseDown = false
-S.UI.resizeGrip.scripts.OnUpdate()
-check(not S.UI.resizeStart and S.UI.frame.movable, "Resize did not release after mouse-up outside grip")
 S.UI:SetWindowScale(999)
 check(S.UI.frame:GetScale() <= S.UI:MaxWindowScale(), "Resize exceeded the visible screen")
 S.UI:SetWindowScale(0 / 0)
@@ -2115,13 +2202,13 @@ do
     local persisted = M.Copy(M.DB)
     local restored = client("LibraryReload", "ArcadeRealm", persisted)
     check(
-        restored.games.UI.frame.width == 1300
-            and restored.games.UI.frame.height == 820
+        restored.games.UI.frame.width == restored.games.UI.BASE_WIDTH
+            and restored.games.UI.frame.height == restored.games.UI.BASE_HEIGHT
             and restored.games.UI.frame:GetScale() == 1.1
             and restored.games:GetClassPreset() == "SHAMAN",
         "Reload lost layout or class settings"
     )
-    M.UI.resetSize.scripts.OnClick()
+    M.UI:ResetWindowSize()
     check(
         M.UI.frame.width == M.UI.BASE_WIDTH and M.UI.frame.height == M.UI.BASE_HEIGHT and M.UI.frame:GetScale() == 1,
         "Reset Size lost base geometry or scale"
@@ -2505,6 +2592,464 @@ do
     )
     DragGames:AbortGame()
 end
+-- Options 2.0: dynamic Retail catalogs, shared cosmetics/audio, migration and scale.
+do
+    local owner = client("OptionsTwo", "OptionsRealm", {
+        settings = { classPreset = "MAGE", windowScale = 1.2, windowWidth = 1500, windowHeight = 900 },
+        tetris = { best = { score = 321, lines = 7, level = 2, preset = "MAGE" } },
+        bejeweled = { best = { score = 654, moves = 5, cleared = 9, bestCascade = 2 } },
+        recentGames = { "tetris", "bejeweled" },
+    })
+    owner.grouped = false
+    local games, ui = owner.games, owner.games.UI
+    local settings = games:GetSettings()
+    check(
+        settings.schemaVersion == 2
+            and settings.soundVolume == 0.6
+            and settings.soundsEnabled
+            and settings.soundTheme == "arcade"
+            and settings.graphicsTheme == "class",
+        "Options defaults/migration are incomplete"
+    )
+    check(
+        ui.frame.width == ui.BASE_WIDTH
+            and ui.frame.height == ui.BASE_HEIGHT
+            and settings.windowWidth == 1500
+            and settings.windowHeight == 900,
+        "Legacy size controls still apply, or migration destroyed their stored data"
+    )
+    check(
+        games.DB.tetris.best.score == 321
+            and games.DB.bejeweled.best.score == 654
+            and games.DB.recentGames[1] == "tetris",
+        "Migration reset scores or recent games"
+    )
+    check(
+        #games.Profiles.classes == #owner.apiClasses and games.Profiles.bySpec[1480],
+        "Retail catalog omitted available classes or Devourer"
+    )
+    ui:ShowOptions()
+    local sets = {}
+    for _, class in ipairs(games.Profiles.classes) do
+        check(
+            ui.classButtons[class.token] and #class.specs == #owner.apiClasses[class.id].specs,
+            "Class selector/spec count differs from the client API"
+        )
+        ui.classButtons[class.token].scripts.OnClick()
+        check(
+            games:GetClassPreset() == class.token and ui.specCount == #class.specs,
+            "Manual class selector did not filter specializations"
+        )
+        local ownSets = {}
+        for index, spec in ipairs(class.specs) do
+            ui.specButtons[index].scripts.OnClick()
+            check(
+                select(2, games:GetSelectedProfile()) == spec.id and ui.specButtons[index].selected,
+                "Manual specialization control lost its stable ID or selected state"
+            )
+            local icons = games:GetPieceIcons("bejeweled")
+            local seen = {}
+            for i = 1, 7 do
+                check(
+                    type(icons[i]) == "number" and icons[i] ~= 134400 and not seen[icons[i]],
+                    "Spec lacks seven distinct visible spell textures"
+                )
+                seen[icons[i]] = true
+            end
+            local fingerprint = table.concat(icons, ",")
+            check(not ownSets[fingerprint], "Two specializations of one class share the same icon set")
+            ownSets[fingerprint] = true
+            sets[spec.id] = fingerprint
+            check(ui.previewCells[1].icon.textureValue == icons[1], "Live graphics preview did not update")
+            for _, event in ipairs(games.Audio.events) do
+                local sound = games.Audio:Resolve("bejeweled", event)
+                check(sound and (sound.kit or sound.file), "Audio event has no safe visible-profile fallback")
+            end
+        end
+    end
+    -- The runtime catalog must accept new specs without a hardcoded count/list.
+    owner.apiClasses[11].specs[#owner.apiClasses[11].specs + 1] =
+        { id = 90001, name = "Future specialization", icon = 132337 }
+    games.Profiles:Refresh()
+    games:SetClassPreset("DRUID")
+    check(
+        ui.specCount == 5 and games:SetManualSpec(90001) and #games:GetPieceIcons("bejeweled") == 7,
+        "API-discovered specialization did not get a selector and safe icon fallback"
+    )
+    games:SetClassPreset("MAGE")
+    games:SetManualSpec(63)
+    games:SetOption("followCharacter", true)
+    owner.env.playerSpec = 64
+    owner:event("PLAYER_SPECIALIZATION_CHANGED", "player")
+    check(
+        games:GetClassPreset() == "MAGE"
+            and select(2, games:GetSelectedProfile()) == 64
+            and settings.manualSpecID == 63
+            and not ui.classButtons.MAGE:IsEnabled()
+            and not ui.specButtons[1]:IsEnabled(),
+        "Follow character overwrote manual choice or failed to lock selectors"
+    )
+    check(
+        not games:SetManualSpec(62) and not games:SetManualClass("WARRIOR"),
+        "Manual profile changed while following the character"
+    )
+    owner.env.playerClass = "DEMONHUNTER"
+    owner.env.playerSpec = 1480
+    owner:event("PLAYER_SPECIALIZATION_CHANGED", "party1")
+    owner:event("PLAYER_SPECIALIZATION_CHANGED", "player")
+    check(
+        games:GetClassPreset() == "DEMONHUNTER" and select(2, games:GetSelectedProfile()) == 1480,
+        "Character class/spec detection did not follow the active profile"
+    )
+    games:SetOption("followCharacter", false)
+    check(
+        games:GetClassPreset() == "MAGE"
+            and select(2, games:GetSelectedProfile()) == 63
+            and ui.classButtons.MAGE:IsEnabled(),
+        "Disabling follow did not restore manual profile"
+    )
+    -- Both engines retain their actual model, board, score and queue when themes change.
+    for _, id in ipairs({ "tetris", "bejeweled" }) do
+        games:StartSingleplayer(id)
+        local module = id == "tetris" and games.Tetris or games.Bejeweled
+        local model, board, queue = module.model, module.model.board, module.model.queue
+        local score = model.score
+        games:SetOption("graphicsTheme", "original")
+        local original = games:GetPieceIcons(id)
+        check(
+            type(original[1]) == "string" and original[1]:find("Pieces/", 1, true),
+            "Original graphics still use spell icons"
+        )
+        check(
+            module.model == model and model.board == board and model.queue == queue and model.score == score,
+            "Original graphics reset an active game"
+        )
+        if id == "tetris" then
+            module:Paint(module.cells[1], "T")
+            check(
+                module.cells[1].icon.vertexColor[1] == games.IconPresets.Colors.T[1],
+                "Classic Tetris block did not receive piece color"
+            )
+            module.model:Hold()
+            module:Render(true)
+            for _, cells in ipairs(module.nextCells) do
+                for _, cell in ipairs(cells) do
+                    if cell.icon:IsShown() then
+                        check(cell.icon.textureValue == original[1], "NEXT used spell icons in Original mode")
+                    end
+                end
+            end
+            local held = 0
+            for _, cell in ipairs(module.holdCells) do
+                if cell.icon:IsShown() then
+                    held = held + 1
+                    check(cell.icon.textureValue == original[1], "HOLD lost original graphics")
+                end
+            end
+            check(held == 4, "HOLD preview lost tetromino geometry")
+        else
+            check(
+                module.cells[1].icon.textureValue == original[model.board[1][1]] and #original == 7,
+                "Bejeweled did not render seven original gems"
+            )
+        end
+        games:SetClassPreset("MAGE")
+        games:SetManualSpec(62)
+        games:SetOption("graphicsTheme", "class")
+        check(
+            module.model == model and model.board == board and model.queue == queue and model.score == score,
+            "Class/spec graphics reset active game state"
+        )
+        games:SetOption("soundTheme", "class")
+        check(module.model == model and module.model.score == score, "Audio preferences changed gameplay")
+        for _, scale in ipairs({ 0.75, 1, 1.2, 1.5 }) do
+            ui:SetWindowScale(scale)
+            check(
+                ui.frame:GetScale() == scale
+                    and ui.optionsFrame:GetEffectiveScale() == scale
+                    and module.root:GetEffectiveScale() == scale
+                    and module.summary:GetEffectiveScale() == scale,
+                "Interface scale did not consistently reach all UI surfaces"
+            )
+            check(
+                module.model == model and model.board == board and module.board.width > 0,
+                "Scale changed the board model"
+            )
+            if id == "tetris" then
+                check((module.board.width - 24) * 2 == module.board.height - 24, "Scaling distorted Tetris proportions")
+            else
+                check(module.cells[1].width == module.cells[1].height, "Scaling distorted Bejeweled cells")
+            end
+        end
+        games:AbortGame()
+    end
+    games:StartSingleplayer("tetris")
+    games:SetOption("graphicsTheme", "original")
+    games.Tetris.model.score = 1024
+    games.Tetris:SaveBest()
+    games:SetOption("graphicsTheme", "class")
+    games.Tetris:ShareBest()
+    check(
+        owner.env.chatDraft:find("Original blocks", 1, true) and games.DB.tetris.best.graphicsTheme == "original",
+        "Original-mode best was incorrectly shared as class spell icons"
+    )
+    games:AbortGame()
+    -- Follow must survive starting a game; starting Tetris must not invoke a manual picker.
+    games:SetOption("followCharacter", true)
+    games:StartSingleplayer("tetris")
+    check(
+        settings.followCharacter and games:GetClassPreset() == "DEMONHUNTER",
+        "Starting a game disabled Follow My Character"
+    )
+    games:AbortGame()
+    games:SetOption("followCharacter", false)
+    games:SetClassPreset("MAGE")
+    games:SetManualSpec(62)
+    games:SetOption("graphicsTheme", "original")
+    games:SetOption("soundTheme", "class")
+    local arcane = games.Audio:Resolve("bejeweled", "select")
+    check(
+        arcane.file and type(games:GetPieceIcons("bejeweled")[1]) == "string",
+        "Class audio was incorrectly coupled to class graphics"
+    )
+    games:SetManualSpec(63)
+    local fire = games.Audio:Resolve("bejeweled", "select")
+    games:SetManualSpec(64)
+    local frost = games.Audio:Resolve("bejeweled", "select")
+    check(
+        arcane.file ~= fire.file and fire.file ~= frost.file and not games.Audio:VolumeSupported(frost),
+        "Mage sound schools are identical, or unsupported file volume is claimed"
+    )
+    games:SetClassPreset("WARLOCK")
+    games:SetManualSpec(265)
+    check(
+        ui.volumePanel.detail.text:find("Spell effects", 1, true),
+        "Partial spell profiles incorrectly claimed independent volume for all effects"
+    )
+    games:SetClassPreset("MAGE")
+    games:SetManualSpec(62)
+    games:SetOption("soundTheme", "arcade")
+    games:SetOption("soundVolume", 0.25)
+    check(
+        games.Audio:Play("bejeweled", "clear", true) and owner.sounds[#owner.sounds].volume == 0.25,
+        "SoundKit playback did not receive independent volume"
+    )
+    local played = #owner.sounds
+    games:SetOption("soundsEnabled", false)
+    check(
+        not games.Audio:Play("bejeweled", "clear", true) and #owner.sounds == played and #games.Audio.handles == 0,
+        "Disabling sounds did not immediately stop/gate addon audio"
+    )
+    games:SetOption("soundsEnabled", true)
+    games:SetOption("soundVolume", 0)
+    check(not games.Audio:Play("bejeweled", "clear", true) and #owner.sounds == played, "Volume zero was not silent")
+    games:SetOption("soundVolume", 0.6)
+    ui:ShowOptions()
+    ui:SelectOptionsTab("audio")
+    ui.soundPreviewButtons.clear.scripts.OnClick()
+    check(
+        #owner.sounds == played + 1 and owner.sounds[#owner.sounds].kit == 10590,
+        "Audio preview is decorative instead of real playback"
+    )
+    now = now + 0.25
+    check(
+        games.Audio:Play("tetris", "move") and not games.Audio:Play("tetris", "move"),
+        "Rapid movement sound throttling failed"
+    )
+    check(games.Audio:Play("tetris", "gameOver"), "Game-over sound was blocked by movement throttling")
+    games:SetOption("soundTheme", "class")
+    games:SetManualSpec(62)
+    local entry = games.Audio:Resolve("bejeweled", "clear")
+    owner.env.rejectSound = entry.file
+    check(
+        games.Audio:Play("bejeweled", "clear", true) and owner.sounds[#owner.sounds].kit == 10590,
+        "Unavailable spell file did not fall back to a verified kit"
+    )
+    owner.env.rejectSound = nil
+    -- Window contains one scale slider and its optional 100% reset, no size controls.
+    ui:SelectOptionsTab("window")
+    local sliders, buttons = 0, 0
+    for _, frame in ipairs(owner.frames) do
+        if frame.parent == ui.windowPanel and frame.kind == "Slider" then
+            sliders = sliders + 1
+        end
+        if frame.parent == ui.windowPanel and frame.kind == "Button" then
+            buttons = buttons + 1
+        end
+    end
+    check(
+        sliders == 1 and buttons == 1 and not ui.resizeGrip and not ui.scaleUp and not ui.scaleDown,
+        "Window page contains extra size controls"
+    )
+    ui.scaleSlider:SetValue(120)
+    check(
+        settings.windowScale == 1.2 and ui.scaleSlider.valueLabel.text == "120%",
+        "Interface slider failed to apply/save"
+    )
+    for _ = 1, 6 do
+        ui:SetWindowScale(0.75)
+        ui:SetWindowScale(1.5)
+        ui.resetScale.scripts.OnClick()
+    end
+    check(ui.frame:GetScale() == 1 and settings.windowScale == 1, "Repeated scaling accumulated transform errors")
+    owner.env.UIParent:SetScale(0.8)
+    owner.env.UIParent:SetSize(2400, 1350)
+    ui:SetWindowScale(1.5)
+    check(
+        math.abs(ui.frame:GetEffectiveScale() - 1.2) < 0.000001
+            and math.abs(ui.optionsFrame:GetEffectiveScale() - ui.frame:GetEffectiveScale()) < 0.000001
+            and math.abs(games.Tetris.summary:GetEffectiveScale() - ui.frame:GetEffectiveScale()) < 0.000001
+            and settings.windowScale == 1.5,
+        "UIParent effective scale was applied twice or lost"
+    )
+    owner.env.UIParent:SetScale(1)
+    owner.env.UIParent:SetSize(1280, 720)
+    ui:SetWindowScale(1.5)
+    check(
+        ui.frame.width * ui.frame:GetScale() <= 1260
+            and ui.frame.height * ui.frame:GetScale() <= 700
+            and settings.windowScale == 1.5
+            and ui.scaleNote.text:find("Screen fit", 1, true),
+        "Screen fitting clipped the window or silently lost the requested scale"
+    )
+    games:SetOption("soundsEnabled", false)
+    local saved = games.Copy(games.DB)
+    local reload = client("OptionsReload", "OptionsRealm", saved)
+    local r = reload.games:GetSettings()
+    check(
+        r.graphicsTheme == settings.graphicsTheme
+            and r.manualClass == settings.manualClass
+            and r.followCharacter == settings.followCharacter
+            and r.manualSpecID == settings.manualSpecID
+            and r.soundTheme == settings.soundTheme
+            and r.soundVolume == settings.soundVolume
+            and r.soundsEnabled == settings.soundsEnabled
+            and r.windowScale == settings.windowScale
+            and reload.games.DB.tetris.best.score >= 321
+            and reload.games.DB.bejeweled.best.score >= 654,
+        "Reload lost Options 2.0 preferences or saved scores"
+    )
+    games:SetOption("soundsEnabled", true)
+    owner.env.UIParent:SetSize(1920, 1080)
+    for _, scale in ipairs({ 0.75, 1, 1.2, 1.5 }) do
+        ui:SetWindowScale(scale)
+        for _, tab in ipairs({ "graphics", "audio", "window" }) do
+            ui:SelectOptionsTab(tab)
+            check(
+                ui.optionsScroll.width <= ui.content.width
+                    and -ui.optionsScroll.points[1][3] + ui.optionsScroll.height <= ui.content.height,
+                "Options scroll viewport exceeds content bounds"
+            )
+            for _, button in pairs(ui.optionTabs) do
+                check(
+                    button.points[1][2] + button.width <= ui.content.width,
+                    "An Options tab extends beyond the content region"
+                )
+            end
+            ui.optionsScroll.scrollBar:SetValue(10000)
+            check(
+                ui.optionsScroll:GetVerticalScroll() <= math.max(0, ui.optionsContent.height - ui.optionsScroll.height),
+                "Options content cannot be reached through its clipped scrollbar"
+            )
+        end
+    end
+    -- A client's legacy playback must be reported honestly, with mute still functional.
+    local modern = owner.env.C_Sound
+    owner.env.C_Sound = nil
+    owner.env.PlaySound = function(kit, channel)
+        owner.sounds[#owner.sounds + 1] = { kit = kit, channel = channel }
+        return true, #owner.sounds
+    end
+    games:SetOption("soundTheme", "arcade")
+    check(
+        not games.Audio:VolumeSupported(games.Audio:Resolve("tetris", "move"))
+            and games.Audio:Play("tetris", "move", true),
+        "Legacy sound playback claimed unsupported volume"
+    )
+    owner.env.C_Sound = modern
+    -- Check actual gameplay event bridges without replacing the engine rules.
+    games:SetOption("soundTheme", "arcade")
+    local log = {}
+    local play = games.Audio.Play
+    games.Audio.Play = function(audio, game, event, preview)
+        log[#log + 1] = game .. ":" .. event
+        return play(audio, game, event, preview)
+    end
+    local function heard(event)
+        for _, value in ipairs(log) do
+            if value == event then
+                return true
+            end
+        end
+    end
+    games:StartSingleplayer("tetris")
+    local t = games.Tetris
+    t.model:Move(-1, 0)
+    t.model:Hold()
+    t.model:HardDrop()
+    check(
+        heard("tetris:move") and heard("tetris:select") and heard("tetris:land"),
+        "Tetris movement/hold/landing sound events are disconnected"
+    )
+    t.model.board = {}
+    for y = 1, 22 do
+        t.model.board[y] = {}
+    end
+    for x = 5, 10 do
+        t.model.board[22][x] = "O"
+    end
+    t.model.kind, t.model.rotation, t.model.x, t.model.y = "I", 0, 1, 21
+    t.model:Lock()
+    check(heard("tetris:clear") and t.model.lines == 1, "Line-clear sound changed or missed actual clear logic")
+    t.model.board = {}
+    for y = 1, 22 do
+        t.model.board[y] = {}
+    end
+    for y = 21, 22 do
+        for x = 3, 10 do
+            t.model.board[y][x] = "I"
+        end
+    end
+    t.model.kind, t.model.rotation, t.model.x, t.model.y = "O", 0, 1, 21
+    t.model:Lock()
+    check(heard("tetris:combo") and t.model.lines == 3, "Multi-line combo sound changed clear logic")
+    t.model.gameover = true
+    t:Advance(0)
+    check(heard("tetris:gameOver"), "Tetris game-over sound is disconnected")
+    games:AbortGame()
+    games:StartSingleplayer("bejeweled")
+    local b = games.Bejeweled
+    b:Click(1, 1, "LeftButton")
+    for y = 1, 8 do
+        for x = 1, 8 do
+            b.model.board[y][x] = (x + 2 * y) % 7 + 1
+        end
+    end
+    b.model.board[1][1], b.model.board[1][2], b.model.board[1][3], b.model.board[2][2] = 1, 2, 1, 1
+    b:TrySwap(2, 1, 2, 2, true)
+    for _ = 1, 7 do
+        b:Advance(0.1)
+    end
+    check(
+        heard("bejeweled:select") and heard("bejeweled:swap") and heard("bejeweled:clear"),
+        "Bejeweled selection/swap/match sounds are disconnected"
+    )
+    b.swap, b.fall, b.phaseTime = nil, nil, 0
+    b.model.board[1][1], b.model.board[1][2], b.model.board[1][3] = 1, 1, 1
+    b.model.gameover = false
+    b.model.pending = b.model:Matches()
+    b.model.phase = "clearing"
+    b.model.cascade = 2
+    for _ = 1, 3 do
+        b:Advance(0.1)
+    end
+    check(heard("bejeweled:combo"), "Bejeweled cascade sound is disconnected")
+    b.model.gameover = true
+    b.model.phase = "over"
+    b:Advance(0)
+    check(heard("bejeweled:gameOver"), "Bejeweled game-over sound is disconnected")
+    games:AbortGame()
+end
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))
 
 -- Optional layout snapshots from the actual UI constructors, for offline visual review.
@@ -2606,6 +3151,34 @@ if arg[1] == "--preview" then
         snapshot(id .. "-pause", preview)
         pg:AbortGame()
     end
+    local optionPreview = client("OptionsPreview", "PreviewRealm")
+    optionPreview.grouped = false
+    local op = optionPreview.games
+    op:SetClassPreset("MAGE")
+    op:SetManualSpec(62)
+    op.UI:ShowOptions()
+    for _, tab in ipairs({ "graphics", "audio", "window" }) do
+        op.UI:SelectOptionsTab(tab)
+        for _, scale in ipairs({ 0.75, 1, 1.2, 1.5 }) do
+            op.UI:SetWindowScale(scale)
+            snapshot("options2-" .. tab .. "-" .. math.floor(scale * 100 + 0.5), optionPreview)
+        end
+    end
+    op.UI:SetWindowScale(1)
+    op.UI:SelectOptionsTab("graphics")
+    op.UI.optionsScroll:SetVerticalScroll(208)
+    snapshot("options2-selectors", optionPreview)
+    op.UI.optionsScroll.scrollBar:SetValue(10000)
+    snapshot("options2-class-preview", optionPreview)
+    op:SetOption("graphicsTheme", "original")
+    snapshot("options2-original-gems", optionPreview)
+    op.UI.previewGame = "tetris"
+    op.UI:RefreshOptions()
+    snapshot("options2-original-blocks", optionPreview)
+    op:SetOption("soundTheme", "class")
+    op.UI:SelectOptionsTab("audio")
+    op.UI.optionsScroll:SetVerticalScroll(208)
+    snapshot("options2-spell-audio", optionPreview)
     G.UI:SelectTab("singleplayer")
     G:StartSingleplayer("tetris")
     T:SelectPreset("DRUID")

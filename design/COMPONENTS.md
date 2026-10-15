@@ -98,3 +98,18 @@ icons and below the opaque menu. Its show/hide scripts synchronize the dimmer;
 resuming removes it. The centered menu caps its width at 320 UI pixels and uses
 a bright cyan premium border, larger heading and divider for contrast. Both
 layers are created once, with no decorative update loop or extra texture files.
+
+## Options 2.0 controls
+
+`Theme:SettingsSlider(parent, min, max, step, onValue)` is a native horizontal
+slider with the shared navy track, cyan fill, icy thumb, current percentage and
+endpoint labels. `slider:Layout(x,y,width)` places its track and labels. It is
+used once for interface scale in Window and once for game volume in Audio;
+the two controls have separate settings and callbacks. Options synchronization
+guards programmatic refreshes against recursive setters. No decorative update
+loop, second scaling control or custom widget framework is introduced.
+
+Graphics/audio choices compose existing NeonButtons, PremiumFrames, icon textures
+and SectionHeaders. Read-only previews use the same shared graphics provider as
+the games. See [OPTIONS_2.md](OPTIONS_2.md) for settings, profile, graphics and audio
+registration APIs, migration, playback limitations and validation.

@@ -2,8 +2,11 @@
 
 Open **Singleplayer → Bejeweled → Play**, or use `/kicbejeweled`.
 This is a relaxed, untimed singleplayer match-three game on an 8×8 board, using
-the same class ability icons as Tetris. Choose one of 13 classes in **Options**;
-the setting applies to both games immediately and is saved between sessions.
+Original colored gems or the same class/spec spell profiles as Tetris. Choose
+**Options -> Graphics** for the theme, class/spec, Follow My Character and preview.
+The selection applies immediately to both games and is saved between sessions.
+**Audio** independently selects arcade or class/spec effects, mute and volume.
+Spell-file effects follow WoW SFX volume; 0% or Off silences them too.
 
 The reference layout places artwork, instructions and Hint/Pause/Share/Class
 Options on the left, the square board in the center, and real score/gold best/

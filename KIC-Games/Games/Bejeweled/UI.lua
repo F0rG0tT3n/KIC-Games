@@ -119,6 +119,7 @@ function B:TrySwap(x, y, tx, ty, dragged)
         return false
     end
     local valid = self.model:Swap(x, y, tx, ty)
+    Games.Audio:Play("bejeweled", "swap")
     self.swap = { x = x, y = y, tx = tx, ty = ty, valid = valid, dragged = dragged, time = 0 }
     self.selected, self.hint, self.phaseTime = nil, nil, 0
     self.message = valid and "Nice match!" or "A swap must make a match."
@@ -191,6 +192,7 @@ function B:Click(x, y, mouse)
     else
         self.selected = { x = x, y = y }
         self.message = "Now select a neighboring gem."
+        Games.Audio:Play("bejeweled", "select")
     end
     self:Render()
 end
@@ -343,6 +345,7 @@ function B:Advance(dt)
         if self.phaseTime >= 0.3 then
             self.model:Step()
             self:SaveBest()
+            Games.Audio:Play("bejeweled", self.model.cascade > 1 and "combo" or "clear")
             self.phaseTime = 0
             self.message = "+" .. self.model.lastGain .. " points"
         end

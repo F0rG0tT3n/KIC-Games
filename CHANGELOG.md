@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.0 - 2026-10-15 - Options 2.0
+
+- Replaced Options with embedded Graphics, Audio and Window tabs using shared premium frames, neon choices, class/spec selectors, toggles, sliders and live previews.
+- Added API-enumerated class/spec metadata, 40 distinct seven-icon profiles, stable spec IDs, remembered manual choices and Follow My Character specialization updates.
+- Added original faceted gem and beveled block textures, with live cosmetic switching for both games, NEXT and HOLD.
+- Added a shared extensible audio registry, actual gameplay event hooks, separate arcade/spec sound themes, enable/volume controls, playable previews, throttling, bounded overlap and safe fallback kits. Current SoundKits receive per-sound volume; spell files explicitly follow WoW SFX volume, while Off/0% mute everything.
+- Migrated shared settings without resetting records, results, recent games or sessions. Window now has only a 75%-150% scale slider in 5% steps and optional 100% reset; removed resize controls and stopped applying obsolete saved dimensions.
+- Added current asset audits, specialization/audio/migration/scaling regressions and offline previews. Missing sound mappings and replacement art are documented. No ZIP or live WoW testing.
+
 ## 0.12.0 - 2026-10-15 - Both gameplay screens
 
 - Bejeweled now swaps during a held directional drag at exactly one rendered tile width/height along the dominant axis. It measures from mouse-down with effective UI scale, swaps only one neighbor once per gesture, suppresses release clicks, and cancels outside-board destinations. Temporary tracking ends immediately on trigger/release/cancellation; matching, scoring and rollback timing are unchanged.

@@ -24,16 +24,20 @@ The tall board is centered between the left information/keycap-controls panel
 and the right STATS/NEXT/HOLD panels. Options and sharing sit below the controls;
 Pause sits below the previews. All cells remain square while resizing.
 
-Choose any of the 13 **class icon presets** in the shared **Options** menu. The
-same selection applies immediately to Tetris and Bejeweled. Your selection is saved;
-the default is your own class. Presets are cosmetic and use the same rules and
-high score. Each preset uses seven fixed spell texture FileDataIDs supplied by WoW,
-independent of spell availability or the spell cache. All 91 slots were checked
-against the [WoW archive file list](https://github.com/wowdev/wow-listfile).
+Choose **Original Graphics** for classic colored blocks or **Class Spells** for
+seven distinct specialization textures in **Options -> Graphics**. Class/spec
+definitions come from the Retail API. **Follow My Character** tracks your active
+spec; disabling it restores your manual selection. Both games share this setting.
+Curated FileDataIDs are checked against spell metadata and the
+[WoW archive file list](https://github.com/wowdev/wow-listfile).
 If the client rejects a texture, the renderer uses that class's icon instead.
 Selecting another preset does not
 restart the game. Opening Options pauses play; close it, then resume when ready.
 The former Tetris class picker now lives entirely in Options.
+**Audio** independently chooses arcade/spec effects, mute and volume. Movement,
+hold, landing, clears, combos and game over feed the shared audio API. SoundKits
+support independent volume on current Retail; spell-file effects follow WoW SFX
+volume. Off or 0% silences all addon effects.
 
 ## Score and speed
 

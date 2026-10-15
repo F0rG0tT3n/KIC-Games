@@ -1,7 +1,7 @@
 local addonName, Games = ...
 _G.KICGames = Games
 
-Games.VERSION = "0.12.0"
+Games.VERSION = "0.13.0"
 Games.API_VERSION = 3
 Games.PREFIX = "KICGames3"
 Games.CONTROL_PREFIX = "KICGames3Ctl"
@@ -316,6 +316,8 @@ events:SetScript("OnEvent", function(_, event, name)
         Games.DB.minimapAngle = tonumber(Games.DB.minimapAngle) or 220
         Games:InitializeResults()
     elseif event == "PLAYER_LOGIN" then
+        Games.Profiles:Refresh()
+        Games:GetSettings()
         Games:InitializeCommunication()
         Games.UI:Initialize()
         SLASH_KICGAMES1 = "/kicgames"

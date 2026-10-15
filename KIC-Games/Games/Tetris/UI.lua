@@ -30,6 +30,11 @@ function T:Paint(cell, kind, ghost)
         if cell.icon:SetTexture(self.icons[kind]) == false then
             cell.icon:SetTexture(self.fallbackIcon)
         end
+        if self.originalGraphics then
+            cell.icon:SetVertexColor(c[1], c[2], c[3])
+        else
+            cell.icon:SetVertexColor(1, 1, 1)
+        end
         cell.icon:SetAlpha(ghost and 0.18 or 1)
         cell.icon:Show()
     end
@@ -89,13 +94,15 @@ function T:SelectPreset(token)
     return Games:SetClassPreset(token)
 end
 function T:ApplyPreset(token)
-    if not self.ByToken[token] then
-        return
+    local icons = Games:GetPieceIcons("tetris")
+    self.icons = {}
+    for i, kind in ipairs(Games.IconPresets.Kinds) do
+        self.icons[kind] = icons[i]
     end
-    self.icons = self:GetIcons(token)
-    self.fallbackIcon = self.FallbackIcons[token]
+    self.originalGraphics = Games:GetSettings().graphicsTheme == "original"
+    self.fallbackIcon = self.FallbackIcons[token] or self.FallbackIcons.MAGE
     if self.presetLabel then
-        self.presetLabel:SetText(self.ByToken[token].name .. " icons")
+        self.presetLabel:SetText(token .. " icons")
     end
     self:Render(true)
 end

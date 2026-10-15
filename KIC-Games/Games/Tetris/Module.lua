@@ -16,7 +16,7 @@ function T:Storage()
     s.best.score = number(s.best.score)
     s.best.lines = number(s.best.lines)
     s.best.level = math.max(1, number(s.best.level))
-    if not self.ByToken[s.best.preset] then
+    if not self.ByToken[s.best.preset] and not Games.Profiles.byClass[s.best.preset] then
         s.best.preset = s.preset
     end
     return s
@@ -24,7 +24,15 @@ end
 function T:SaveBest()
     local m, s = self.model, self:Storage()
     if m and m.score > s.best.score then
-        s.best = { score = m.score, lines = m.lines, level = m.level, preset = s.preset, achievedAt = GetServerTime() }
+        s.best = {
+            score = m.score,
+            lines = m.lines,
+            level = m.level,
+            preset = s.preset,
+            specID = select(2, Games:GetSelectedProfile()),
+            graphicsTheme = Games:GetSettings().graphicsTheme,
+            achievedAt = GetServerTime(),
+        }
     end
 end
 function T:ShareBest()
@@ -34,11 +42,11 @@ function T:ShareBest()
     end
     local best = self:Storage().best
     local message = string.format(
-        "KIC Tetris best: %d points | %d lines | Level %d | %s icons",
+        "KIC Tetris best: %d points | %d lines | Level %d | %s",
         best.score,
         best.lines,
         best.level,
-        self.ByToken[best.preset].name
+        Games.Graphics:Label("tetris", best)
     )
     local channel = Games:GroupChannel()
     local prefix = channel == "INSTANCE_CHAT" and "/i "
@@ -56,6 +64,7 @@ function T:Complete()
     if not self.running then
         return
     end
+    Games.Audio:Play("tetris", "gameOver")
     self:SaveBest()
     local m, context = self.model, self.context
     local score, lines, level = m.score, m.lines, m.level
@@ -66,15 +75,48 @@ function T:Complete()
     if ok then
         self.summaryText:SetText(
             string.format(
-                "Score: %d\nLines: %d    Level: %d\nBest: %d\n%s icons",
+                "Score: %d\nLines: %d    Level: %d\nBest: %d\n%s",
                 score,
                 lines,
                 level,
                 self:Storage().best.score,
-                self.ByToken[self:Storage().preset].name
+                Games.Graphics:Label("tetris")
             )
         )
         self.summary:Show()
+    end
+end
+function T:AttachAudio(model)
+    local move, rotate, hold, lock = model.Move, model.Rotate, model.Hold, model.Lock
+    model.Move = function(m, dx, dy)
+        local result = move(m, dx, dy)
+        if result and dx ~= 0 then
+            Games.Audio:Play("tetris", "move")
+        end
+        return result
+    end
+    model.Rotate = function(m, direction)
+        local result = rotate(m, direction)
+        if result then
+            Games.Audio:Play("tetris", "move")
+        end
+        return result
+    end
+    model.Hold = function(m)
+        local result = hold(m)
+        if result then
+            Games.Audio:Play("tetris", "select")
+        end
+        return result
+    end
+    model.Lock = function(m)
+        local lines, ended = m.lines, m.gameover
+        local result = lock(m)
+        if not ended then
+            local cleared = m.lines - lines
+            Games.Audio:Play("tetris", cleared > 1 and "combo" or cleared == 1 and "clear" or "land")
+        end
+        return result
     end
 end
 Games:RegisterGame({
@@ -94,9 +136,11 @@ Games:RegisterGame({
     OnStart = function(context)
         T.context = context
         T.model = T.Engine.New()
+        T:AttachAudio(T.model)
         T.running, T.paused, T.drawRevision = true, false, nil
         T:ReleaseKeys()
-        T:SelectPreset(T:Storage().preset)
+        T:Storage()
+        T:ApplyPreset(Games:GetClassPreset())
         T.root:EnableKeyboard(true)
         T.root:Show()
     end,
