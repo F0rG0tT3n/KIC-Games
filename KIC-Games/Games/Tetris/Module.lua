@@ -1,5 +1,6 @@
 local _, Games = ...
 local T = Games.Tetris
+local lineEvents = { "tetris_1_line", "tetris_2_lines", "tetris_3_lines", "tetris_4_lines" }
 local function number(value)
     return type(value) == "number" and value == value and value >= 0 and value <= 2147483647 and math.floor(value) or 0
 end
@@ -114,7 +115,7 @@ function T:AttachAudio(model)
         local result = lock(m)
         if not ended then
             local cleared = m.lines - lines
-            Games.Audio:Play("tetris", cleared > 1 and "combo" or cleared == 1 and "clear" or "land")
+            Games.Audio:Play("tetris", lineEvents[cleared] or "land")
         end
         return result
     end

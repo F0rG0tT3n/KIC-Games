@@ -66,7 +66,29 @@
           "path": "sound/spells/spell_wr_mortalstrike_revamp_cast_03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1258146,
+          "path": "sound/spells/spell_wr_slam_revamp_impact_01.ogg",
+          "candidate": "Slam"
+        },
+        "tetris_3_lines": {
+          "id": 1267929,
+          "path": "sound/spells/spell_wr_mortalstrike_revamp_cast_01.ogg",
+          "candidate": "Mortal Strike"
+        },
+        "bejeweled_match_3": {
+          "id": 1258146,
+          "path": "sound/spells/spell_wr_slam_revamp_impact_01.ogg",
+          "candidate": "Slam"
+        },
+        "bejeweled_cascade": {
+          "id": 1267929,
+          "path": "sound/spells/spell_wr_mortalstrike_revamp_cast_01.ogg",
+          "candidate": "Mortal Strike"
+        }
+      }
     },
     {
       "token": "WARRIOR",
@@ -93,10 +115,11 @@
           "id": 132352
         },
         {
-          "spellID": 184364,
-          "name": "Enraged Regeneration",
-          "path": "interface/icons/ability_warrior_focusedrage.blp",
-          "id": 132345
+          "spellID": 5308,
+          "name": "Execute",
+          "path": "interface/icons/inv_sword_48.blp",
+          "id": 135358,
+          "source": "https://nether.wowhead.com/tooltip/spell/5308"
         },
         {
           "spellID": 1719,
@@ -132,7 +155,49 @@
           "path": "sound/spells/spell_wr_bloodthirst_revamp_impact_03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1276028,
+          "path": "sound/spells/spell_wr_ragingblow_revamp_impact_01.ogg",
+          "candidate": "Raging Blow"
+        },
+        "tetris_2_lines": {
+          "id": 1276021,
+          "path": "sound/spells/spell_wr_bloodthirst_revamp_impact_01.ogg",
+          "candidate": "Bloodthirst"
+        },
+        "tetris_3_lines": {
+          "id": 1335795,
+          "path": "sound/spells/spell_wr_rampage_cast_01.ogg",
+          "candidate": "Rampage"
+        },
+        "tetris_4_lines": {
+          "id": 1455742,
+          "path": "sound/spells/spell_wr_artifact_odynsfury_cast_01.ogg",
+          "candidate": "Odyn's Fury"
+        },
+        "bejeweled_match_3": {
+          "id": 1276028,
+          "path": "sound/spells/spell_wr_ragingblow_revamp_impact_01.ogg",
+          "candidate": "Raging Blow"
+        },
+        "bejeweled_match_4": {
+          "id": 1276021,
+          "path": "sound/spells/spell_wr_bloodthirst_revamp_impact_01.ogg",
+          "candidate": "Bloodthirst"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 1455742,
+          "path": "sound/spells/spell_wr_artifact_odynsfury_cast_01.ogg",
+          "candidate": "Odyn's Fury"
+        },
+        "bejeweled_cascade": {
+          "id": 1335795,
+          "path": "sound/spells/spell_wr_rampage_cast_01.ogg",
+          "candidate": "Rampage"
+        }
+      }
     },
     {
       "token": "WARRIOR",
@@ -177,15 +242,38 @@
           "id": 136105
         },
         {
-          "spellID": 46968,
-          "name": "Shockwave",
-          "path": "interface/icons/ability_warrior_shockwave.blp",
-          "id": 236312
+          "spellID": 190456,
+          "name": "Ignore Pain",
+          "path": "interface/icons/ability_warrior_renewedvigor.blp",
+          "id": 1377132,
+          "source": "https://nether.wowhead.com/tooltip/spell/190456"
         }
       ],
       "missing": [],
       "sounds": [],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1337829,
+          "path": "sound/spells/spell_wr_revenge_cast_01.ogg",
+          "candidate": "Revenge"
+        },
+        "tetris_2_lines": {
+          "id": 1362397,
+          "path": "sound/spells/spell_wr_thunderclap_impact_revamp_01.ogg",
+          "candidate": "Thunder Clap"
+        },
+        "bejeweled_match_3": {
+          "id": 1337829,
+          "path": "sound/spells/spell_wr_revenge_cast_01.ogg",
+          "candidate": "Revenge"
+        },
+        "bejeweled_match_4": {
+          "id": 1362397,
+          "path": "sound/spells/spell_wr_thunderclap_impact_revamp_01.ogg",
+          "candidate": "Thunder Clap"
+        }
+      }
     },
     {
       "token": "PALADIN",
@@ -230,15 +318,50 @@
           "id": 135875
         },
         {
-          "id": 135891,
-          "path": "interface/icons/spell_holy_crusaderstrike.blp"
+          "spellID": 85673,
+          "name": "Word of Glory",
+          "path": "interface/icons/inv_helmet_96.blp",
+          "id": 133192,
+          "source": "https://nether.wowhead.com/tooltip/spell/85673"
         }
       ],
       "missing": [],
       "sounds": [],
       "missingSpellLookups": [
         31842
-      ]
+      ],
+      "soundEvents": {
+        "tetris_2_lines": {
+          "id": 2818300,
+          "path": "sound/spells/spell_pa_revamp_holy_shock_heal_impact_01.ogg",
+          "candidate": "Holy Shock"
+        },
+        "tetris_3_lines": {
+          "id": 569623,
+          "path": "sound/spells/spell_pa_lightofdawn_impact_01.ogg",
+          "candidate": "Light of Dawn"
+        },
+        "tetris_4_lines": {
+          "id": 1884443,
+          "path": "sound/spells/spell_pa_revamp_avengingwrath_impact_01.ogg",
+          "candidate": "Avenging Wrath"
+        },
+        "bejeweled_match_4": {
+          "id": 2818300,
+          "path": "sound/spells/spell_pa_revamp_holy_shock_heal_impact_01.ogg",
+          "candidate": "Holy Shock"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 1884443,
+          "path": "sound/spells/spell_pa_revamp_avengingwrath_impact_01.ogg",
+          "candidate": "Avenging Wrath"
+        },
+        "bejeweled_cascade": {
+          "id": 569623,
+          "path": "sound/spells/spell_pa_lightofdawn_impact_01.ogg",
+          "candidate": "Light of Dawn"
+        }
+      }
     },
     {
       "token": "PALADIN",
@@ -277,10 +400,11 @@
           "id": 135926
         },
         {
-          "spellID": 204019,
-          "name": "Blessed Hammer",
-          "path": "interface/icons/paladin_retribution.blp",
-          "id": 535595
+          "spellID": 85673,
+          "name": "Word of Glory",
+          "path": "interface/icons/inv_helmet_96.blp",
+          "id": 133192,
+          "source": "https://nether.wowhead.com/tooltip/spell/85673"
         },
         {
           "spellID": 275779,
@@ -304,7 +428,19 @@
           "path": "sound/spells/spell_pa_avengersshield_impact_revamp_03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_3_lines": {
+          "id": 1360126,
+          "path": "sound/spells/spell_pa_avengersshield_impact_revamp_01.ogg",
+          "candidate": "Avenger's Shield"
+        },
+        "bejeweled_cascade": {
+          "id": 1360126,
+          "path": "sound/spells/spell_pa_avengersshield_impact_revamp_01.ogg",
+          "candidate": "Avenger's Shield"
+        }
+      }
     },
     {
       "token": "PALADIN",
@@ -331,10 +467,11 @@
           "id": 1360757
         },
         {
-          "spellID": 35395,
-          "name": "Crusader Strike",
-          "path": "interface/icons/spell_holy_crusaderstrike.blp",
-          "id": 135891
+          "spellID": 20271,
+          "name": "Judgment",
+          "path": "interface/icons/spell_holy_righteousfury.blp",
+          "id": 135959,
+          "source": "https://nether.wowhead.com/tooltip/spell/20271"
         },
         {
           "spellID": 255937,
@@ -370,7 +507,49 @@
           "path": "sound/spells/spell_pa_templarsverdict_impact03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1253380,
+          "path": "sound/spells/spell_pa_crusaderstrike_revamp_impact_01.ogg",
+          "candidate": "Crusader Strike"
+        },
+        "tetris_2_lines": {
+          "id": 1254585,
+          "path": "sound/spells/spell_pa_bladeofjustice_cast_revamp_01.ogg",
+          "candidate": "Blade of Justice"
+        },
+        "tetris_3_lines": {
+          "id": 1264929,
+          "path": "sound/spells/spell_pa_divine_storm_revamp_cast_01.ogg",
+          "candidate": "Divine Storm"
+        },
+        "tetris_4_lines": {
+          "id": 1455052,
+          "path": "sound/spells/spell_pa_artifact_wakeofashes_cast_01.ogg",
+          "candidate": "Wake of Ashes"
+        },
+        "bejeweled_match_3": {
+          "id": 1253380,
+          "path": "sound/spells/spell_pa_crusaderstrike_revamp_impact_01.ogg",
+          "candidate": "Crusader Strike"
+        },
+        "bejeweled_match_4": {
+          "id": 1254585,
+          "path": "sound/spells/spell_pa_bladeofjustice_cast_revamp_01.ogg",
+          "candidate": "Blade of Justice"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 1455052,
+          "path": "sound/spells/spell_pa_artifact_wakeofashes_cast_01.ogg",
+          "candidate": "Wake of Ashes"
+        },
+        "bejeweled_cascade": {
+          "id": 1264929,
+          "path": "sound/spells/spell_pa_divine_storm_revamp_cast_01.ogg",
+          "candidate": "Divine Storm"
+        }
+      }
     },
     {
       "token": "HUNTER",
@@ -403,22 +582,25 @@
           "id": 236186
         },
         {
-          "spellID": 115939,
-          "name": "Beast Cleave",
-          "path": "interface/icons/ability_hunter_sickem.blp",
-          "id": 461121
+          "spellID": 193455,
+          "name": "Cobra Shot",
+          "path": "interface/icons/ability_hunter_cobrashot.blp",
+          "id": 461114,
+          "source": "https://nether.wowhead.com/tooltip/spell/193455"
         },
         {
-          "spellID": 193530,
-          "name": "Aspect of the Wild",
-          "path": "interface/icons/spell_nature_protectionformnature.blp",
-          "id": 136074
+          "spellID": 2643,
+          "name": "Multi-Shot",
+          "path": "interface/icons/ability_upgrademoonglaive.blp",
+          "id": 132330,
+          "source": "https://nether.wowhead.com/tooltip/spell/2643"
         },
         {
-          "spellID": 982,
-          "name": "Revive Pet",
-          "path": "interface/icons/ability_hunter_beastsoothe.blp",
-          "id": 132163
+          "spellID": 53351,
+          "name": "Kill Shot",
+          "path": "interface/icons/ability_hunter_assassinate2.blp",
+          "id": 236174,
+          "source": "https://nether.wowhead.com/tooltip/spell/53351"
         }
       ],
       "missing": [],
@@ -436,7 +618,39 @@
           "path": "sound/spells/killcommand.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 569707,
+          "path": "sound/spells/spell_hu_cobrashot_impact_01.ogg",
+          "candidate": "Cobra Shot"
+        },
+        "tetris_3_lines": {
+          "id": 569021,
+          "path": "sound/spells/spell_hu_killcommand_impact.ogg",
+          "candidate": "Kill Command"
+        },
+        "tetris_4_lines": {
+          "id": 1451134,
+          "path": "sound/spells/spell_hu_bestialwrath_impact01.ogg",
+          "candidate": "Bestial Wrath"
+        },
+        "bejeweled_match_3": {
+          "id": 569707,
+          "path": "sound/spells/spell_hu_cobrashot_impact_01.ogg",
+          "candidate": "Cobra Shot"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 1451134,
+          "path": "sound/spells/spell_hu_bestialwrath_impact01.ogg",
+          "candidate": "Bestial Wrath"
+        },
+        "bejeweled_cascade": {
+          "id": 569021,
+          "path": "sound/spells/spell_hu_killcommand_impact.ogg",
+          "candidate": "Kill Command"
+        }
+      }
     },
     {
       "token": "HUNTER",
@@ -475,12 +689,18 @@
           "id": 236178
         },
         {
-          "id": 132157,
-          "path": "interface/icons/ability_hunter_aimedshot.blp"
+          "spellID": 56641,
+          "name": "Steady Shot",
+          "path": "interface/icons/ability_hunter_steadyshot.blp",
+          "id": 132213,
+          "source": "https://nether.wowhead.com/tooltip/spell/56641"
         },
         {
-          "id": 236179,
-          "path": "interface/icons/ability_hunter_focusedaim.blp"
+          "spellID": 53351,
+          "name": "Kill Shot",
+          "path": "interface/icons/ability_hunter_assassinate2.blp",
+          "id": 236174,
+          "source": "https://nether.wowhead.com/tooltip/spell/53351"
         }
       ],
       "missing": [],
@@ -501,7 +721,39 @@
       "missingSpellLookups": [
         19434,
         194386
-      ]
+      ],
+      "soundEvents": {
+        "tetris_2_lines": {
+          "id": 1591768,
+          "path": "sound/spells/spell_hu_arcaneshot_impact_01.ogg",
+          "candidate": "Arcane Shot"
+        },
+        "tetris_3_lines": {
+          "id": 1313130,
+          "path": "sound/spells/spell_hu_aimedshot_impact.ogg",
+          "candidate": "Aimed Shot"
+        },
+        "tetris_4_lines": {
+          "id": 1315078,
+          "path": "sound/spells/spell_hu_trueshot_impact.ogg",
+          "candidate": "Trueshot"
+        },
+        "bejeweled_match_4": {
+          "id": 1591768,
+          "path": "sound/spells/spell_hu_arcaneshot_impact_01.ogg",
+          "candidate": "Arcane Shot"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 1315078,
+          "path": "sound/spells/spell_hu_trueshot_impact.ogg",
+          "candidate": "Trueshot"
+        },
+        "bejeweled_cascade": {
+          "id": 1313130,
+          "path": "sound/spells/spell_hu_aimedshot_impact.ogg",
+          "candidate": "Aimed Shot"
+        }
+      }
     },
     {
       "token": "HUNTER",
@@ -528,16 +780,17 @@
           "id": 2065634
         },
         {
-          "spellID": 187708,
-          "name": "Carve",
-          "path": "interface/icons/ability_hunter_carve.blp",
-          "id": 1376039
+          "spellID": 34026,
+          "name": "Kill Command",
+          "path": "interface/icons/ability_hunter_killcommand.blp",
+          "id": 132176
         },
         {
-          "spellID": 190925,
-          "name": "Harpoon",
-          "path": "interface/icons/ability_hunter_harpoon.blp",
-          "id": 1376040
+          "spellID": 53351,
+          "name": "Kill Shot",
+          "path": "interface/icons/ability_hunter_assassinate2.blp",
+          "id": 236174,
+          "source": "https://nether.wowhead.com/tooltip/spell/53351"
         },
         {
           "spellID": 269751,
@@ -567,7 +820,29 @@
           "path": "sound/spells/spell_hu_raptorstrike_cast03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1302244,
+          "path": "sound/spells/spell_hu_raptorstrike_cast01.ogg",
+          "candidate": "Raptor Strike"
+        },
+        "tetris_2_lines": {
+          "id": 569021,
+          "path": "sound/spells/spell_hu_killcommand_impact.ogg",
+          "candidate": "Kill Command"
+        },
+        "bejeweled_match_3": {
+          "id": 1302244,
+          "path": "sound/spells/spell_hu_raptorstrike_cast01.ogg",
+          "candidate": "Raptor Strike"
+        },
+        "bejeweled_match_4": {
+          "id": 569021,
+          "path": "sound/spells/spell_hu_killcommand_impact.ogg",
+          "candidate": "Kill Command"
+        }
+      }
     },
     {
       "token": "ROGUE",
@@ -612,10 +887,11 @@
           "id": 1259291
         },
         {
-          "spellID": 5938,
-          "name": "Shiv",
-          "path": "interface/icons/inv_throwingknife_04.blp",
-          "id": 135428
+          "spellID": 51723,
+          "name": "Fan of Knives",
+          "path": "interface/icons/ability_rogue_fanofknives.blp",
+          "id": 236273,
+          "source": "https://nether.wowhead.com/tooltip/spell/51723"
         }
       ],
       "missing": [],
@@ -633,7 +909,29 @@
           "path": "sound/spells/spell_ro_mutilate_impact_02.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1301172,
+          "path": "sound/spells/spell_ro_mutilate_impact_01.ogg",
+          "candidate": "Mutilate"
+        },
+        "tetris_3_lines": {
+          "id": 1301162,
+          "path": "sound/spells/spell_ro_envenom_impact_01.ogg",
+          "candidate": "Envenom"
+        },
+        "bejeweled_match_3": {
+          "id": 1301172,
+          "path": "sound/spells/spell_ro_mutilate_impact_01.ogg",
+          "candidate": "Mutilate"
+        },
+        "bejeweled_cascade": {
+          "id": 1301162,
+          "path": "sound/spells/spell_ro_envenom_impact_01.ogg",
+          "candidate": "Envenom"
+        }
+      }
     },
     {
       "token": "ROGUE",
@@ -699,7 +997,39 @@
           "path": "sound/spells/spell_ro_pistolshot_cast_03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 569227,
+          "path": "sound/spells/sinisterstrikeimpact.ogg",
+          "candidate": "Sinister Strike"
+        },
+        "tetris_2_lines": {
+          "id": 1360714,
+          "path": "sound/spells/spell_ro_pistolshot_cast_01.ogg",
+          "candidate": "Pistol Shot"
+        },
+        "tetris_3_lines": {
+          "id": 1537119,
+          "path": "sound/spells/spell_ro_betweentheeyes_cast_01.ogg",
+          "candidate": "Between the Eyes"
+        },
+        "bejeweled_match_3": {
+          "id": 569227,
+          "path": "sound/spells/sinisterstrikeimpact.ogg",
+          "candidate": "Sinister Strike"
+        },
+        "bejeweled_match_4": {
+          "id": 1360714,
+          "path": "sound/spells/spell_ro_pistolshot_cast_01.ogg",
+          "candidate": "Pistol Shot"
+        },
+        "bejeweled_cascade": {
+          "id": 1537119,
+          "path": "sound/spells/spell_ro_betweentheeyes_cast_01.ogg",
+          "candidate": "Between the Eyes"
+        }
+      }
     },
     {
       "token": "ROGUE",
@@ -732,10 +1062,11 @@
           "id": 252272
         },
         {
-          "spellID": 121471,
-          "name": "Shadow Blades",
-          "path": "interface/icons/inv_knife_1h_grimbatolraid_d_03.blp",
-          "id": 376022
+          "spellID": 319175,
+          "name": "Black Powder",
+          "path": "interface/icons/spell_priest_divinestar_shadow.blp",
+          "id": 608955,
+          "source": "https://nether.wowhead.com/tooltip/spell/319175"
         },
         {
           "spellID": 280719,
@@ -765,7 +1096,39 @@
           "path": "sound/spells/spell_ro_shadowstrike_cast_revamp_01.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 569555,
+          "path": "sound/spells/backstab_impact_chest.ogg",
+          "candidate": "Backstab"
+        },
+        "tetris_2_lines": {
+          "id": 569471,
+          "path": "sound/spells/shadowstrike_impact_chest.ogg",
+          "candidate": "Shadowstrike"
+        },
+        "tetris_3_lines": {
+          "id": 1311840,
+          "path": "sound/spells/spell_ro_eviscerate_cast_revamp_01.ogg",
+          "candidate": "Eviscerate"
+        },
+        "bejeweled_match_3": {
+          "id": 569555,
+          "path": "sound/spells/backstab_impact_chest.ogg",
+          "candidate": "Backstab"
+        },
+        "bejeweled_match_4": {
+          "id": 569471,
+          "path": "sound/spells/shadowstrike_impact_chest.ogg",
+          "candidate": "Shadowstrike"
+        },
+        "bejeweled_cascade": {
+          "id": 1311840,
+          "path": "sound/spells/spell_ro_eviscerate_cast_revamp_01.ogg",
+          "candidate": "Eviscerate"
+        }
+      }
     },
     {
       "token": "PRIEST",
@@ -780,10 +1143,10 @@
           "id": 237545
         },
         {
-          "spellID": 81749,
-          "name": "Atonement",
-          "path": "interface/icons/ability_priest_atonement.blp",
-          "id": 458720
+          "spellID": 8092,
+          "name": "Mind Blast",
+          "path": "interface/icons/spell_shadow_unholyfrenzy.blp",
+          "id": 136224
         },
         {
           "spellID": 17,
@@ -798,16 +1161,17 @@
           "id": 135936
         },
         {
-          "spellID": 47536,
-          "name": "Rapture",
-          "path": "interface/icons/spell_holy_rapture.blp",
-          "id": 237548
+          "spellID": 62618,
+          "name": "Power Word: Barrier",
+          "path": "interface/icons/spell_holy_powerwordbarrier.blp",
+          "id": 253400,
+          "source": "https://nether.wowhead.com/tooltip/spell/62618"
         },
         {
-          "spellID": 204197,
-          "name": "Purge the Wicked",
-          "path": "interface/icons/ability_mage_firestarter.blp",
-          "id": 236216
+          "spellID": 589,
+          "name": "Shadow Word: Pain",
+          "path": "interface/icons/spell_shadow_shadowwordpain.blp",
+          "id": 136207
         },
         {
           "id": 135924,
@@ -831,7 +1195,49 @@
       ],
       "missingSpellLookups": [
         194509
-      ]
+      ],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1694004,
+          "path": "sound/spells/spell_pr_revamp_smite_impact_01.ogg",
+          "candidate": "Smite"
+        },
+        "tetris_2_lines": {
+          "id": 1708158,
+          "path": "sound/spells/spell_pr_revamp_powerword_shield_impact_01.ogg",
+          "candidate": "Power Word: Shield"
+        },
+        "tetris_3_lines": {
+          "id": 1708153,
+          "path": "sound/spells/spell_pr_revamp_penance_impact_01.ogg",
+          "candidate": "Penance"
+        },
+        "tetris_4_lines": {
+          "id": 1708212,
+          "path": "sound/spells/spell_pr_revamp_powerword_barrier_impact.ogg",
+          "candidate": "Power Word: Barrier"
+        },
+        "bejeweled_match_3": {
+          "id": 1694004,
+          "path": "sound/spells/spell_pr_revamp_smite_impact_01.ogg",
+          "candidate": "Smite"
+        },
+        "bejeweled_match_4": {
+          "id": 1708158,
+          "path": "sound/spells/spell_pr_revamp_powerword_shield_impact_01.ogg",
+          "candidate": "Power Word: Shield"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 1708212,
+          "path": "sound/spells/spell_pr_revamp_powerword_barrier_impact.ogg",
+          "candidate": "Power Word: Barrier"
+        },
+        "bejeweled_cascade": {
+          "id": 1708153,
+          "path": "sound/spells/spell_pr_revamp_penance_impact_01.ogg",
+          "candidate": "Penance"
+        }
+      }
     },
     {
       "token": "PRIEST",
@@ -858,10 +1264,11 @@
           "id": 135944
         },
         {
-          "spellID": 47788,
-          "name": "Guardian Spirit",
-          "path": "interface/icons/spell_holy_guardianspirit.blp",
-          "id": 237542
+          "spellID": 2061,
+          "name": "Flash Heal",
+          "path": "interface/icons/spell_holy_flashheal.blp",
+          "id": 135907,
+          "source": "https://nether.wowhead.com/tooltip/spell/2061"
         },
         {
           "spellID": 14914,
@@ -870,10 +1277,11 @@
           "id": 135972
         },
         {
-          "spellID": 64843,
-          "name": "Divine Hymn",
-          "path": "interface/icons/spell_holy_divinehymn.blp",
-          "id": 237540
+          "spellID": 2060,
+          "name": "Heal",
+          "path": "interface/icons/spell_holy_greaterheal.blp",
+          "id": 135913,
+          "source": "https://nether.wowhead.com/tooltip/spell/2060"
         },
         {
           "spellID": 204883,
@@ -884,7 +1292,39 @@
       ],
       "missing": [],
       "sounds": [],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1693996,
+          "path": "sound/spells/spell_pr_revamp_flashheal_impact_01.ogg",
+          "candidate": "Flash Heal"
+        },
+        "tetris_2_lines": {
+          "id": 569611,
+          "path": "sound/spells/prayerofmending_impact_head.ogg",
+          "candidate": "Prayer of Mending"
+        },
+        "tetris_3_lines": {
+          "id": 1698678,
+          "path": "sound/spells/spell_pr_revamp_holy_word_serenity_impact_01.ogg",
+          "candidate": "Holy Word: Serenity"
+        },
+        "bejeweled_match_3": {
+          "id": 1693996,
+          "path": "sound/spells/spell_pr_revamp_flashheal_impact_01.ogg",
+          "candidate": "Flash Heal"
+        },
+        "bejeweled_match_4": {
+          "id": 569611,
+          "path": "sound/spells/prayerofmending_impact_head.ogg",
+          "candidate": "Prayer of Mending"
+        },
+        "bejeweled_cascade": {
+          "id": 1698678,
+          "path": "sound/spells/spell_pr_revamp_holy_word_serenity_impact_01.ogg",
+          "candidate": "Holy Word: Serenity"
+        }
+      }
     },
     {
       "token": "PRIEST",
@@ -917,20 +1357,25 @@
           "id": 135978
         },
         {
-          "spellID": 335467,
-          "name": "Shadow Word: Madness",
-          "path": "interface/icons/inv12_ability_priest_powerwordmadness_eye.blp",
-          "id": 7569529
+          "spellID": 263165,
+          "name": "Void Torrent",
+          "path": "interface/icons/spell_priest_voidsear.blp",
+          "id": 1386551,
+          "source": "https://nether.wowhead.com/tooltip/spell/263165"
         },
         {
-          "spellID": 34433,
-          "name": "Shadowfiend",
-          "path": "interface/icons/spell_shadow_shadowfiend.blp",
-          "id": 136199
+          "spellID": 47585,
+          "name": "Dispersion",
+          "path": "interface/icons/spell_shadow_dispersion.blp",
+          "id": 237563,
+          "source": "https://nether.wowhead.com/tooltip/spell/47585"
         },
         {
-          "id": 462324,
-          "path": "interface/icons/spell_shadow_mindflay.blp"
+          "spellID": 32379,
+          "name": "Shadow Word: Death",
+          "path": "interface/icons/spell_shadow_demonicfortitude.blp",
+          "id": 136149,
+          "source": "https://nether.wowhead.com/tooltip/spell/32379"
         }
       ],
       "missing": [],
@@ -950,7 +1395,19 @@
       ],
       "missingSpellLookups": [
         228260
-      ]
+      ],
+      "soundEvents": {
+        "tetris_2_lines": {
+          "id": 1714480,
+          "path": "sound/spells/spell_pr_revamp_shadow_mindblast_impact_01.ogg",
+          "candidate": "Mind Blast"
+        },
+        "bejeweled_match_4": {
+          "id": 1714480,
+          "path": "sound/spells/spell_pr_revamp_shadow_mindblast_impact_01.ogg",
+          "candidate": "Mind Blast"
+        }
+      }
     },
     {
       "token": "DEATHKNIGHT",
@@ -989,10 +1446,11 @@
           "id": 136168
         },
         {
-          "spellID": 194844,
-          "name": "Bonestorm",
-          "path": "interface/icons/achievement_boss_lordmarrowgar.blp",
-          "id": 342917
+          "spellID": 43265,
+          "name": "Death and Decay",
+          "path": "interface/icons/spell_shadow_deathanddecay.blp",
+          "id": 136144,
+          "source": "https://nether.wowhead.com/tooltip/spell/43265"
         },
         {
           "spellID": 49028,
@@ -1016,7 +1474,29 @@
           "path": "sound/spells/spell_dk_deathstrike_cast03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_2_lines": {
+          "id": 1278529,
+          "path": "sound/spells/spell_dk_marrowrend_cast01.ogg",
+          "candidate": "Marrowrend"
+        },
+        "tetris_3_lines": {
+          "id": 1272242,
+          "path": "sound/spells/spell_dk_deathstrike_cast01.ogg",
+          "candidate": "Death Strike"
+        },
+        "bejeweled_match_4": {
+          "id": 1278529,
+          "path": "sound/spells/spell_dk_marrowrend_cast01.ogg",
+          "candidate": "Marrowrend"
+        },
+        "bejeweled_cascade": {
+          "id": 1272242,
+          "path": "sound/spells/spell_dk_deathstrike_cast01.ogg",
+          "candidate": "Death Strike"
+        }
+      }
     },
     {
       "token": "DEATHKNIGHT",
@@ -1055,16 +1535,18 @@
           "id": 538770
         },
         {
-          "spellID": 207230,
-          "name": "Frostscythe",
-          "path": "interface/icons/inv12_ability_deathknight_frostscythe.blp",
-          "id": 7439190
+          "spellID": 279302,
+          "name": "Frostwyrm's Fury",
+          "path": "interface/icons/achievement_boss_sindragosa.blp",
+          "id": 341980,
+          "source": "https://nether.wowhead.com/tooltip/spell/279302"
         },
         {
-          "spellID": 152279,
-          "name": "Breath of Sindragosa",
-          "path": "interface/icons/spell_deathknight_breathofsindragosa.blp",
-          "id": 1029007
+          "spellID": 194913,
+          "name": "Glacial Advance",
+          "path": "interface/icons/ability_hunter_glacialtrap.blp",
+          "id": 537514,
+          "source": "https://nether.wowhead.com/tooltip/spell/194913"
         }
       ],
       "missing": [],
@@ -1082,7 +1564,39 @@
           "path": "sound/spells/spell_dk_obliterate_cast_03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1272260,
+          "path": "sound/spells/spell_dk_howlingblast_impact01.ogg",
+          "candidate": "Howling Blast"
+        },
+        "tetris_2_lines": {
+          "id": 1272250,
+          "path": "sound/spells/spell_dk_froststrike_impact01.ogg",
+          "candidate": "Frost Strike"
+        },
+        "tetris_3_lines": {
+          "id": 986405,
+          "path": "sound/spells/spell_dk_obliterate_cast_01.ogg",
+          "candidate": "Obliterate"
+        },
+        "bejeweled_match_3": {
+          "id": 1272260,
+          "path": "sound/spells/spell_dk_howlingblast_impact01.ogg",
+          "candidate": "Howling Blast"
+        },
+        "bejeweled_match_4": {
+          "id": 1272250,
+          "path": "sound/spells/spell_dk_froststrike_impact01.ogg",
+          "candidate": "Frost Strike"
+        },
+        "bejeweled_cascade": {
+          "id": 986405,
+          "path": "sound/spells/spell_dk_obliterate_cast_01.ogg",
+          "candidate": "Obliterate"
+        }
+      }
     },
     {
       "token": "DEATHKNIGHT",
@@ -1121,16 +1635,18 @@
           "id": 237511
         },
         {
-          "spellID": 63560,
-          "name": "Dark Transformation",
-          "path": "interface/icons/achievement_boss_festergutrotface.blp",
-          "id": 342913
+          "spellID": 77575,
+          "name": "Outbreak",
+          "path": "interface/icons/spell_deathvortex.blp",
+          "id": 348565,
+          "source": "https://nether.wowhead.com/tooltip/spell/77575"
         },
         {
-          "spellID": 115989,
-          "name": "Unholy Blight",
-          "path": "interface/icons/spell_shadow_contagion.blp",
-          "id": 136132
+          "spellID": 207317,
+          "name": "Epidemic",
+          "path": "interface/icons/spell_nature_nullifydisease.blp",
+          "id": 136066,
+          "source": "https://nether.wowhead.com/tooltip/spell/207317"
         }
       ],
       "missing": [],
@@ -1148,7 +1664,29 @@
           "path": "sound/spells/spell_dk_scourgestrike_cast03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_2_lines": {
+          "id": 1273702,
+          "path": "sound/spells/spell_dk_scourgestrike_cast01.ogg",
+          "candidate": "Scourge Strike"
+        },
+        "tetris_3_lines": {
+          "id": 1343035,
+          "path": "sound/spells/spell_dk_deathcoil_impact.ogg",
+          "candidate": "Death Coil"
+        },
+        "bejeweled_match_4": {
+          "id": 1273702,
+          "path": "sound/spells/spell_dk_scourgestrike_cast01.ogg",
+          "candidate": "Scourge Strike"
+        },
+        "bejeweled_cascade": {
+          "id": 1343035,
+          "path": "sound/spells/spell_dk_deathcoil_impact.ogg",
+          "candidate": "Death Coil"
+        }
+      }
     },
     {
       "token": "SHAMAN",
@@ -1193,10 +1731,11 @@
           "id": 135813
         },
         {
-          "spellID": 117014,
-          "name": "Elemental Blast",
-          "path": "interface/icons/shaman_talent_elementalblast.blp",
-          "id": 651244
+          "spellID": 188443,
+          "name": "Chain Lightning",
+          "path": "interface/icons/spell_nature_chainlightning.blp",
+          "id": 136015,
+          "source": "https://nether.wowhead.com/tooltip/spell/188443"
         }
       ],
       "missing": [],
@@ -1214,7 +1753,39 @@
           "path": "sound/spells/shaman_lavaburstimpact3.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 568516,
+          "path": "sound/spells/lightningboltimpact.ogg",
+          "candidate": "Lightning Bolt"
+        },
+        "tetris_2_lines": {
+          "id": 569666,
+          "path": "sound/spells/shaman_lavaburstimpact1.ogg",
+          "candidate": "Lava Burst"
+        },
+        "tetris_3_lines": {
+          "id": 2576255,
+          "path": "sound/spells/spell_sh_revamp_earthshock_impact01.ogg",
+          "candidate": "Earth Shock"
+        },
+        "bejeweled_match_3": {
+          "id": 568516,
+          "path": "sound/spells/lightningboltimpact.ogg",
+          "candidate": "Lightning Bolt"
+        },
+        "bejeweled_match_4": {
+          "id": 569666,
+          "path": "sound/spells/shaman_lavaburstimpact1.ogg",
+          "candidate": "Lava Burst"
+        },
+        "bejeweled_cascade": {
+          "id": 2576255,
+          "path": "sound/spells/spell_sh_revamp_earthshock_impact01.ogg",
+          "candidate": "Earth Shock"
+        }
+      }
     },
     {
       "token": "SHAMAN",
@@ -1247,20 +1818,23 @@
           "id": 1370984
         },
         {
-          "spellID": 197214,
-          "name": "Sundering",
-          "path": "interface/icons/ability_rhyolith_lavapool.blp",
-          "id": 524794
+          "spellID": 188196,
+          "name": "Lightning Bolt",
+          "path": "interface/icons/spell_nature_lightning.blp",
+          "id": 136048
         },
         {
-          "spellID": 342240,
-          "name": "Ice Strike",
-          "path": "interface/icons/spell_frost_frostbolt.blp",
-          "id": 135845
+          "spellID": 188443,
+          "name": "Chain Lightning",
+          "path": "interface/icons/spell_nature_chainlightning.blp",
+          "id": 136015,
+          "source": "https://nether.wowhead.com/tooltip/spell/188443"
         },
         {
-          "id": 136114,
-          "path": "interface/icons/spell_nature_windfury.blp"
+          "spellID": 188389,
+          "name": "Flame Shock",
+          "path": "interface/icons/spell_fire_flameshock.blp",
+          "id": 135813
         }
       ],
       "missing": [],
@@ -1280,7 +1854,49 @@
       ],
       "missingSpellLookups": [
         8232
-      ]
+      ],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1395052,
+          "path": "sound/spells/spell_sh_lavalash_cast01.ogg",
+          "candidate": "Lava Lash"
+        },
+        "tetris_2_lines": {
+          "id": 1369104,
+          "path": "sound/spells/spell_sh_crashlightning_revamp_impact01.ogg",
+          "candidate": "Crash Lightning"
+        },
+        "tetris_3_lines": {
+          "id": 1369112,
+          "path": "sound/spells/spell_sh_stormstrike_revamp_cast01.ogg",
+          "candidate": "Stormstrike"
+        },
+        "tetris_4_lines": {
+          "id": 569157,
+          "path": "sound/spells/shaman_feralspiritimpact.ogg",
+          "candidate": "Feral Spirit"
+        },
+        "bejeweled_match_3": {
+          "id": 1395052,
+          "path": "sound/spells/spell_sh_lavalash_cast01.ogg",
+          "candidate": "Lava Lash"
+        },
+        "bejeweled_match_4": {
+          "id": 1369104,
+          "path": "sound/spells/spell_sh_crashlightning_revamp_impact01.ogg",
+          "candidate": "Crash Lightning"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 569157,
+          "path": "sound/spells/shaman_feralspiritimpact.ogg",
+          "candidate": "Feral Spirit"
+        },
+        "bejeweled_cascade": {
+          "id": 1369112,
+          "path": "sound/spells/spell_sh_stormstrike_revamp_cast01.ogg",
+          "candidate": "Stormstrike"
+        }
+      }
     },
     {
       "token": "SHAMAN",
@@ -1313,16 +1929,18 @@
           "id": 237586
         },
         {
-          "spellID": 108280,
-          "name": "Healing Tide Totem",
-          "path": "interface/icons/ability_shaman_healingtide.blp",
-          "id": 538569
+          "spellID": 8004,
+          "name": "Healing Surge",
+          "path": "interface/icons/spell_nature_healingway.blp",
+          "id": 136044,
+          "source": "https://nether.wowhead.com/tooltip/spell/8004"
         },
         {
-          "spellID": 974,
-          "name": "Earth Shield",
-          "path": "interface/icons/spell_nature_skinofearth.blp",
-          "id": 136089
+          "spellID": 5394,
+          "name": "Healing Stream Totem",
+          "path": "interface/icons/inv_spear_04.blp",
+          "id": 135127,
+          "source": "https://nether.wowhead.com/tooltip/spell/5394"
         },
         {
           "spellID": 77472,
@@ -1346,7 +1964,39 @@
           "path": "sound/spells/spell_sh_resto_chainheal_impact03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 568572,
+          "path": "sound/spells/spell_sh_greaterhealingwave_impact_01.ogg",
+          "candidate": "Healing Wave"
+        },
+        "tetris_2_lines": {
+          "id": 1937566,
+          "path": "sound/spells/spell_sh_resto_revamp_riptide_impact01.ogg",
+          "candidate": "Riptide"
+        },
+        "tetris_3_lines": {
+          "id": 1937576,
+          "path": "sound/spells/spell_sh_resto_chainheal_impact01.ogg",
+          "candidate": "Chain Heal"
+        },
+        "bejeweled_match_3": {
+          "id": 568572,
+          "path": "sound/spells/spell_sh_greaterhealingwave_impact_01.ogg",
+          "candidate": "Healing Wave"
+        },
+        "bejeweled_match_4": {
+          "id": 1937566,
+          "path": "sound/spells/spell_sh_resto_revamp_riptide_impact01.ogg",
+          "candidate": "Riptide"
+        },
+        "bejeweled_cascade": {
+          "id": 1937576,
+          "path": "sound/spells/spell_sh_resto_chainheal_impact01.ogg",
+          "candidate": "Chain Heal"
+        }
+      }
     },
     {
       "token": "MAGE",
@@ -1391,10 +2041,11 @@
           "id": 6035311
         },
         {
-          "spellID": 205025,
-          "name": "Presence of Mind",
-          "path": "interface/icons/spell_nature_enchantarmor.blp",
-          "id": 136031
+          "spellID": 153626,
+          "name": "Arcane Orb",
+          "path": "interface/icons/spell_mage_arcaneorb.blp",
+          "id": 1033906,
+          "source": "https://nether.wowhead.com/tooltip/spell/153626"
         }
       ],
       "missing": [],
@@ -1412,7 +2063,39 @@
           "path": "sound/spells/arcaneexplosion.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1668195,
+          "path": "sound/spells/spell_ma_revamp_arcane_blast_cast_01.ogg",
+          "candidate": "Arcane Blast"
+        },
+        "tetris_2_lines": {
+          "id": 568149,
+          "path": "sound/spells/mage_arcanebarrage_impact1.ogg",
+          "candidate": "Arcane Barrage"
+        },
+        "tetris_3_lines": {
+          "id": 1662811,
+          "path": "sound/spells/spell_ma_revamp_arcane_explosion_impact_01.ogg",
+          "candidate": "Arcane Explosion"
+        },
+        "bejeweled_match_3": {
+          "id": 1668195,
+          "path": "sound/spells/spell_ma_revamp_arcane_blast_cast_01.ogg",
+          "candidate": "Arcane Blast"
+        },
+        "bejeweled_match_4": {
+          "id": 568149,
+          "path": "sound/spells/mage_arcanebarrage_impact1.ogg",
+          "candidate": "Arcane Barrage"
+        },
+        "bejeweled_cascade": {
+          "id": 1662811,
+          "path": "sound/spells/spell_ma_revamp_arcane_explosion_impact_01.ogg",
+          "candidate": "Arcane Explosion"
+        }
+      }
     },
     {
       "token": "MAGE",
@@ -1457,10 +2140,11 @@
           "id": 1392549
         },
         {
-          "spellID": 31661,
-          "name": "Dragon's Breath",
-          "path": "interface/icons/inv_misc_head_dragon_01.blp",
-          "id": 134153
+          "spellID": 2948,
+          "name": "Scorch",
+          "path": "interface/icons/spell_fire_soulburn.blp",
+          "id": 135827,
+          "source": "https://nether.wowhead.com/tooltip/spell/2948"
         }
       ],
       "missing": [],
@@ -1478,7 +2162,49 @@
           "path": "sound/spells/spell_ma_pyroblast_impact_01.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 568461,
+          "path": "sound/spells/fireballimpacta.ogg",
+          "candidate": "Fireball"
+        },
+        "tetris_2_lines": {
+          "id": 1686530,
+          "path": "sound/spells/spell_ma_revamp_fireblast_impact_01.ogg",
+          "candidate": "Fire Blast"
+        },
+        "tetris_3_lines": {
+          "id": 1392377,
+          "path": "sound/spells/spell_ma_pyroblast_impact_01.ogg",
+          "candidate": "Pyroblast"
+        },
+        "tetris_4_lines": {
+          "id": 1390656,
+          "path": "sound/spells/spell_ma_combustion_cast_01.ogg",
+          "candidate": "Combustion"
+        },
+        "bejeweled_match_3": {
+          "id": 568461,
+          "path": "sound/spells/fireballimpacta.ogg",
+          "candidate": "Fireball"
+        },
+        "bejeweled_match_4": {
+          "id": 1686530,
+          "path": "sound/spells/spell_ma_revamp_fireblast_impact_01.ogg",
+          "candidate": "Fire Blast"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 1390656,
+          "path": "sound/spells/spell_ma_combustion_cast_01.ogg",
+          "candidate": "Combustion"
+        },
+        "bejeweled_cascade": {
+          "id": 1392377,
+          "path": "sound/spells/spell_ma_pyroblast_impact_01.ogg",
+          "candidate": "Pyroblast"
+        }
+      }
     },
     {
       "token": "MAGE",
@@ -1517,10 +2243,11 @@
           "id": 135857
         },
         {
-          "spellID": 12472,
-          "name": "Icy Veins",
-          "path": "interface/icons/spell_frost_coldhearted.blp",
-          "id": 135838
+          "spellID": 122,
+          "name": "Frost Nova",
+          "path": "interface/icons/spell_frost_frostnova.blp",
+          "id": 135848,
+          "source": "https://nether.wowhead.com/tooltip/spell/122"
         },
         {
           "spellID": 205021,
@@ -1544,7 +2271,39 @@
           "path": "sound/spells/frostnova.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1631383,
+          "path": "sound/spells/spell_ma_revamp_frostbolt_impact_01.ogg",
+          "candidate": "Frostbolt"
+        },
+        "tetris_2_lines": {
+          "id": 569403,
+          "path": "sound/spells/ice_lance_impact1.ogg",
+          "candidate": "Ice Lance"
+        },
+        "tetris_3_lines": {
+          "id": 1631359,
+          "path": "sound/spells/spell_ma_revamp_flurry_impact_01.ogg",
+          "candidate": "Flurry"
+        },
+        "bejeweled_match_3": {
+          "id": 1631383,
+          "path": "sound/spells/spell_ma_revamp_frostbolt_impact_01.ogg",
+          "candidate": "Frostbolt"
+        },
+        "bejeweled_match_4": {
+          "id": 569403,
+          "path": "sound/spells/ice_lance_impact1.ogg",
+          "candidate": "Ice Lance"
+        },
+        "bejeweled_cascade": {
+          "id": 1631359,
+          "path": "sound/spells/spell_ma_revamp_flurry_impact_01.ogg",
+          "candidate": "Flurry"
+        }
+      }
     },
     {
       "token": "WARLOCK",
@@ -1577,10 +2336,11 @@
           "id": 136193
         },
         {
-          "spellID": 324536,
-          "name": "Malefic Rapture",
-          "path": "interface/icons/ability_warlock_everlastingaffliction.blp",
-          "id": 236296
+          "spellID": 198590,
+          "name": "Drain Soul",
+          "path": "interface/icons/spell_shadow_haunting.blp",
+          "id": 136163,
+          "source": "https://nether.wowhead.com/tooltip/spell/198590"
         },
         {
           "spellID": 48181,
@@ -1589,10 +2349,11 @@
           "id": 236298
         },
         {
-          "spellID": 63106,
-          "name": "Siphon Life",
-          "path": "interface/icons/spell_shadow_requiem.blp",
-          "id": 136188
+          "spellID": 278350,
+          "name": "Vile Taint",
+          "path": "interface/icons/sha_spell_shadow_shadesofdarkness_nightborne.blp",
+          "id": 1391774,
+          "source": "https://nether.wowhead.com/tooltip/spell/278350"
         }
       ],
       "missing": [],
@@ -1602,7 +2363,39 @@
           "path": "sound/spells/unstableaffliction_impact_chest.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 2101389,
+          "path": "sound/spells/spell_wl_revamp_corruption_impact_01.ogg",
+          "candidate": "Corruption"
+        },
+        "tetris_2_lines": {
+          "id": 2068252,
+          "path": "sound/spells/spell_wl_revamp_agony_impact_01.ogg",
+          "candidate": "Agony"
+        },
+        "tetris_3_lines": {
+          "id": 569658,
+          "path": "sound/spells/unstableaffliction_impact_chest.ogg",
+          "candidate": "Unstable Affliction"
+        },
+        "bejeweled_match_3": {
+          "id": 2101389,
+          "path": "sound/spells/spell_wl_revamp_corruption_impact_01.ogg",
+          "candidate": "Corruption"
+        },
+        "bejeweled_match_4": {
+          "id": 2068252,
+          "path": "sound/spells/spell_wl_revamp_agony_impact_01.ogg",
+          "candidate": "Agony"
+        },
+        "bejeweled_cascade": {
+          "id": 569658,
+          "path": "sound/spells/unstableaffliction_impact_chest.ogg",
+          "candidate": "Unstable Affliction"
+        }
+      }
     },
     {
       "token": "WARLOCK",
@@ -1647,10 +2440,11 @@
           "id": 237562
         },
         {
-          "spellID": 264119,
-          "name": "Summon Vilefiend",
-          "path": "interface/icons/inv_argusfelstalkermount.blp",
-          "id": 1616211
+          "spellID": 686,
+          "name": "Shadow Bolt",
+          "path": "interface/icons/spell_shadow_shadowbolt.blp",
+          "id": 136197,
+          "source": "https://nether.wowhead.com/tooltip/spell/686"
         }
       ],
       "missing": [],
@@ -1668,7 +2462,39 @@
           "path": "sound/spells/spell_wl_demonbolt_impact_03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 2068311,
+          "path": "sound/spells/spell_wl_revamp_shadow_bolt_cast_01.ogg",
+          "candidate": "Shadow Bolt"
+        },
+        "tetris_2_lines": {
+          "id": 999327,
+          "path": "sound/spells/spell_wl_demonbolt_impact_01.ogg",
+          "candidate": "Demonbolt"
+        },
+        "tetris_3_lines": {
+          "id": 568058,
+          "path": "sound/spells/spell_wl_handofguldan_impact_01.ogg",
+          "candidate": "Hand of Gul'dan"
+        },
+        "bejeweled_match_3": {
+          "id": 2068311,
+          "path": "sound/spells/spell_wl_revamp_shadow_bolt_cast_01.ogg",
+          "candidate": "Shadow Bolt"
+        },
+        "bejeweled_match_4": {
+          "id": 999327,
+          "path": "sound/spells/spell_wl_demonbolt_impact_01.ogg",
+          "candidate": "Demonbolt"
+        },
+        "bejeweled_cascade": {
+          "id": 568058,
+          "path": "sound/spells/spell_wl_handofguldan_impact_01.ogg",
+          "candidate": "Hand of Gul'dan"
+        }
+      }
     },
     {
       "token": "WARLOCK",
@@ -1713,10 +2539,11 @@
           "id": 136191
         },
         {
-          "spellID": 196447,
-          "name": "Channel Demonfire",
-          "path": "interface/icons/spell_fire_ragnaros_lavaboltgreen.blp",
-          "id": 840407
+          "spellID": 80240,
+          "name": "Havoc",
+          "path": "interface/icons/ability_warlock_baneofhavoc.blp",
+          "id": 460695,
+          "source": "https://nether.wowhead.com/tooltip/spell/80240"
         }
       ],
       "missing": [],
@@ -1734,7 +2561,49 @@
           "path": "sound/spells/spell_wl_revamp_chaosbolt_impact_03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 2125625,
+          "path": "sound/spells/spell_wl_incinerate_impact_01.ogg",
+          "candidate": "Incinerate"
+        },
+        "tetris_2_lines": {
+          "id": 593894,
+          "path": "sound/spells/spell_wl_conflagrate_impact01.ogg",
+          "candidate": "Conflagrate"
+        },
+        "tetris_3_lines": {
+          "id": 2068263,
+          "path": "sound/spells/spell_wl_revamp_chaosbolt_impact_01.ogg",
+          "candidate": "Chaos Bolt"
+        },
+        "tetris_4_lines": {
+          "id": 1489078,
+          "path": "sound/spells/spell_wl_summon_infernal_impact_01.ogg",
+          "candidate": "Summon Infernal"
+        },
+        "bejeweled_match_3": {
+          "id": 2125625,
+          "path": "sound/spells/spell_wl_incinerate_impact_01.ogg",
+          "candidate": "Incinerate"
+        },
+        "bejeweled_match_4": {
+          "id": 593894,
+          "path": "sound/spells/spell_wl_conflagrate_impact01.ogg",
+          "candidate": "Conflagrate"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 1489078,
+          "path": "sound/spells/spell_wl_summon_infernal_impact_01.ogg",
+          "candidate": "Summon Infernal"
+        },
+        "bejeweled_cascade": {
+          "id": 2068263,
+          "path": "sound/spells/spell_wl_revamp_chaosbolt_impact_01.ogg",
+          "candidate": "Chaos Bolt"
+        }
+      }
     },
     {
       "token": "MONK",
@@ -1773,16 +2642,18 @@
           "id": 1360979
         },
         {
-          "spellID": 115203,
-          "name": "Fortifying Brew",
-          "path": "interface/icons/ability_monk_fortifyingale_new.blp",
-          "id": 615341
+          "spellID": 100780,
+          "name": "Tiger Palm",
+          "path": "interface/icons/ability_monk_tigerpalm.blp",
+          "id": 606551,
+          "source": "https://nether.wowhead.com/tooltip/spell/100780"
         },
         {
-          "spellID": 116847,
-          "name": "Rushing Jade Wind",
-          "path": "interface/icons/ability_monk_rushingjadewind.blp",
-          "id": 606549
+          "spellID": 325153,
+          "name": "Exploding Keg",
+          "path": "interface/icons/inv12_ability_monk_explodingkeg.blp",
+          "id": 7439206,
+          "source": "https://nether.wowhead.com/tooltip/spell/325153"
         }
       ],
       "missing": [],
@@ -1800,7 +2671,39 @@
           "path": "sound/spells/spell_mk_kegsmash_03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 574719,
+          "path": "sound/spells/spell_mk_tigerpalm_cast.ogg",
+          "candidate": "Tiger Palm"
+        },
+        "tetris_2_lines": {
+          "id": 606779,
+          "path": "sound/spells/spell_mk_blackoutkick_cast_01.ogg",
+          "candidate": "Blackout Kick"
+        },
+        "tetris_4_lines": {
+          "id": 1483241,
+          "path": "sound/spells/spell_mk_artifact_exploding_keg_impact_01.ogg",
+          "candidate": "Exploding Keg"
+        },
+        "bejeweled_match_3": {
+          "id": 574719,
+          "path": "sound/spells/spell_mk_tigerpalm_cast.ogg",
+          "candidate": "Tiger Palm"
+        },
+        "bejeweled_match_4": {
+          "id": 606779,
+          "path": "sound/spells/spell_mk_blackoutkick_cast_01.ogg",
+          "candidate": "Blackout Kick"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 1483241,
+          "path": "sound/spells/spell_mk_artifact_exploding_keg_impact_01.ogg",
+          "candidate": "Exploding Keg"
+        }
+      }
     },
     {
       "token": "MONK",
@@ -1827,16 +2730,18 @@
           "id": 1360980
         },
         {
-          "spellID": 115310,
-          "name": "Revival",
-          "path": "interface/icons/spell_monk_revival.blp",
-          "id": 1020466
+          "spellID": 205406,
+          "name": "Sheilun's Gift",
+          "path": "interface/icons/inv_staff_2h_artifactshaohao_d_01.blp",
+          "id": 1242282,
+          "source": "https://nether.wowhead.com/tooltip/spell/205406"
         },
         {
-          "spellID": 116849,
-          "name": "Life Cocoon",
-          "path": "interface/icons/ability_monk_chicocoon.blp",
-          "id": 627485
+          "spellID": 116680,
+          "name": "Thunder Focus Tea",
+          "path": "interface/icons/ability_monk_thunderfocustea.blp",
+          "id": 611418,
+          "source": "https://nether.wowhead.com/tooltip/spell/116680"
         },
         {
           "spellID": 115175,
@@ -1845,15 +2750,18 @@
           "id": 606550
         },
         {
-          "id": 1360978,
-          "path": "interface/icons/ability_monk_essencefont.blp"
+          "spellID": 107428,
+          "name": "Rising Sun Kick",
+          "path": "interface/icons/ability_monk_risingsunkick.blp",
+          "id": 642415
         }
       ],
       "missing": [],
       "sounds": [],
       "missingSpellLookups": [
         191837
-      ]
+      ],
+      "soundEvents": {}
     },
     {
       "token": "MONK",
@@ -1886,16 +2794,18 @@
           "id": 988194
         },
         {
-          "spellID": 115080,
-          "name": "Touch of Death",
-          "path": "interface/icons/ability_monk_touchofdeath.blp",
-          "id": 606552
+          "spellID": 100780,
+          "name": "Tiger Palm",
+          "path": "interface/icons/ability_monk_tigerpalm.blp",
+          "id": 606551,
+          "source": "https://nether.wowhead.com/tooltip/spell/100780"
         },
         {
-          "spellID": 137639,
-          "name": "Storm, Earth, and Fire",
-          "path": "interface/icons/spell_nature_giftofthewild.blp",
-          "id": 136038
+          "spellID": 100784,
+          "name": "Blackout Kick",
+          "path": "interface/icons/ability_monk_roundhousekick.blp",
+          "id": 574575,
+          "source": "https://nether.wowhead.com/tooltip/spell/100784"
         },
         {
           "spellID": 392983,
@@ -1906,7 +2816,29 @@
       ],
       "missing": [],
       "sounds": [],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 574719,
+          "path": "sound/spells/spell_mk_tigerpalm_cast.ogg",
+          "candidate": "Tiger Palm"
+        },
+        "tetris_4_lines": {
+          "id": 1378203,
+          "path": "sound/spells/spell_mk_strikeofthewindlord_cast_01.ogg",
+          "candidate": "Strike of the Windlord"
+        },
+        "bejeweled_match_3": {
+          "id": 574719,
+          "path": "sound/spells/spell_mk_tigerpalm_cast.ogg",
+          "candidate": "Tiger Palm"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 1378203,
+          "path": "sound/spells/spell_mk_strikeofthewindlord_cast_01.ogg",
+          "candidate": "Strike of the Windlord"
+        }
+      }
     },
     {
       "token": "DRUID",
@@ -1972,7 +2904,49 @@
           "path": "sound/spells/spell_dr_revamp_starsurge_impact_03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 568563,
+          "path": "sound/spells/druid_wrath_impact01.ogg",
+          "candidate": "Wrath"
+        },
+        "tetris_2_lines": {
+          "id": 568008,
+          "path": "sound/spells/starfireimpact.ogg",
+          "candidate": "Starfire"
+        },
+        "tetris_3_lines": {
+          "id": 1597457,
+          "path": "sound/spells/spell_dr_revamp_starsurge_impact_01.ogg",
+          "candidate": "Starsurge"
+        },
+        "tetris_4_lines": {
+          "id": 1597431,
+          "path": "sound/spells/spell_dr_revamp_celestialalignment_cast_01.ogg",
+          "candidate": "Celestial Alignment"
+        },
+        "bejeweled_match_3": {
+          "id": 568563,
+          "path": "sound/spells/druid_wrath_impact01.ogg",
+          "candidate": "Wrath"
+        },
+        "bejeweled_match_4": {
+          "id": 568008,
+          "path": "sound/spells/starfireimpact.ogg",
+          "candidate": "Starfire"
+        },
+        "bejeweled_match_5_plus": {
+          "id": 1597431,
+          "path": "sound/spells/spell_dr_revamp_celestialalignment_cast_01.ogg",
+          "candidate": "Celestial Alignment"
+        },
+        "bejeweled_cascade": {
+          "id": 1597457,
+          "path": "sound/spells/spell_dr_revamp_starsurge_impact_01.ogg",
+          "candidate": "Starsurge"
+        }
+      }
     },
     {
       "token": "DRUID",
@@ -2017,10 +2991,11 @@
           "id": 132242
         },
         {
-          "spellID": 285381,
-          "name": "Primal Wrath",
-          "path": "interface/icons/artifactability_feraldruid_ashamanesbite.blp",
-          "id": 1392547
+          "spellID": 202028,
+          "name": "Brutal Slash",
+          "path": "interface/icons/ability_druid_ravage.blp",
+          "id": 132141,
+          "source": "https://nether.wowhead.com/tooltip/spell/202028"
         }
       ],
       "missing": [],
@@ -2034,7 +3009,8 @@
           "path": "sound/spells/spell_dr_ferociousbite_revamp_cast.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {}
     },
     {
       "token": "DRUID",
@@ -2067,22 +3043,24 @@
           "id": 132136
         },
         {
-          "spellID": 22812,
-          "name": "Barkskin",
-          "path": "interface/icons/spell_nature_stoneclawtotem.blp",
-          "id": 136097
+          "spellID": 106830,
+          "name": "Thrash",
+          "path": "interface/icons/spell_druid_thrash.blp",
+          "id": 451161
         },
         {
-          "spellID": 61336,
-          "name": "Survival Instincts",
-          "path": "interface/icons/ability_druid_tigersroar.blp",
-          "id": 236169
+          "spellID": 213764,
+          "name": "Swipe",
+          "path": "interface/icons/inv_misc_monsterclaw_03.blp",
+          "id": 134296,
+          "source": "https://nether.wowhead.com/tooltip/spell/213764"
         },
         {
-          "spellID": 102558,
-          "name": "Incarnation: Guardian of Ursoc",
-          "path": "interface/icons/spell_druid_incarnation.blp",
-          "id": 571586
+          "spellID": 106951,
+          "name": "Berserk",
+          "path": "interface/icons/ability_druid_berserk.blp",
+          "id": 236149,
+          "source": "https://nether.wowhead.com/tooltip/spell/106951"
         }
       ],
       "missing": [],
@@ -2100,7 +3078,29 @@
           "path": "sound/spells/spell_mangle_cast_02.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_2_lines": {
+          "id": 568870,
+          "path": "sound/spells/spell_dr_thrash_impact_01.ogg",
+          "candidate": "Thrash"
+        },
+        "tetris_3_lines": {
+          "id": 569315,
+          "path": "sound/spells/mangle_impact.ogg",
+          "candidate": "Mangle"
+        },
+        "bejeweled_match_4": {
+          "id": 568870,
+          "path": "sound/spells/spell_dr_thrash_impact_01.ogg",
+          "candidate": "Thrash"
+        },
+        "bejeweled_cascade": {
+          "id": 569315,
+          "path": "sound/spells/mangle_impact.ogg",
+          "candidate": "Mangle"
+        }
+      }
     },
     {
       "token": "DRUID",
@@ -2145,10 +3145,11 @@
           "id": 136107
         },
         {
-          "spellID": 197721,
-          "name": "Flourish",
-          "path": "interface/icons/spell_druid_wildburst.blp",
-          "id": 538743
+          "spellID": 145205,
+          "name": "Efflorescence",
+          "path": "interface/icons/inv_misc_herb_talandrasrose.blp",
+          "id": 134222,
+          "source": "https://nether.wowhead.com/tooltip/spell/145205"
         }
       ],
       "missing": [],
@@ -2166,7 +3167,39 @@
           "path": "sound/spells/spell_dr_revamp_rejuvenation_impact03.ogg"
         }
       ],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_1_line": {
+          "id": 1687852,
+          "path": "sound/spells/spell_dr_revamp_rejuvenation_impact01.ogg",
+          "candidate": "Rejuvenation"
+        },
+        "tetris_2_lines": {
+          "id": 1687849,
+          "path": "sound/spells/spell_dr_revamp_regrowth_impact01.ogg",
+          "candidate": "Regrowth"
+        },
+        "tetris_3_lines": {
+          "id": 1687861,
+          "path": "sound/spells/spell_dr_revamp_wildgrowth_impact01.ogg",
+          "candidate": "Wild Growth"
+        },
+        "bejeweled_match_3": {
+          "id": 1687852,
+          "path": "sound/spells/spell_dr_revamp_rejuvenation_impact01.ogg",
+          "candidate": "Rejuvenation"
+        },
+        "bejeweled_match_4": {
+          "id": 1687849,
+          "path": "sound/spells/spell_dr_revamp_regrowth_impact01.ogg",
+          "candidate": "Regrowth"
+        },
+        "bejeweled_cascade": {
+          "id": 1687861,
+          "path": "sound/spells/spell_dr_revamp_wildgrowth_impact01.ogg",
+          "candidate": "Wild Growth"
+        }
+      }
     },
     {
       "token": "DEMONHUNTER",
@@ -2199,27 +3232,42 @@
           "id": 1247261
         },
         {
-          "spellID": 191427,
-          "name": "Metamorphosis",
-          "path": "interface/icons/ability_demonhunter_metamorphasisdps.blp",
-          "id": 1247262
+          "spellID": 162243,
+          "name": "Demon's Bite",
+          "path": "interface/icons/inv_weapon_glave_01.blp",
+          "id": 135561,
+          "source": "https://nether.wowhead.com/tooltip/spell/162243"
         },
         {
-          "spellID": 258920,
-          "name": "Immolation Aura",
-          "path": "interface/icons/ability_demonhunter_immolation.blp",
-          "id": 1344649
+          "spellID": 201427,
+          "name": "Annihilation",
+          "path": "interface/icons/inv_glaive_1h_npc_d_02.blp",
+          "id": 1303275,
+          "source": "https://nether.wowhead.com/tooltip/spell/201427"
         },
         {
-          "spellID": 258860,
-          "name": "Essence Break",
-          "path": "interface/icons/spell_shadow_ritualofsacrifice.blp",
-          "id": 136189
+          "spellID": 210152,
+          "name": "Death Sweep",
+          "path": "interface/icons/inv_glaive_1h_artifactaldrochi_d_02dual.blp",
+          "id": 1309099,
+          "source": "https://nether.wowhead.com/tooltip/spell/210152"
         }
       ],
       "missing": [],
       "sounds": [],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_2_lines": {
+          "id": 1280632,
+          "path": "sound/spells/spell_dh_chaos_strike_cast_01.ogg",
+          "candidate": "Chaos Strike"
+        },
+        "bejeweled_match_4": {
+          "id": 1280632,
+          "path": "sound/spells/spell_dh_chaos_strike_cast_01.ogg",
+          "candidate": "Chaos Strike"
+        }
+      }
     },
     {
       "token": "DEMONHUNTER",
@@ -2228,10 +3276,11 @@
       "label": "Vengeance",
       "icons": [
         {
-          "spellID": 204021,
-          "name": "Fiery Brand",
-          "path": "interface/icons/ability_demonhunter_fierybrand.blp",
-          "id": 1344647
+          "spellID": 263642,
+          "name": "Fracture",
+          "path": "interface/icons/ability_creature_felsunder.blp",
+          "id": 1388065,
+          "source": "https://nether.wowhead.com/tooltip/spell/263642"
         },
         {
           "spellID": 228477,
@@ -2252,10 +3301,11 @@
           "id": 1344645
         },
         {
-          "spellID": 187827,
-          "name": "Metamorphosis",
-          "path": "interface/icons/ability_demonhunter_metamorphasistank.blp",
-          "id": 1247263
+          "spellID": 203782,
+          "name": "Shear",
+          "path": "interface/icons/ability_demonhunter_hatefulstrike.blp",
+          "id": 1344648,
+          "source": "https://nether.wowhead.com/tooltip/spell/203782"
         },
         {
           "spellID": 204596,
@@ -2264,15 +3314,28 @@
           "id": 1344652
         },
         {
-          "spellID": 189110,
-          "name": "Infernal Strike",
-          "path": "interface/icons/ability_demonhunter_infernalstrike1.blp",
-          "id": 1344650
+          "spellID": 212084,
+          "name": "Fel Devastation",
+          "path": "interface/icons/ability_demonhunter_feldevastation.blp",
+          "id": 1450143,
+          "source": "https://nether.wowhead.com/tooltip/spell/212084"
         }
       ],
       "missing": [],
       "sounds": [],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {
+        "tetris_2_lines": {
+          "id": 1345254,
+          "path": "sound/spells/spell_dh_soul_cleave_cast_01.ogg",
+          "candidate": "Soul Cleave"
+        },
+        "bejeweled_match_4": {
+          "id": 1345254,
+          "path": "sound/spells/spell_dh_soul_cleave_cast_01.ogg",
+          "candidate": "Soul Cleave"
+        }
+      }
     },
     {
       "token": "DEMONHUNTER",
@@ -2310,7 +3373,8 @@
         }
       ],
       "missing": [],
-      "sounds": []
+      "sounds": [],
+      "soundEvents": {}
     },
     {
       "token": "EVOKER",
@@ -2343,10 +3407,11 @@
           "id": 4622468
         },
         {
-          "spellID": 375087,
-          "name": "Dragonrage",
-          "path": "interface/icons/ability_evoker_dragonrage.blp",
-          "id": 4622452
+          "spellID": 357210,
+          "name": "Deep Breath",
+          "path": "interface/icons/ability_evoker_deepbreath.blp",
+          "id": 4622450,
+          "source": "https://nether.wowhead.com/tooltip/spell/357210"
         },
         {
           "spellID": 361469,
@@ -2363,7 +3428,8 @@
       ],
       "missing": [],
       "sounds": [],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {}
     },
     {
       "token": "EVOKER",
@@ -2396,16 +3462,17 @@
           "id": 4622457
         },
         {
-          "spellID": 363534,
-          "name": "Rewind",
-          "path": "interface/icons/ability_evoker_rewind.blp",
-          "id": 4622474
+          "spellID": 361469,
+          "name": "Living Flame",
+          "path": "interface/icons/ability_evoker_livingflame.blp",
+          "id": 4622464
         },
         {
-          "spellID": 373861,
-          "name": "Temporal Anomaly",
-          "path": "interface/icons/ability_evoker_temporalanomaly.blp",
-          "id": 4630480
+          "spellID": 360995,
+          "name": "Verdant Embrace",
+          "path": "interface/icons/ability_evoker_rescue.blp",
+          "id": 4622471,
+          "source": "https://nether.wowhead.com/tooltip/spell/360995"
         },
         {
           "spellID": 366155,
@@ -2416,7 +3483,8 @@
       ],
       "missing": [],
       "sounds": [],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {}
     },
     {
       "token": "EVOKER",
@@ -2455,21 +3523,22 @@
           "id": 5199622
         },
         {
-          "spellID": 360827,
-          "name": "Blistering Scales",
-          "path": "interface/icons/ability_evoker_blisteringscales.blp",
-          "id": 5199621
+          "spellID": 357208,
+          "name": "Fire Breath",
+          "path": "interface/icons/ability_evoker_firebreath.blp",
+          "id": 4622458
         },
         {
-          "spellID": 369459,
-          "name": "Source of Magic",
-          "path": "interface/icons/ability_evoker_blue_01.blp",
-          "id": 4630412
+          "spellID": 361469,
+          "name": "Living Flame",
+          "path": "interface/icons/ability_evoker_livingflame.blp",
+          "id": 4622464
         }
       ],
       "missing": [],
       "sounds": [],
-      "missingSpellLookups": []
+      "missingSpellLookups": [],
+      "soundEvents": {}
     }
   ],
   "spellSource": "https://nether.wowhead.com/tooltip/spell/{spellID}"

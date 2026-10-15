@@ -3105,9 +3105,11 @@ do
     games:SetOption("soundTheme", "arcade")
     local log = {}
     local play = games.Audio.Play
-    games.Audio.Play = function(audio, game, event, preview)
+    local contexts = {}
+    games.Audio.Play = function(audio, game, event, preview, cascade, arcadeFallback)
         log[#log + 1] = game .. ":" .. event
-        return play(audio, game, event, preview)
+        contexts[#contexts + 1] = { event = event, cascade = cascade }
+        return play(audio, game, event, preview, cascade, arcadeFallback)
     end
     local function heard(event)
         for _, value in ipairs(log) do
@@ -3125,29 +3127,32 @@ do
         heard("tetris:move") and heard("tetris:select") and heard("tetris:land"),
         "Tetris movement/hold/landing sound events are disconnected"
     )
-    t.model.board = {}
-    for y = 1, 22 do
-        t.model.board[y] = {}
-    end
-    for x = 5, 10 do
-        t.model.board[22][x] = "O"
-    end
-    t.model.kind, t.model.rotation, t.model.x, t.model.y = "I", 0, 1, 21
-    t.model:Lock()
-    check(heard("tetris:clear") and t.model.lines == 1, "Line-clear sound changed or missed actual clear logic")
-    t.model.board = {}
-    for y = 1, 22 do
-        t.model.board[y] = {}
-    end
-    for y = 21, 22 do
-        for x = 3, 10 do
-            t.model.board[y][x] = "I"
+    for count = 0, 4 do
+        t.model.board = {}
+        for y = 1, 22 do
+            t.model.board[y] = {}
         end
+        for y = 23 - count, 22 do
+            for x = 1, 10 do
+                if x ~= 3 then
+                    t.model.board[y][x] = "O"
+                end
+            end
+        end
+        local before, lines = #log, t.model.lines
+        t.model.kind, t.model.rotation, t.model.x, t.model.y = "I", 1, 1, 19
+        now = now + 0.2
+        t.model:Lock()
+        local event = count == 0 and "land" or "tetris_" .. count .. (count == 1 and "_line" or "_lines")
+        check(
+            #log == before + 1 and log[#log] == "tetris:" .. event and t.model.lines - lines == count,
+            "Tetris 0/1/2/3/4-line dispatch changed the actual lock operation"
+        )
     end
-    t.model.kind, t.model.rotation, t.model.x, t.model.y = "O", 0, 1, 21
-    t.model:Lock()
-    check(heard("tetris:combo") and t.model.lines == 3, "Multi-line combo sound changed clear logic")
     t.model.gameover = true
+    local silent = #log
+    t.model:Lock()
+    check(#log == silent, "Already-ended Tetris lock emitted a landing/clear sound")
     t:Advance(0)
     check(heard("tetris:gameOver"), "Tetris game-over sound is disconnected")
     games:AbortGame()
@@ -3165,7 +3170,7 @@ do
         b:Advance(0.1)
     end
     check(
-        heard("bejeweled:select") and heard("bejeweled:swap") and heard("bejeweled:clear"),
+        heard("bejeweled:select") and heard("bejeweled:swap") and heard("bejeweled:bejeweled_match_3"),
         "Bejeweled selection/swap/match sounds are disconnected"
     )
     b.swap, b.fall, b.phaseTime = nil, nil, 0
@@ -3174,15 +3179,147 @@ do
     b.model.pending = b.model:Matches()
     b.model.phase = "clearing"
     b.model.cascade = 2
+    local event, before = b:MatchSoundEvent(), #log
     for _ = 1, 3 do
         b:Advance(0.1)
     end
-    check(heard("bejeweled:combo"), "Bejeweled cascade sound is disconnected")
+    check(
+        #log == before + 1 and log[#log] == "bejeweled:" .. event and contexts[#contexts].cascade == 2,
+        "Cascade lost its independently measured match tier or emitted duplicate sounds"
+    )
+    local function matchRound(runs, expected, cascade)
+        b.swap, b.fall, b.phaseTime, b.paused = nil, nil, 0, false
+        b.model.board = {}
+        for y = 1, 8 do
+            b.model.board[y] = {}
+        end
+        for _, run in ipairs(runs) do
+            for i = 0, run[3] - 1 do
+                local x, y = run[1] + (run[4] and 0 or i), run[2] + (run[4] and i or 0)
+                b.model.board[y][x] = run[5] or 7
+            end
+        end
+        b.model.gameover, b.model.cascade, b.model.phase = false, cascade or 1, "clearing"
+        b.model.pending = b.model:Matches()
+        local count, score, calls = #b.model.pending, b.model.score, #log
+        check(b:MatchSoundEvent() == expected, "Match strength used total cleared cells or the wrong axis")
+        now = now + 0.2
+        for _ = 1, 3 do
+            b:Advance(0.1)
+        end
+        check(
+            #log == calls + 1
+                and log[#log] == "bejeweled:" .. expected
+                and contexts[#contexts].cascade == (cascade or 1),
+            "Match resolution emitted duplicate/incorrect audio"
+        )
+        check(b.model.score - score == count * 50 * (cascade or 1), "Sound classification changed match scoring")
+    end
+    for _, vertical in ipairs({ false, true }) do
+        for count = 3, 8 do
+            local expected = count >= 5 and "bejeweled_match_5_plus" or "bejeweled_match_" .. count
+            matchRound({ { 1, 1, count, vertical } }, expected)
+        end
+    end
+    matchRound({ { 1, 1, 3 }, { 5, 5, 3 } }, "bejeweled_match_3")
+    matchRound({ { 1, 1, 3 }, { 2, 1, 3, true } }, "bejeweled_match_3", 3)
+    matchRound({ { 1, 1, 3 }, { 4, 5, 4 } }, "bejeweled_match_4")
     b.model.gameover = true
     b.model.phase = "over"
     b:Advance(0)
     check(heard("bejeweled:gameOver"), "Bejeweled game-over sound is disconnected")
     games:AbortGame()
+    games.Audio.Play = play
+    local previewEvents = "select,move,swap,land,clear,combo,gameOver,victory"
+    games.Audio:RegisterGame("tetris", games.Audio.games.tetris)
+    local buttons = 0
+    for _ in pairs(ui.soundPreviewButtons) do
+        buttons = buttons + 1
+    end
+    check(
+        table.concat(games.Audio.events, ",") == previewEvents and buttons == 8,
+        "Internal audio events leaked into the finished Options preview UI"
+    )
+    for sid, profile in pairs(games.ProfileData) do
+        games:SetClassPreset(profile.class)
+        games:SetManualSpec(sid)
+        games:SetOption("soundTheme", "class")
+        for key, game in pairs(games.Audio.internalEvents) do
+            local resolved, usedFallback = games.Audio:Resolve(game, key)
+            local expected = profile.soundEvents[key]
+            local legacy = (key == "tetris_1_line" or key == "bejeweled_match_3") and games.Audio.specs[sid]
+            legacy = legacy and legacy.clear
+            check(resolved and (resolved.file or resolved.kit), "A specialization/event has no safe sound")
+            if expected then
+                check(
+                    resolved.file == expected and not usedFallback,
+                    "Spec/event FileDataID was confused with a kit/spell ID"
+                )
+            elseif legacy then
+                check(resolved.file == legacy.file, "Existing valid low-tier effect was lost")
+            else
+                check(resolved.kit and usedFallback, "Missing spec tier did not use the arcade fallback")
+            end
+            games:SetOption("soundTheme", "arcade")
+            resolved, usedFallback = games.Audio:Resolve(game, key)
+            check(resolved.kit and usedFallback, "Original Audio used a specialization file")
+            games:SetOption("soundTheme", "class")
+        end
+    end
+    games:SetClassPreset("MAGE")
+    games:SetManualSpec(63)
+    games:SetOption("soundTheme", "class")
+    games:SetOption("soundVolume", 0.25)
+    games:SetOption("soundsEnabled", true)
+    local cascadeSound = games.Audio:Resolve("bejeweled", "bejeweled_match_3", 2)
+    local five = games.Audio:Resolve("bejeweled", "bejeweled_match_5_plus", 2)
+    check(
+        cascadeSound.file == 1392377 and five.file == 1390656,
+        "Cascade enhancement downgraded an iconic 5+ effect or ignored its own profile"
+    )
+    for _, test in ipairs({ { "tetris", "tetris_4_lines", 1 }, { "bejeweled", "bejeweled_match_3", 2 } }) do
+        local sound = games.Audio:Resolve(test[1], test[2], test[3])
+        owner.env.rejectSound = sound.file
+        check(
+            games.Audio:Play(test[1], test[2], true, test[3])
+                and owner.sounds[#owner.sounds].kit == 73279
+                and owner.sounds[#owner.sounds].volume == 0.25,
+            "New resolution file/cascade failure did not fall back safely with saved volume"
+        )
+        owner.env.rejectSound = nil
+    end
+    local filePlayer = owner.env.PlaySoundFile
+    owner.env.PlaySoundFile = nil
+    local kit, missingFileAPI = games.Audio:Resolve("tetris", "tetris_4_lines")
+    check(kit.kit == 73279 and missingFileAPI, "Missing file API did not select an arcade kit")
+    owner.env.PlaySoundFile = filePlayer
+    games:SetOption("soundTheme", "arcade")
+    now = now + 0.2
+    games.Audio:Play("tetris", "move")
+    check(
+        games.Audio:Play("tetris", "tetris_1_line") and not games.Audio:Play("tetris", "tetris_2_lines"),
+        "Clear audio was lost behind movement or rapid tiers bypassed the shared cooldown"
+    )
+    now = now + 0.11
+    check(
+        games.Audio:Play("tetris", "tetris_4_lines") and #games.Audio.handles == 1,
+        "Resolution effects stacked instead of replacing previous effects"
+    )
+    local count = #owner.sounds
+    games:SetOption("soundVolume", 0)
+    check(
+        not games.Audio:Play("tetris", "tetris_4_lines", true) and #owner.sounds == count,
+        "Zero volume failed to mute an internal event"
+    )
+    games:SetOption("soundVolume", 0.6)
+    games:SetOption("soundTheme", "class")
+    games:SetOption("soundsEnabled", false)
+    check(
+        not games.Audio:Play("bejeweled", "bejeweled_match_5_plus", true)
+            and #owner.sounds == count
+            and #games.Audio.handles == 0,
+        "Disabled class audio still played an internal event"
+    )
 end
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))
 

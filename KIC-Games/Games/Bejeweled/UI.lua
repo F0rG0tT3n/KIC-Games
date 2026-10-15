@@ -3,6 +3,22 @@ local B, Theme = Games.Bejeweled, Games.Theme
 local function key(x, y)
     return (y - 1) * 8 + x
 end
+-- Inspect intact rows/columns before Step removes pending cells. Separate
+-- simultaneous triples and crossing triples remain match-3, regardless of count.
+function B:MatchSoundEvent()
+    local board, longest = self.model.board, 0
+    for i = 1, 8 do
+        local horizontal, vertical, lastH, lastV = 0, 0
+        for j = 1, 8 do
+            local h, v = board[i][j], board[j][i]
+            horizontal = h and (h == lastH and horizontal + 1 or 1) or 0
+            vertical = v and (v == lastV and vertical + 1 or 1) or 0
+            lastH, lastV = h, v
+            longest = math.max(longest, horizontal, vertical)
+        end
+    end
+    return longest >= 5 and "bejeweled_match_5_plus" or longest == 4 and "bejeweled_match_4" or "bejeweled_match_3"
+end
 function B:CancelDrag()
     if self.drag then
         self.suppressDragClick = true
@@ -343,9 +359,10 @@ function B:Advance(dt)
         redraw = true
         self.phaseTime = self.phaseTime + dt
         if self.phaseTime >= 0.3 then
+            local event, cascade = self:MatchSoundEvent(), self.model.cascade
             self.model:Step()
             self:SaveBest()
-            Games.Audio:Play("bejeweled", self.model.cascade > 1 and "combo" or "clear")
+            Games.Audio:Play("bejeweled", event, nil, cascade)
             self.phaseTime = 0
             self.message = "+" .. self.model.lastGain .. " points"
         end
