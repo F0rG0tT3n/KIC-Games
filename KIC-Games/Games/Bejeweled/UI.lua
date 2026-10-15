@@ -71,7 +71,8 @@ function B:StartMatchEffect(tier, length, matched, cascade, points)
     end
     local duration = tier == 5 and 0.85 or tier == 4 and 0.6 or 0.35
     local color = effectColors[tier]
-    local effect = { tier = tier, duration = duration, time = 0, cells = {}, particles = {} }
+    local effect =
+        { tier = tier, duration = duration, labelDuration = duration + 0.45, time = 0, cells = {}, particles = {} }
     for _, c in ipairs(matched) do
         effect.cells[key(c.x, c.y)] = true
     end
@@ -103,14 +104,16 @@ function B:UpdateMatchEffect(dt)
     if not effect then
         return
     end
-    effect.time = math.min(effect.duration, effect.time + dt)
-    local progress = effect.time / effect.duration
+    effect.time = math.min(effect.labelDuration, effect.time + dt)
+    local progress = math.min(1, effect.time / effect.duration)
     local fade = 1 - progress
+    local textFade =
+        math.max(0, math.min(1, (effect.labelDuration - effect.time) / (effect.labelDuration - effect.duration * 0.4)))
     for i in pairs(effect.cells) do
         self.cells[i].spark:SetAlpha(fade * (effect.tier == 5 and 0.65 or 0.42))
     end
-    self.effectBanner:SetAlpha(fade)
-    self.effectDetail:SetAlpha(fade)
+    self.effectBanner:SetAlpha(textFade)
+    self.effectDetail:SetAlpha(textFade)
     self.effectFlash:SetAlpha(effect.tier == 5 and fade * 0.18 or 0)
     for i, point in ipairs(effect.particles) do
         local particle = self.effectParticles[i]
@@ -125,7 +128,7 @@ function B:UpdateMatchEffect(dt)
         )
         particle:SetAlpha(fade)
     end
-    if progress >= 1 then
+    if effect.time >= effect.labelDuration then
         self.matchEffect = nil
         self.effectBanner:Hide()
         self.effectDetail:Hide()

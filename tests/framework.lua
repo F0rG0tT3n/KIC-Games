@@ -3371,6 +3371,15 @@ do
     matchRound({ { 1, 1, 3 }, { 2, 1, 3, true } }, "bejeweled_match_3", 3)
     matchRound({ { 1, 1, 3 } }, "bejeweled_match_3", 4)
     matchRound({ { 1, 1, 3 }, { 4, 5, 4 } }, "bejeweled_match_4")
+    b:UpdateMatchEffect(0.6)
+    check(
+        b.matchEffect
+            and b.effectBanner:IsShown()
+            and b.effectDetail:IsShown()
+            and b.effectBanner.alpha > 0
+            and b.effectFlash.alpha == 0,
+        "Match text ended with the shorter sparkle animation"
+    )
     b:UpdateMatchEffect(1)
     check(
         not b.matchEffect and not b.effectBanner:IsShown() and not b.effectDetail:IsShown() and b.effectFlash.alpha == 0,
