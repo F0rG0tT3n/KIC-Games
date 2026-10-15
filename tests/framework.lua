@@ -1432,13 +1432,11 @@ Bj.scoreIdleTime = 0
 for _ = 1, 49 do
     Bj:Advance(0.1)
 end
-check(not Bj.hint and Bj.model.moves == 0, "Automatic hint appeared before five seconds")
-Bj:Advance(0.1)
-Bj:Advance(0.1)
-check(
-    Bj.hint and Bj.model.score == 0 and Bj.model.moves == 0,
-    "Five seconds without points did not reveal a valid swap"
-)
+check(not Bj.hint and Bj.model.moves == 0, "Hint appeared without a button click")
+Bj:Advance(60)
+check(not Bj.hint and Bj.hintsRemaining == 3, "Idle time triggered an automatic hint")
+Bj.hintButton.scripts.OnClick()
+check(Bj.hint and Bj.model.score == 0 and Bj.model.moves == 0, "Hint button did not reveal a valid swap")
 local hinted = Bj.cells[(Bj.hint.y - 1) * 8 + Bj.hint.x]
 local firstBounce = hinted.icon.points[1][3]
 local partner = Bj.cells[(Bj.hint.ty - 1) * 8 + Bj.hint.tx]
@@ -2550,7 +2548,9 @@ do
                 check(
                     game.leftArt.artLoaded
                         and game.leftArt.drawLayer == "ARTWORK"
-                        and not game.hintButton
+                        and game.hintButton
+                        and game.pauseButton.points[1][3] > game.hintButton.points[1][3]
+                        and game.hintButton.points[1][3] > game.shareButton.points[1][3]
                         and game.pauseButton.points[1][3] > game.shareButton.points[1][3]
                         and game.shareButton.points[1][3] > game.optionsButton.points[1][3],
                     "Bejeweled artwork or required action order changed"

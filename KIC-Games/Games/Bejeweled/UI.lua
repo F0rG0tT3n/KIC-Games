@@ -301,7 +301,6 @@ function B:TrySwap(x, y, tx, ty, dragged)
         return false
     end
     local valid = self.model:Swap(x, y, tx, ty)
-    self.hintNextAt = self.scoreIdleTime + 5
     Games.Audio:Play(self.gameID or "bejeweled", "swap")
     self.swap = { x = x, y = y, tx = tx, ty = ty, valid = valid, dragged = dragged, time = 0 }
     self.selected, self.hint, self.phaseTime = nil, nil, 0
@@ -335,25 +334,33 @@ function B:Pause(value)
     self:CancelDrag()
     self.paused = value
     self.selected, self.hint = nil, nil
-    if value then
-        self.hintNextAt = self.scoreIdleTime + 5
-    end
     if self.model and self.model.phase == "idle" and not self.swap and not self.fall then
         self.message = "Select a gem, then a neighbor."
     end
     self:Render()
 end
 function B:Hint()
-    if self:Blocked() or self.paused or self.drag or self.swap or self.fall or self.model.phase ~= "idle" then
-        return
+    if
+        self:Blocked()
+        or self.paused
+        or self.drag
+        or self.swap
+        or self.fall
+        or self.model.phase ~= "idle"
+        or (self.hintsRemaining or 0) <= 0
+        or self.hint
+    then
+        return false
     end
     self.hint = self.model:FindMove()
     if not self.hint then
-        return
+        return false
     end
+    self.hintsRemaining = self.hintsRemaining - 1
     self.selected, self.hintPulseTime = nil, 0
     self.message = "Try the two highlighted gems."
     self:Render()
+    return true
 end
 function B:UpdateHintPulse()
     local pulse = math.abs(math.sin(self.hintPulseTime * 5))
@@ -375,7 +382,6 @@ function B:Click(x, y, mouse)
     if self.paused or self.drag or self.swap or self.fall or self.model.phase ~= "idle" then
         return
     end
-    self.hintNextAt = self.scoreIdleTime + 5
     if mouse == "RightButton" then
         self.selected, self.hint = nil, nil
         self.message = "Select a gem, then a neighbor."
@@ -498,6 +504,22 @@ function B:Render()
             or m.phase == "clearing" and (m.cascade > 1 and ("CASCADE x" .. m.cascade) or "MATCH!")
             or self.message
     )
+    self.hintButton:SetText("Hint (" .. (self.hintsRemaining or 0) .. "/3)")
+    if
+        self.running
+        and not self.paused
+        and not self.drag
+        and not self.swap
+        and not self.fall
+        and m.phase == "idle"
+        and not m.gameover
+        and not self.hint
+        and (self.hintsRemaining or 0) > 0
+    then
+        self.hintButton:Enable()
+    else
+        self.hintButton:Disable()
+    end
     self.pauseButton:SetText(self.paused and "Resume" or "Pause")
     self.pauseOverlay:SetShown(self.paused == true)
 end
@@ -530,8 +552,6 @@ function B:Advance(dt)
     if self.hint then
         self.hintPulseTime = self.hintPulseTime + dt
         self:UpdateHintPulse()
-    elseif self.scoreIdleTime >= self.hintNextAt and self.model.phase == "idle" and not self.swap and not self.fall then
-        self:Hint()
     end
     if self.swap then
         redraw = true
@@ -566,7 +586,6 @@ function B:Advance(dt)
             local event, cascade = self:MatchSoundEvent(), self.model.cascade
             self.model:Step()
             self.scoreIdleTime = 0
-            self.hintNextAt = 5
             self.hint = nil
             self.effectPending = nil
             self:SaveBest()
@@ -617,6 +636,9 @@ function B:CreateUI(parent)
     self.pauseButton = Theme:GameButton(self.left, "Pause", "icon-pause", function()
         self:Pause(not self.paused)
     end, true)
+    self.hintButton = Theme:GameButton(self.left, "Hint (3/3)", "icon-hint", function()
+        self:Hint()
+    end)
     self.shareButton = Theme:GameButton(self.left, "Share Best", "icon-share", function()
         self:ShareBest()
     end)
@@ -808,7 +830,7 @@ function B:LayoutUI()
     for i, row in ipairs(self.instructions) do
         Theme:PlaceGame(row, 16, artH + 104 + (i - 1) * (h < 550 and 26 or 31), leftW - 32, h < 550 and 25 or 29)
     end
-    for i, b in ipairs({ self.pauseButton, self.shareButton, self.optionsButton }) do
+    for i, b in ipairs({ self.pauseButton, self.hintButton, self.shareButton, self.optionsButton }) do
         Theme:PlaceGameButton(b, 18, h - 160 + (i - 1) * 38, leftW - 36, 32)
     end
     for i, cell in ipairs(self.cells) do

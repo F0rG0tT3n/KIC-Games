@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased - Manual Bejeweled hints
+
+- Restored Hint buttons in standard Bejeweled and Deluxe, with a visible three-use allowance per run. Removed automatic hints; both suggested tiles retain the existing vertical bounce.
+- Pause/reopen preserves remaining uses; restart restores three. Blocked/no-move requests and repeat clicks on an active hint do not spend uses.
+
 ## Unreleased - Deluxe special visuals
 
 - Replaced opaque special overlays with thin orange/cyan/rainbow corner rails and small bottom badges, keeping gem and class/spec icons readable during swaps, falls and dragging.

@@ -11,7 +11,10 @@ Deluxe does not rename, migrate or overwrite Bejeweled or Tetris records.
 ## Rules and placement
 
 The board has eight rows, eight columns and seven normal colors. Click adjacent
-pieces or use the same directional drag gesture as standard Bejeweled. Invalid
+pieces or use the same directional drag gesture as standard Bejeweled.
+**Hint (3/3)** provides three manual hints per run, with the same vertical tile
+bounce as standard Bejeweled. There are no automatic hints; restart resets the
+allowance while pause/reopen preserves it. Invalid
 normal swaps animate back without counting a move. There is no timer.
 
 | Pattern | Created special | Activation |

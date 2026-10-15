@@ -45,10 +45,11 @@ New matches create cascades until the board settles. Input is blocked during
 swap and cascade animations. The starting board has no automatic matches and
 always has a legal move.
 
-After five active seconds without scoring, two gems in a valid swap bounce and
-glow until you interact. Interaction postpones the suggestion for five seconds;
-pausing freezes the clock, and scoring resets it. The
-signal never swaps gems or spends points.
+The **Hint (3/3)** button offers three hints per run. Each successful request
+makes both gems of a valid swap bounce vertically and glow until you interact.
+There are no automatic hints. An already displayed hint cannot consume another
+use; unavailable or blocked hints cost nothing. Pause/reopen preserves the remaining
+count; restarting gives three uses again. Hints never swap gems or spend points.
 Sparkles and a brief flash now begin while the matched gems are still visible.
 Three-in-a-row uses a small burst, four adds more sparks, and five or more gives
 a stronger board flash and a larger burst. Above the board, beneath Back to Launcher,
@@ -64,7 +65,7 @@ in their line, and crossing matches count their intersection once.
 Each cleared gem earns **50 × cascade number** points: the first clear uses ×1,
 the next automatic clear uses ×2, and so on. The multiplier resets on your next
 manual swap. The side panel shows score, best score, accepted moves, cleared gems
-and your largest cascade. The automatic hint and invalid swaps do not add points or moves.
+and your largest cascade. Manual hints and invalid swaps do not add points or moves.
 
 The account-wide best is saved under `KICGamesDB.bejeweled.best`, with score,
 moves, gems, best cascade and timestamp. It updates after each clear and survives

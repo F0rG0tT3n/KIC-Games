@@ -212,6 +212,7 @@ lua tests/framework.lua
 lua tests/tetris.lua
 lua tests/bejeweled.lua
 lua tests/bejeweled_deluxe.lua
+lua tests/bejeweled_hints.lua
 lua tests/deluxe_effects.lua
 lua tests/share_best.lua
 python tests/artwork.py

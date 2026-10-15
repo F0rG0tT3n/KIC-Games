@@ -101,7 +101,8 @@ function Games:RegisterBejeweledModule(B, id, title, slash)
             B.running, B.paused = true, false
             B.selected, B.hint, B.swap, B.fall = nil, nil, nil, nil
             B.phaseTime, B.message = 0, "Select a gem, then a neighbor."
-            B.scoreIdleTime, B.hintNextAt, B.hintPulseTime, B.matchEffect, B.effectPending = 0, 5, 0, nil, nil
+            B.scoreIdleTime, B.hintPulseTime, B.matchEffect, B.effectPending = 0, 0, nil, nil
+            B.hintsRemaining = 3
             B.effectBanner:Hide()
             B.effectDetail:Hide()
             B.effectFlash:SetAlpha(0)
