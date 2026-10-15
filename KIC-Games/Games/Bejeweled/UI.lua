@@ -42,7 +42,78 @@ function B:MatchSoundEvent()
             longest = math.max(longest, horizontal, vertical)
         end
     end
-    return longest >= 5 and "bejeweled_match_5_plus" or longest == 4 and "bejeweled_match_4" or "bejeweled_match_3"
+    local tier = math.min(longest, 5)
+    return tier == 5 and "bejeweled_match_5_plus" or tier == 4 and "bejeweled_match_4" or "bejeweled_match_3", tier
+end
+local effectColors = {
+    [3] = { 0.32, 0.88, 1 },
+    [4] = { 1, 0.78, 0.28 },
+    [5] = { 1, 0.43, 0.95 },
+}
+function B:StartMatchEffect(tier, matched)
+    if self.matchEffect then
+        for i in pairs(self.matchEffect.cells) do
+            self.cells[i].spark:SetAlpha(0)
+        end
+    end
+    for _, particle in ipairs(self.effectParticles) do
+        particle:Hide()
+    end
+    local duration = tier == 5 and 0.85 or tier == 4 and 0.6 or 0.35
+    local color = effectColors[tier]
+    local effect = { tier = tier, duration = duration, time = 0, cells = {}, particles = {} }
+    for _, c in ipairs(matched) do
+        effect.cells[key(c.x, c.y)] = true
+    end
+    self.matchEffect = effect
+    self.effectBanner:SetText(tier == 5 and "EPIC MATCH!" or tier == 4 and "GREAT MATCH!" or "MATCH!")
+    self.effectBanner:SetTextColor(color[1], color[2], color[3], 1)
+    self.effectBanner:Show()
+    local count = tier == 5 and 24 or tier == 4 and 8 or 0
+    for i = 1, count do
+        local c = matched[(i - 1) % #matched + 1]
+        local angle = i * 2.399963 -- Evenly dispersed without changing the game RNG.
+        effect.particles[i] = { x = c.x, y = c.y, dx = math.cos(angle), dy = math.sin(angle) }
+        local particle = self.effectParticles[i]
+        particle:SetColorTexture(color[1], color[2], color[3], 1)
+        particle:Show()
+    end
+    self:UpdateMatchEffect(0)
+end
+function B:UpdateMatchEffect(dt)
+    local effect = self.matchEffect
+    if not effect then
+        return
+    end
+    effect.time = math.min(effect.duration, effect.time + dt)
+    local progress = effect.time / effect.duration
+    local fade = 1 - progress
+    for i in pairs(effect.cells) do
+        self.cells[i].spark:SetAlpha(fade * (effect.tier == 5 and 0.65 or 0.42))
+    end
+    self.effectBanner:SetAlpha(fade)
+    self.effectFlash:SetAlpha(effect.tier == 5 and fade * 0.18 or 0)
+    for i, point in ipairs(effect.particles) do
+        local particle = self.effectParticles[i]
+        local spread = progress * self.step * (effect.tier == 5 and 1.7 or 0.9)
+        particle:ClearAllPoints()
+        particle:SetPoint(
+            "CENTER",
+            self.viewport,
+            "TOPLEFT",
+            (point.x - 0.5) * self.step + point.dx * spread,
+            -(point.y - 0.5) * self.step + point.dy * spread
+        )
+        particle:SetAlpha(fade)
+    end
+    if progress >= 1 then
+        self.matchEffect = nil
+        self.effectBanner:Hide()
+        self.effectFlash:SetAlpha(0)
+        for _, particle in ipairs(self.effectParticles) do
+            particle:Hide()
+        end
+    end
 end
 function B:CancelDrag()
     if self.drag then
@@ -180,6 +251,7 @@ function B:TrySwap(x, y, tx, ty, dragged)
         return false
     end
     local valid = self.model:Swap(x, y, tx, ty)
+    self.hintNextAt = self.scoreIdleTime + 5
     Games.Audio:Play("bejeweled", "swap")
     self.swap = { x = x, y = y, tx = tx, ty = ty, valid = valid, dragged = dragged, time = 0 }
     self.selected, self.hint, self.phaseTime = nil, nil, 0
@@ -213,6 +285,9 @@ function B:Pause(value)
     self:CancelDrag()
     self.paused = value
     self.selected, self.hint = nil, nil
+    if value then
+        self.hintNextAt = self.scoreIdleTime + 5
+    end
     if self.model and self.model.phase == "idle" and not self.swap and not self.fall then
         self.message = "Select a gem, then a neighbor."
     end
@@ -223,9 +298,22 @@ function B:Hint()
         return
     end
     self.hint = self.model:FindMove()
-    self.selected, self.hintTime = nil, 3
+    if not self.hint then
+        return
+    end
+    self.selected, self.hintPulseTime = nil, 0
     self.message = "Try the two highlighted gems."
     self:Render()
+end
+function B:UpdateHintPulse()
+    local pulse = math.abs(math.sin(self.hintPulseTime * 5))
+    for i = 1, 2 do
+        local x, y = i == 1 and self.hint.x or self.hint.tx, i == 1 and self.hint.y or self.hint.ty
+        local cell = self.cells[key(x, y)]
+        cell.icon:ClearAllPoints()
+        cell.icon:SetPoint("TOPLEFT", 5, -5 + 6 * pulse)
+        cell:SetBackdropBorderColor(1, 0.85, 0.25, 0.5 + 0.5 * pulse)
+    end
 end
 function B:Click(x, y, mouse)
     if self:Blocked() then
@@ -237,6 +325,7 @@ function B:Click(x, y, mouse)
     if self.paused or self.drag or self.swap or self.fall or self.model.phase ~= "idle" then
         return
     end
+    self.hintNextAt = self.scoreIdleTime + 5
     if mouse == "RightButton" then
         self.selected, self.hint = nil, nil
         self.message = "Select a gem, then a neighbor."
@@ -294,7 +383,12 @@ function B:Render()
             then
                 cell:SetBackdropBorderColor(unpack(Theme.Colors.ice))
             elseif hint then
-                cell:SetBackdropBorderColor(1, 0.85, 0.25, 1)
+                cell:SetBackdropBorderColor(
+                    1,
+                    0.85,
+                    0.25,
+                    0.5 + 0.5 * math.abs(math.sin((self.hintPulseTime or 0) * 5))
+                )
             elseif matches[index] then
                 cell:SetBackdropBorderColor(1, 1, 1, 1)
             elseif cell.hovered and not self.paused then
@@ -316,6 +410,8 @@ function B:Render()
                 end
             elseif self.fall and self.fall.drops[index] then
                 dy = (y - self.fall.drops[index]) * self.step * (1 - math.min(1, self.fall.time / 0.26)) ^ 2
+            elseif hint and not self.paused then
+                dy = 6 * math.abs(math.sin((self.hintPulseTime or 0) * 5))
             end
             cell.icon:SetPoint("TOPLEFT", 5 + dx, -5 + dy)
             if kind then
@@ -368,19 +464,20 @@ function B:Advance(dt)
     if self.drag then
         return
     end
-    dt = math.min(math.max(dt, 0), 0.1)
+    local idleDt = math.max(dt, 0)
+    dt = math.min(idleDt, 0.1)
     if self.scorePulseLeft and self.scorePulseLeft > 0 then
         self.scorePulseLeft = math.max(0, self.scorePulseLeft - dt)
         self.scorePulse:SetAlpha(0.13 * self.scorePulseLeft / 0.35)
     end
+    self.scoreIdleTime = self.scoreIdleTime + idleDt
+    self:UpdateMatchEffect(dt)
     local redraw = false
     if self.hint then
-        self.hintTime = self.hintTime - dt
-        if self.hintTime <= 0 then
-            self.hint = nil
-            self.message = "Select a gem, then a neighbor."
-            redraw = true
-        end
+        self.hintPulseTime = self.hintPulseTime + dt
+        self:UpdateHintPulse()
+    elseif self.scoreIdleTime >= self.hintNextAt and self.model.phase == "idle" and not self.swap and not self.fall then
+        self:Hint()
     end
     if self.swap then
         redraw = true
@@ -400,8 +497,13 @@ function B:Advance(dt)
         redraw = true
         self.phaseTime = self.phaseTime + dt
         if self.phaseTime >= 0.3 then
-            local event, cascade = self:MatchSoundEvent(), self.model.cascade
+            local event, tier = self:MatchSoundEvent()
+            local cascade, matched = self.model.cascade, self.model.pending
             self.model:Step()
+            self.scoreIdleTime = 0
+            self.hintNextAt = 5
+            self.hint = nil
+            self:StartMatchEffect(tier, matched)
             self:SaveBest()
             Games.Audio:Play("bejeweled", event, nil, cascade)
             self.phaseTime = 0
@@ -441,12 +543,9 @@ function B:CreateUI(parent)
     }) do
         self.instructions[#self.instructions + 1] = Theme:InstructionRow(self.left, row[1], row[2])
     end
-    self.hintButton = Theme:GameButton(self.left, "Hint", "icon-hint", function()
-        self:Hint()
-    end, true)
     self.pauseButton = Theme:GameButton(self.left, "Pause", "icon-pause", function()
         self:Pause(not self.paused)
-    end)
+    end, true)
     self.shareButton = Theme:GameButton(self.left, "Share Best", "icon-share", function()
         self:ShareBest()
     end)
@@ -502,6 +601,11 @@ function B:CreateUI(parent)
             cell.icon = cell:CreateTexture(nil, "ARTWORK")
             cell.icon:SetSize(34, 34)
             cell.icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
+            cell.spark = cell:CreateTexture(nil, "OVERLAY")
+            cell.spark:SetAllPoints(cell)
+            cell.spark:SetColorTexture(1, 1, 1, 1)
+            cell.spark:SetBlendMode("ADD")
+            cell.spark:SetAlpha(0)
             cell.selection = CreateFrame("Frame", nil, cell, "BackdropTemplate")
             cell.selection:SetPoint("TOPLEFT", -2, 2)
             cell.selection:SetPoint("BOTTOMRIGHT", 2, -2)
@@ -534,6 +638,29 @@ function B:CreateUI(parent)
     self.dragTracker:SetScript("OnHide", function()
         self:CancelDrag()
     end)
+    self.effectLayer = CreateFrame("Frame", nil, self.viewport)
+    self.effectLayer:SetAllPoints(self.viewport)
+    self.effectLayer:SetFrameLevel(self.viewport:GetFrameLevel() + 10)
+    self.effectLayer:EnableMouse(false)
+    self.effectFlash = self.effectLayer:CreateTexture(nil, "OVERLAY")
+    self.effectFlash:SetAllPoints(self.viewport)
+    self.effectFlash:SetColorTexture(1, 0.55, 0.95, 1)
+    self.effectFlash:SetBlendMode("ADD")
+    self.effectFlash:SetAlpha(0)
+    self.effectParticles = {}
+    for i = 1, 24 do
+        local particle = self.effectLayer:CreateTexture(nil, "OVERLAY")
+        particle:SetTexture("Interface\\Buttons\\WHITE8X8")
+        particle:SetSize(i % 3 == 0 and 7 or 4, i % 3 == 0 and 7 or 4)
+        particle:SetBlendMode("ADD")
+        particle:Hide()
+        self.effectParticles[i] = particle
+    end
+    self.effectBanner = Theme:GameLabel(self.effectLayer, "", 30, Theme.Colors.gold)
+    self.effectBanner:ClearAllPoints()
+    self.effectBanner:SetPoint("CENTER", self.effectLayer, "CENTER", 0, 0)
+    self.effectBanner:SetJustifyH("CENTER")
+    self.effectBanner:Hide()
     self.pauseOverlay = Theme:PauseMenu(board, "bejeweled", self)
     self.right = Theme:PremiumFrame(self.root, 250, 550, 0, 0, { skin = "game-stats-frame" })
     self.crest = Theme:Art(self.right, "crest", 160, 160, 80, -18, 0.07, "ARTWORK")
@@ -601,7 +728,7 @@ function B:LayoutUI()
     for i, row in ipairs(self.instructions) do
         Theme:PlaceGame(row, 16, artH + 104 + (i - 1) * (h < 550 and 26 or 31), leftW - 32, h < 550 and 25 or 29)
     end
-    for i, b in ipairs({ self.hintButton, self.pauseButton, self.shareButton, self.optionsButton }) do
+    for i, b in ipairs({ self.pauseButton, self.shareButton, self.optionsButton }) do
         Theme:PlaceGameButton(b, 18, h - 160 + (i - 1) * 38, leftW - 36, 32)
     end
     for i, cell in ipairs(self.cells) do

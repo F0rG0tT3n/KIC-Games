@@ -103,6 +103,15 @@ Games:RegisterGame({
         B.running, B.paused = true, false
         B.selected, B.hint, B.swap, B.fall = nil, nil, nil, nil
         B.phaseTime, B.message = 0, "Select a gem, then a neighbor."
+        B.scoreIdleTime, B.hintNextAt, B.hintPulseTime, B.matchEffect = 0, 5, 0, nil
+        B.effectBanner:Hide()
+        B.effectFlash:SetAlpha(0)
+        for _, cell in ipairs(B.cells) do
+            cell.spark:SetAlpha(0)
+        end
+        for _, particle in ipairs(B.effectParticles) do
+            particle:Hide()
+        end
         B:ApplyPreset(Games:GetClassPreset())
         B.root:Show()
         B:Render()
@@ -112,6 +121,15 @@ Games:RegisterGame({
         B:SaveBest()
         B.running = false
         B.swap, B.fall, B.selected, B.hint = nil, nil, nil, nil
+        B.matchEffect = nil
+        B.effectBanner:Hide()
+        B.effectFlash:SetAlpha(0)
+        for _, cell in ipairs(B.cells) do
+            cell.spark:SetAlpha(0)
+        end
+        for _, particle in ipairs(B.effectParticles) do
+            particle:Hide()
+        end
         B.context = nil
         if B.summary then
             B.summary:Hide()

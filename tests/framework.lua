@@ -1400,15 +1400,35 @@ Bj.model.random = function(n)
     refillIndex = refillIndex + 1
     return ({ 2, 1, 2 })[refillIndex] or math.random(n)
 end
-Bj:Hint()
-check(Bj.hint ~= nil and Bj.model.score == 0, "Hint was missing or changed score")
-for _ = 1, 31 do
+Bj.scoreIdleTime = 0
+for _ = 1, 49 do
     Bj:Advance(0.1)
 end
-check(not Bj.hint and Bj.model.moves == 0 and Bj.model.score == 0, "Hint did not expire or played a move automatically")
-Bj:Hint()
+check(not Bj.hint and Bj.model.moves == 0, "Automatic hint appeared before five seconds")
+Bj:Advance(0.1)
+Bj:Advance(0.1)
+check(
+    Bj.hint and Bj.model.score == 0 and Bj.model.moves == 0,
+    "Five seconds without points did not reveal a valid swap"
+)
+local hinted = Bj.cells[(Bj.hint.y - 1) * 8 + Bj.hint.x]
+local firstBounce = hinted.icon.points[1][3]
+local partner = Bj.cells[(Bj.hint.ty - 1) * 8 + Bj.hint.tx]
+local secondBounce = partner.icon.points[1][3]
+Bj:Advance(0.1)
+check(
+    hinted.icon.points[1][3] ~= firstBounce and partner.icon.points[1][3] ~= secondBounce,
+    "Both gems in the suggested swap did not bounce"
+)
 Bj:Click(2, 1, "LeftButton")
 check(Bj.selected and not Bj.hint, "Gem selection did not clear hint")
+Bj:Advance(0.1)
+check(not Bj.hint, "Automatic hint reappeared immediately after interaction")
+Bj:Pause(true)
+local pausedIdle = Bj.scoreIdleTime
+Bj:Advance(1)
+check(Bj.scoreIdleTime == pausedIdle and not Bj.hint, "Paused time advanced the automatic hint")
+Bj:Pause(false)
 Bj:Click(2, 1, "RightButton")
 check(not Bj.selected, "Right click did not clear selection")
 Bj:Click(8, 8, "LeftButton")
@@ -2499,7 +2519,7 @@ do
                 check(
                     game.leftArt.artLoaded
                         and game.leftArt.drawLayer == "ARTWORK"
-                        and game.hintButton.points[1][3] > game.pauseButton.points[1][3]
+                        and not game.hintButton
                         and game.pauseButton.points[1][3] > game.shareButton.points[1][3]
                         and game.shareButton.points[1][3] > game.optionsButton.points[1][3],
                     "Bejeweled artwork or required action order changed"
@@ -3296,6 +3316,8 @@ do
         b.model.gameover, b.model.cascade, b.model.phase = false, cascade or 1, "clearing"
         b.model.pending = b.model:Matches()
         local count, score, calls = #b.model.pending, b.model.score, #log
+        local firstMatch = b.model.pending[1]
+        b.scoreIdleTime = 5
         check(b:MatchSoundEvent() == expected, "Match strength used total cleared cells or the wrong axis")
         now = now + 0.2
         for _ = 1, 3 do
@@ -3308,6 +3330,19 @@ do
             "Match resolution emitted duplicate/incorrect audio"
         )
         check(b.model.score - score == count * 50 * (cascade or 1), "Sound classification changed match scoring")
+        local tier = expected == "bejeweled_match_5_plus" and 5 or expected == "bejeweled_match_4" and 4 or 3
+        check(
+            b.matchEffect
+                and b.matchEffect.tier == tier
+                and #b.matchEffect.particles == (tier == 5 and 24 or tier == 4 and 8 or 0)
+                and b.cells[(firstMatch.y - 1) * 8 + firstMatch.x].spark.alpha > 0
+                and b.scoreIdleTime == 0,
+            "Match effect intensity or score-based hint reset is wrong"
+        )
+        check(
+            tier == 5 or not b.effectParticles[24]:IsShown(),
+            "A lower-tier match kept old epic particles or did not reset the hint timer"
+        )
     end
     for _, vertical in ipairs({ false, true }) do
         for count = 3, 8 do
@@ -3318,6 +3353,11 @@ do
     matchRound({ { 1, 1, 3 }, { 5, 5, 3 } }, "bejeweled_match_3")
     matchRound({ { 1, 1, 3 }, { 2, 1, 3, true } }, "bejeweled_match_3", 3)
     matchRound({ { 1, 1, 3 }, { 4, 5, 4 } }, "bejeweled_match_4")
+    b:UpdateMatchEffect(1)
+    check(
+        not b.matchEffect and not b.effectBanner:IsShown() and b.effectFlash.alpha == 0,
+        "Match particles or banner persisted after the effect"
+    )
     b.model.gameover = true
     b.model.phase = "over"
     b:Advance(0)

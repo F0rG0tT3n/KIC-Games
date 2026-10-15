@@ -10,7 +10,7 @@ Verified spell SoundKits and arcade fallback effects use Master with the addon
 volume slider. Unmapped spell files are represented by arcade sounds. 0% or Off
 silences all KIC effects.
 
-The reference layout places artwork, instructions and Hint/Pause/Share/
+The reference layout places artwork, instructions and Pause/Share/
 Options on the left, the square board in the center, and real score/gold best/
 statistics/tips on the right. Cyan layered board edges and diamonds use the same
 shared theme as the Launcher. Selection, hover, valid swaps, matches/cascades and
@@ -45,7 +45,13 @@ New matches create cascades until the board settles. Input is blocked during
 swap and cascade animations. The starting board has no automatic matches and
 always has a legal move.
 
-**Hint** highlights one available swap for three seconds without spending points.
+After five active seconds without scoring, two gems in a valid swap bounce and
+glow until you interact. Interaction postpones the suggestion for five seconds;
+pausing freezes the clock, and scoring resets it. The
+signal never swaps gems or spends points.
+Three-in-a-row clears give a brief glow, four adds sparks, and five or more adds
+a stronger flash, more sparks and an epic banner. Crossings of triples still
+use the three-gem visual tier.
 There is no timer or move limit. A run ends when the settled board has no legal
 swaps left. This initial version uses ordinary gems; long matches clear all gems
 in their line, and crossing matches count their intersection once.
@@ -55,7 +61,7 @@ in their line, and crossing matches count their intersection once.
 Each cleared gem earns **50 × cascade number** points: the first clear uses ×1,
 the next automatic clear uses ×2, and so on. The multiplier resets on your next
 manual swap. The side panel shows score, best score, accepted moves, cleared gems
-and your largest cascade. Hints and invalid swaps do not add points or moves.
+and your largest cascade. The automatic hint and invalid swaps do not add points or moves.
 
 The account-wide best is saved under `KICGamesDB.bejeweled.best`, with score,
 moves, gems, best cascade and timestamp. It updates after each clear and survives
