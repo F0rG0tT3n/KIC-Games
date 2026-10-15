@@ -2,6 +2,7 @@
 
 ## 0.12.0 - 2026-10-15 - Both gameplay screens
 
+- Pause-menu Stop match returns to the visible Launcher after ending the run; the urgent-stop command still closes the addon window.
 - Rebuilt Bejeweled around the supplied artwork/instructions/actions, centered square 8x8 class-icon board, and score/gold-best/statistics/tip composition.
 - Rebuilt Tetris with a left information/keycap panel, square-cell 10x20 playfield, grouped score/best/lines/level, five real queue slots, violet hold and Pause action.
 - Extended the shared Theme with framed boards, diamond/crown accents, icon actions/rows, keycaps, fitted scores, gold-best panels and reusable pause menus; registered eleven small original transparent TGA masks.

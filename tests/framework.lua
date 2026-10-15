@@ -2268,8 +2268,14 @@ do
         game:Pause(true)
         game.pauseOverlay.stop.scripts.OnClick()
         check(
-            not games.ActiveGame and not game.running and not game.root:IsShown(),
-            "Explicit in-game Stop did not end the run"
+            not games.ActiveGame
+                and not game.running
+                and not game.root:IsShown()
+                and ui.frame:IsShown()
+                and ui.home:IsShown()
+                and ui.launcherPage == "home"
+                and not ui.gameContainer:IsShown(),
+            "Pause-menu Stop must end the run and return to the visible Launcher"
         )
     end
     -- Resized drag hit-testing still uses the same engine action and timing.

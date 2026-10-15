@@ -25,6 +25,8 @@ for changed files, automated validation, artwork substitutions and live WoW test
 The gameplay header contains **Back to Launcher**, party status and Close.
 Back/Close pause and preserve the run; Resume opens it again. Each game's pause
 menu supplies **Resume**, **Restart run** and **Stop match**.
+The pause menu's **Stop match** ends the run and returns to the Launcher with
+the addon window still open.
 
 Choose your class once in **Options**; it updates both games immediately without
 resetting the board or score. Your previous Tetris class selection migrates on
