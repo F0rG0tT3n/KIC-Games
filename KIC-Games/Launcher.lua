@@ -7,6 +7,12 @@ local library = {
         tagline = "MATCH / CASCADE / REPEAT",
         summary = "Match 3+ in a row or column.\nCascades multiply points.",
     },
+    bejeweled_deluxe = {
+        hero = "bejeweled-deluxe-hero",
+        card = "bejeweled-deluxe-card",
+        tagline = "BOMB / LIGHTNING / COLOR ORB",
+        summary = "Create special gems.\nUnleash chain reactions.",
+    },
     tetris = {
         hero = "tetris-hero",
         card = "tetris-card",
@@ -331,7 +337,9 @@ function UI:RefreshLauncher()
     place(self.abortButton, nil, self.frame:GetWidth() - (inGame and 350 or 452), -30, 110, 28)
     place(self.continueButton, nil, self.frame:GetWidth() - 596, -30, 136, 28)
     local activeID = Games.ActiveGame and Games.ActiveGame.game.id
-    local activeModule = activeID == "tetris" and Games.Tetris or activeID == "bejeweled" and Games.Bejeweled
+    local activeModule = activeID == "tetris" and Games.Tetris
+        or activeID == "bejeweled" and Games.Bejeweled
+        or activeID == "bejeweled_deluxe" and Games.BejeweledDeluxe
     self.continueButton:SetShown(
         not inGame and activeModule and activeModule.running and activeModule.paused and not Games:IsRoundStopped()
     )

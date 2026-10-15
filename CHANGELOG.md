@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased - Bejeweled Deluxe
+
+- Added standalone `bejeweled_deluxe` with Bomb, Lightning and colorless Orb creation, all special combinations, bounded chain resolution and deterministic cascade scoring.
+- Reused Bejeweled's board UI, directional drag, animations and lifecycle with separate state and saved scores. Standard Bejeweled's engine and all Tetris gameplay remain unchanged.
+- Integrated supplied Deluxe hero/card art, launcher/recent/results/resume paths, special overlays in both graphics modes, and existing volume-controlled audio events.
+- Added dedicated engine/client integration tests and documented rules, scoring, file inventory and live-client checks in `BEJEWELED-DELUXE.md`. No remote push or release ZIP.
+
 ## 0.13.0 - 2026-10-15 - Options 2.0
 
 - Bejeweled drag swaps now trigger on entering/crossing an actual adjacent tile rather than a full-tile displacement. Gaps and diagonal cells do not trigger; fast drags detect the first crossed neighbor, with one attempt per press and existing rollback/click behavior preserved.

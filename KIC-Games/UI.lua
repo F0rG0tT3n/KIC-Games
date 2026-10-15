@@ -77,7 +77,9 @@ function UI:Initialize()
     self.abortButton:Hide()
     self.continueButton = button(frame, "Continue game", 136, 478, -34, function()
         local id = Games.ActiveGame and Games.ActiveGame.game.id
-        local module = id == "tetris" and Games.Tetris or id == "bejeweled" and Games.Bejeweled
+        local module = id == "tetris" and Games.Tetris
+            or id == "bejeweled" and Games.Bejeweled
+            or id == "bejeweled_deluxe" and Games.BejeweledDeluxe
         if module and module.running and module.paused then
             UI:ShowGame()
             module:Pause(false)
@@ -267,7 +269,9 @@ function UI:GetGameContainer()
 end
 function UI:LayoutGameContainer()
     local id = Games.ActiveGame and Games.ActiveGame.game.id
-    local module = id == "bejeweled" and Games.Bejeweled or id == "tetris" and Games.Tetris
+    local module = id == "bejeweled" and Games.Bejeweled
+        or id == "tetris" and Games.Tetris
+        or id == "bejeweled_deluxe" and Games.BejeweledDeluxe
     self.gameContainer:ClearAllPoints()
     if module then
         self.gameContainer:SetPoint("TOPLEFT", 20, -100)
@@ -289,7 +293,9 @@ end
 
 function UI:PauseGameplay()
     local id = Games.ActiveGame and Games.ActiveGame.game.id
-    local module = id == "tetris" and Games.Tetris or id == "bejeweled" and Games.Bejeweled
+    local module = id == "tetris" and Games.Tetris
+        or id == "bejeweled" and Games.Bejeweled
+        or id == "bejeweled_deluxe" and Games.BejeweledDeluxe
     if module and module.running then
         module:Pause(true)
     end

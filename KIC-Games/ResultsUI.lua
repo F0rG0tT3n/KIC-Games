@@ -115,7 +115,7 @@ function UI:RefreshResults()
     self.bestScore:SetText(best and number(best.score) and tostring(best.score) .. " points" or "No saved best yet")
     local metadata = {}
     local fields = self.resultGameID == "tetris" and { { "lines", "Lines" }, { "level", "Level" } }
-        or self.resultGameID == "bejeweled" and {
+        or (self.resultGameID == "bejeweled" or self.resultGameID == "bejeweled_deluxe") and {
             { "moves", "Moves" },
             { "cleared", "Gems" },
             { "bestCascade", "Cascade" },

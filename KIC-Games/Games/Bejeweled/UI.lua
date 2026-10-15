@@ -280,6 +280,9 @@ function B:StartDrag(x, y)
     if self.dragFrame.icon:SetTexture(self.icons[self.model.board[y][x]]) == false then
         self.dragFrame.icon:SetTexture(self.fallbackIcon)
     end
+    if self.PaintSpecial then
+        self:PaintSpecial(self.dragFrame, self.model.board[y][x])
+    end
     self.dragTracker:SetScript("OnUpdate", function()
         self:UpdateDrag()
     end)
@@ -299,7 +302,7 @@ function B:TrySwap(x, y, tx, ty, dragged)
     end
     local valid = self.model:Swap(x, y, tx, ty)
     self.hintNextAt = self.scoreIdleTime + 5
-    Games.Audio:Play("bejeweled", "swap")
+    Games.Audio:Play(self.gameID or "bejeweled", "swap")
     self.swap = { x = x, y = y, tx = tx, ty = ty, valid = valid, dragged = dragged, time = 0 }
     self.selected, self.hint, self.phaseTime = nil, nil, 0
     self.message = valid and "Nice match!" or "A swap must make a match."
@@ -389,7 +392,7 @@ function B:Click(x, y, mouse)
     else
         self.selected = { x = x, y = y }
         self.message = "Now select a neighboring gem."
-        Games.Audio:Play("bejeweled", "select")
+        Games.Audio:Play(self.gameID or "bejeweled", "select")
     end
     self:Render()
 end
@@ -474,6 +477,9 @@ function B:Render()
             else
                 cell.icon:Hide()
             end
+            if self.PaintSpecial then
+                self:PaintSpecial(cell, kind)
+            end
         end
     end
     Theme:ScoreValue(self.scoreText, m.score, 56)
@@ -546,7 +552,13 @@ function B:Advance(dt)
         if self.effectPending ~= self.model.pending then
             local _, tier, length = self:MatchSoundEvent()
             local cascade, matched = self.model.cascade, self.model.pending
-            self:StartMatchEffect(tier, length, matched, cascade, #matched * 50 * cascade)
+            self:StartMatchEffect(
+                tier,
+                length,
+                matched,
+                cascade,
+                self.model.plan and self.model.plan.gain or #matched * 50 * cascade
+            )
             self.effectPending = matched
         end
         self.phaseTime = self.phaseTime + dt
@@ -558,7 +570,11 @@ function B:Advance(dt)
             self.hint = nil
             self.effectPending = nil
             self:SaveBest()
-            Games.Audio:Play("bejeweled", event, nil, cascade)
+            if self.PlayResolution then
+                self:PlayResolution(self.model.lastResolution, cascade)
+            else
+                Games.Audio:Play(self.gameID or "bejeweled", event, nil, cascade)
+            end
             self.phaseTime = 0
             self.message = "+" .. self.model.lastGain .. " points"
         end
@@ -582,18 +598,20 @@ function B:CreateUI(parent)
     self.root = CreateFrame("Frame", nil, parent)
     self.root:SetPoint("TOPLEFT", 0, 0)
     self.left = Theme:PremiumFrame(self.root, 250, 550, 0, 0)
-    self.leftArt = Theme:Art(self.left, "bejeweled-hero", 220, 130, 14, -14, 1, "ARTWORK")
-    self.title = Theme:GameLabel(self.left, "BEJEWELED", 28)
+    self.leftArt = Theme:Art(self.left, self.heroArt or "bejeweled-hero", 220, 130, 14, -14, 1, "ARTWORK")
+    self.title = Theme:GameLabel(self.left, self.displayTitle or "BEJEWELED", self.titleSize or 28)
     self.tagline = Theme:GameLabel(self.left, "MATCH / CASCADE / REPEAT", 12, Theme.Colors.accent)
     self.titleRule = Theme:Separator(self.left, 14, -200, 220)
     self.instructions = {}
-    for _, row in ipairs({
-        { "icon-gem", "Swap neighboring icons\nto match three or more." },
-        { "icon-swap", "Match 3+ in a row or column." },
-        { "icon-cascade", "Cascades multiply points." },
-        { "icon-clock", "No timer. Take your time." },
-        { "icon-infinity", "No moves left? Run complete." },
-    }) do
+    for _, row in
+        ipairs(self.instructionRows or {
+            { "icon-gem", "Swap neighboring icons\nto match three or more." },
+            { "icon-swap", "Match 3+ in a row or column." },
+            { "icon-cascade", "Cascades multiply points." },
+            { "icon-clock", "No timer. Take your time." },
+            { "icon-infinity", "No moves left? Run complete." },
+        })
+    do
         self.instructions[#self.instructions + 1] = Theme:InstructionRow(self.left, row[1], row[2])
     end
     self.pauseButton = Theme:GameButton(self.left, "Pause", "icon-pause", function()
@@ -717,7 +735,7 @@ function B:CreateUI(parent)
     self.effectDetail:SetHeight(16)
     self.effectDetail:SetJustifyH("CENTER")
     self.effectDetail:Hide()
-    self.pauseOverlay = Theme:PauseMenu(board, "bejeweled", self)
+    self.pauseOverlay = Theme:PauseMenu(board, self.gameID or "bejeweled", self)
     self.right = Theme:PremiumFrame(self.root, 250, 550, 0, 0, { skin = "game-stats-frame" })
     self.crest = Theme:Art(self.right, "crest", 160, 160, 80, -18, 0.07, "ARTWORK")
     self.crown = Theme:GameIcon(self.right, "ornament-crown", 34, Theme.Colors.gold)
@@ -734,13 +752,13 @@ function B:CreateUI(parent)
     self.clearedRow = Theme:GameStatRow(self.right, "icon-gem", "GEMS CLEARED")
     self.cascadeRow = Theme:GameStatRow(self.right, "icon-cascade", "BEST CASCADE")
     self.statRule = Theme:SectionHeader(self.right, "", 200, 18, -380)
-    self.gemDecor = Theme:Art(self.right, "bejeweled-card", 130, 70, 40, -370, 0.16, "ARTWORK")
+    self.gemDecor = Theme:Art(self.right, self.cardArt or "bejeweled-card", 130, 70, 40, -370, 0.16, "ARTWORK")
     self.tipPanel = Theme:PremiumFrame(self.right, 220, 104, 14, -430, { compact = true })
     self.statusText = Theme:GameLabel(self.tipPanel, "", 13)
     self.statusText:SetMaxLines(2)
     self.tipText = Theme:GameLabel(
         self.tipPanel,
-        "50 points per gem x cascade.\nRight-click clears selection.",
+        self.scoringTip or "50 points per gem x cascade.\nRight-click clears selection.",
         12,
         Theme.Colors.muted
     )
@@ -783,7 +801,7 @@ function B:LayoutUI()
     Theme:PlaceGame(self.right, w - rightW, 0, rightW, h)
     local artH = math.min(178, math.floor(h * (h < 550 and 0.21 or 0.24)))
     Theme:PlaceGame(self.leftArt, 14, 14, leftW - 28, artH)
-    Theme:SetArt(self.leftArt, "bejeweled-hero", leftW - 28, artH, 1)
+    Theme:SetArt(self.leftArt, self.heroArt or "bejeweled-hero", leftW - 28, artH, 1)
     Theme:PlaceGame(self.title, 14, artH + 24, leftW - 28, 36)
     Theme:PlaceGame(self.tagline, 14, artH + 65, leftW - 28, 24)
     Theme:PlaceGame(self.titleRule, 14, artH + 91, leftW - 28, 1)
@@ -835,15 +853,16 @@ function B:CreateSummary()
     f:SetPoint("CENTER", Games.UI.frame, "CENTER", 0, 0)
     Theme:Window(f, true, true)
     Theme:CloseButton(f)
-    _G.KICGamesBejeweledResult = f
-    UISpecialFrames[#UISpecialFrames + 1] = "KICGamesBejeweledResult"
+    local resultName = self.resultName or "KICGamesBejeweledResult"
+    _G[resultName] = f
+    UISpecialFrames[#UISpecialFrames + 1] = resultName
     Theme:Label(f, "NO MOVES LEFT", 24, -26, 350):SetTextColor(unpack(Theme.Colors.accent))
     Theme:Label(f, "Run complete", 24, -54, 380, "GameFontNormalLarge")
     self.summaryText = Theme:Label(f, "", 24, -104, 392)
     self.summaryText:SetFont("Fonts\\ARIALN.TTF", 17, "")
     Theme:NeonButton(f, "Play again", 188, 24, -230, function()
         f:Hide()
-        Games:StartSingleplayer("bejeweled")
+        Games:StartSingleplayer(self.gameID or "bejeweled")
     end)
     Theme:NeonButton(f, "Share best", 188, 228, -230, function()
         self:ShareBest()
@@ -851,4 +870,12 @@ function B:CreateSummary()
     f:Hide()
     self.summary = f
     Games.UI:RegisterAuxiliaryWindow(f)
+end
+
+-- Reuse board UI behavior without sharing mutable module/UI state.
+Games.BejeweledUI = {}
+for name, method in pairs(B) do
+    if type(method) == "function" then
+        Games.BejeweledUI[name] = method
+    end
 end

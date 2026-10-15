@@ -8,7 +8,7 @@ root = Path(__file__).resolve().parents[1]
 addon = root / 'KIC-Games'
 art = (addon / 'Artwork.lua').read_text(encoding='utf-8')
 files = re.findall(r'file\s*=\s*base\s*\.\.\s*"([^"]+\.tga)"\s*,\s*width\s*=\s*(\d+)\s*,\s*height\s*=\s*(\d+)', art)
-assert len(files) == 32, 'Expected eight supplied artworks, five navigation, eleven gameplay icons and eight original pieces'
+assert len(files) == 34, 'Expected ten supplied artworks, five navigation, eleven gameplay icons and eight original pieces'
 for name, width, height in files:
     path = addon / 'Media' / 'KICUI' / name
     data = path.read_bytes()
@@ -37,3 +37,12 @@ assert entries.index('Artwork.lua') < entries.index('Theme.lua') < entries.index
 print(f'PASS: {len(files)} runtime TGAs, headers, dimensions, optional source hashes, paths and TOC load order')
 
 assert entries.index('ProfileData.lua') < entries.index('Profiles.lua') < entries.index('Settings.lua') < entries.index('Graphics.lua') < entries.index('Audio.lua') < entries.index('UI.lua')
+
+# Deluxe uses the exact supplied artwork bytes, with left-side hero text.
+import zipfile
+archive = root / "KIC-Bejeweled-Deluxe-Assets.zip"
+if archive.exists():
+    with zipfile.ZipFile(archive) as z:
+        for name in ("bejeweled-deluxe-hero.tga", "bejeweled-deluxe-card.tga"):
+            assert (addon / "Media/KICUI" / name).read_bytes() == z.read(name)
+assert re.search(r'\["bejeweled-deluxe-hero"\].*?textSide = "left"', art, re.S)

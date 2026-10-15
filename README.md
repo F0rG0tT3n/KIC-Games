@@ -4,7 +4,9 @@ World of Warcraft Retail party-game launcher and multiplayer framework, version
 0.13.0. Intended for waiting for the group to fill and the time between dungeons.
 Includes **[Tetris](TETRIS.md)** with Original and class/spec graphics and
 **[Bejeweled](BEJEWELED.md)** with animated gem swaps and cascades.
-Both singleplayer modules have saved high scores, editable chat sharing and
+Also includes **[Bejeweled Deluxe](BEJEWELED-DELUXE.md)**, an independent game with
+Bomb, Lightning and Color Orb combinations and separate saved records.
+All singleplayer modules have saved high scores, editable chat sharing and
 shared graphics, audio and interface scale settings from **Options**.
 
 The Neon Arcade Launcher has a shared Home / Singleplayer / Multiplayer / Results /
@@ -75,6 +77,7 @@ installable folder at its root.
 - `/kictetris share`: draft your saved best score in chat; press Enter to send.
 - `/kicbejeweled`: start Bejeweled, or reopen your active run.
 - `/kicbejeweled share`: draft your best gem-matching score in chat.
+- `/kicbejeweleddeluxe`: start or reopen Bejeweled Deluxe; add `share` to draft its best score.
 
 ## Singleplayer and Multiplayer tabs
 
@@ -208,6 +211,7 @@ Run the isolated-client integration checks from the repository root:
 lua tests/framework.lua
 lua tests/tetris.lua
 lua tests/bejeweled.lua
+lua tests/bejeweled_deluxe.lua
 python tests/artwork.py
 python tests/options_assets.py
 ```

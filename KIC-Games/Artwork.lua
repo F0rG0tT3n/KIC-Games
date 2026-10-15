@@ -7,6 +7,13 @@ Games.Artwork = {
     hall = { file = base .. "background-hall.tga", width = 1024, height = 512 },
     ["bejeweled-hero"] = { file = base .. "bejeweled-hero.tga", width = 1024, height = 512, textSide = "right" },
     ["bejeweled-card"] = { file = base .. "bejeweled-card.tga", width = 256, height = 256 },
+    ["bejeweled-deluxe-hero"] = {
+        file = base .. "bejeweled-deluxe-hero.tga",
+        width = 1024,
+        height = 512,
+        textSide = "left",
+    },
+    ["bejeweled-deluxe-card"] = { file = base .. "bejeweled-deluxe-card.tga", width = 256, height = 256 },
     ["tetris-hero"] = { file = base .. "tetris-hero.tga", width = 1024, height = 512, textSide = "left" },
     ["tetris-card"] = { file = base .. "tetris-card.tga", width = 256, height = 256 },
     ["original-gem-1"] = { file = base .. "Pieces/gem-1.tga", width = 64, height = 64 },

@@ -37,3 +37,6 @@ Games\Tetris\Module.lua
 Games\Bejeweled\Engine.lua
 Games\Bejeweled\UI.lua
 Games\Bejeweled\Module.lua
+Games\BejeweledDeluxe\Engine.lua
+Games\BejeweledDeluxe\UI.lua
+Games\BejeweledDeluxe\Module.lua

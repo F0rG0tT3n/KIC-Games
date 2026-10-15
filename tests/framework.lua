@@ -423,6 +423,9 @@ local function client(name, realm, saved)
     function methods:SetBackdrop(info)
         self.backdropInfo = info
     end
+    function methods:SetRotation(angle)
+        self.rotation = angle
+    end
     function methods:SetFont(_, size)
         self.fontSize = size
     end
@@ -584,6 +587,16 @@ local function client(name, realm, saved)
     return c
 end
 
+if arg[1] == "--harness" then
+    return {
+        client = client,
+        advance = function(dt)
+            now = now + dt
+        end,
+        packets = packets,
+    }
+end
+
 if arg[1] == "--audit" then
     assert(loadfile("tests/audit_regressions.lua"))()(client, check)
     print(string.format("PASS: %d audit assertions", tests))
@@ -650,7 +663,11 @@ local function register(c, version)
 end
 
 check(
-    #A:GetGames("singleplayer") == 2 and A.Registry.tetris and A.Registry.bejeweled and #A:GetGames("multiplayer") == 0,
+    #A:GetGames("singleplayer") == 3
+        and A.Registry.tetris
+        and A.Registry.bejeweled
+        and A.Registry.bejeweled_deluxe
+        and #A:GetGames("multiplayer") == 0,
     "Bundled games must only appear in singleplayer"
 )
 A.UI:Toggle()
@@ -1176,18 +1193,18 @@ J:RegisterGame({
     end,
     OnStart = function() end,
 })
-check(#J:GetGames("singleplayer") == 3 and #J:GetGames("multiplayer") == 1, "Game modes were not separated")
+check(#J:GetGames("singleplayer") == 4 and #J:GetGames("multiplayer") == 1, "Game modes were not separated")
 J.UI.singleTab.scripts.OnClick()
 check(
     J.UI.tab == "singleplayer" and not J.UI.browserPanel:IsShown() and J.UI.cardScroll:IsShown(),
     "Singleplayer tab kept multiplayer panels visible"
 )
 check(
-    J.UI.launcherCards[2].title.text == "Solo fixture" and J.UI.soloPlay.enabled,
+    J.UI.launcherCards[3].title.text == "Solo fixture" and J.UI.soloPlay.enabled,
     "Singleplayer tab did not show an available offline game"
 )
 local queued = #packets
-J.UI.launcherCards[2].play.scripts.OnClick()
+J.UI.launcherCards[3].play.scripts.OnClick()
 check(
     J.ActiveGame and J.Lobby.mode == "singleplayer" and soloMessages == 1,
     "Solo game failed to launch without a group"
@@ -1510,7 +1527,7 @@ check(
     S.UI.launcherCards[1].icon:IsShown() and S.UI.launcherCards[1].title.text == "Bejeweled",
     "Bejeweled library icon is missing"
 )
-check(S.UI.launcherCards[2].icon.textureValue == S.Artwork["tetris-card"].file, "Tetris block icon is missing")
+check(S.UI.launcherCards[3].icon.textureValue == S.Artwork["tetris-card"].file, "Tetris block icon is missing")
 check(S:StartSingleplayer("tetris"), "Could not start Tetris for options checks")
 local originalModel = S.Tetris.model
 S.UI.optionsButton.scripts.OnClick()
@@ -1904,23 +1921,23 @@ do
     end
     Arcade.UI:ResetWindowSize()
 end
-check(#Arcade:GetGames() == 2 and not Arcade.Registry.pug, "Concept artwork registered a fake game")
+check(#Arcade:GetGames() == 3 and not Arcade.Registry.pug, "Concept artwork registered a fake game")
 check(
     Arcade.UI.noGames:IsShown() and Arcade.UI.browseGames:IsShown() and #Arcade:GetRecentGames() == 0,
     "New Home did not show the recent-games empty state"
 )
 check(
-    Arcade.UI.groupStatus.text == "No group" and Arcade.UI.footer.text:find("2 installed", 1, true),
+    Arcade.UI.groupStatus.text == "No group" and Arcade.UI.footer.text:find("3 installed", 1, true),
     "Inaccurate footer or party status"
 )
 Arcade.UI.browseGames.scripts.OnClick()
 check(
     Arcade.UI.launcherPage == "singleplayer"
         and Arcade.UI.launcherCards[1].title.text == "Bejeweled"
-        and Arcade.UI.launcherCards[2].title.text == "Tetris",
+        and Arcade.UI.launcherCards[3].title.text == "Tetris",
     "Browse did not show registered games"
 )
-Arcade.UI.launcherCards[2].details.scripts.OnClick()
+Arcade.UI.launcherCards[3].details.scripts.OnClick()
 check(
     Arcade.UI.launcherPage == "home"
         and Arcade.UI.featuredID == "tetris"
@@ -2191,7 +2208,7 @@ do
     end
     M.UI:OpenLauncher("singleplayer")
     check(
-        #M:GetGames("singleplayer") == 26 and M.UI.launcherCards[26]:IsShown(),
+        #M:GetGames("singleplayer") == 27 and M.UI.launcherCards[27]:IsShown(),
         "Library capped the installed game count"
     )
     check(
@@ -2266,7 +2283,7 @@ do
     M.UI:RefreshLauncher()
     check(not M.UI.recentNext.enabled, "Out-of-range carousel page was not clamped")
     M.UI:ShowResults()
-    check(#M.UI.resultGameButtons == 50, "Results selector capped registered games")
+    check(#M.UI.resultGameButtons == 51, "Results selector capped registered games")
     wheel(M.UI.resultGamesScroll)
     M.UI.resultGameID = "tetris"
     M.DB.tetris = { best = { score = 12345, lines = 12, level = 3 } }
