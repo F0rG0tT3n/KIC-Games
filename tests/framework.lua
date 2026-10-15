@@ -189,6 +189,9 @@ local function client(name, realm, saved)
         local _, lines = (self.text or ""):gsub("\n", "\n")
         return (lines + 1) * 18
     end
+    function methods:GetStringWidth()
+        return #(self.text or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "") * (self.fontSize or 14) * 0.5
+    end
     function methods:GetCenter()
         return 0, 0
     end
@@ -218,7 +221,6 @@ local function client(name, realm, saved)
     end
     for _, method in ipairs({
         "SetSpacing",
-        "SetBackdrop",
         "SetClampedToScreen",
         "EnableMouse",
         "RegisterForClicks",
@@ -295,7 +297,14 @@ local function client(name, realm, saved)
         return self.verticalScroll or 0
     end
     function methods:SetWidth(width)
+        local changed = self.width ~= width
         self.width = width
+        if changed and self.scripts.OnSizeChanged then
+            self.scripts.OnSizeChanged(self, width, self:GetHeight())
+        end
+    end
+    function methods:SetBackdrop(info)
+        self.backdropInfo = info
     end
     function methods:SetFont(_, size)
         self.fontSize = size
@@ -1541,6 +1550,18 @@ do
             Arcade.UI:FeatureGame(id)
             local ui = Arcade.UI
             check(
+                ui.hero.backdropInfo and ui.hero.backdropInfo.bgFile == nil and ui.hero.premium.artwork,
+                "Featured surface still has an opaque native backdrop fill"
+            )
+            ui.heroArt:SetVertexColor(0, 0, 0, 1)
+            ui.heroArt:SetBlendMode("ADD")
+            ui.heroArt:Hide()
+            ui:RefreshFeature(ui.content:GetWidth())
+            check(
+                ui.heroArt.vertexColor[1] == 1 and ui.heroArt.blendMode == "BLEND" and ui.heroArt:IsShown(),
+                "Featured refresh retained stale tint, blend or visibility"
+            )
+            check(
                 ui.heroArt:IsVisible()
                     and ui.heroArt.textureValue == Arcade.Artwork[id .. "-hero"].file
                     and ui.heroArt.alpha == 1,
@@ -1769,7 +1790,10 @@ Arcade.UI:OpenLauncher("home")
 Arcade.UI:FeatureGame("tetris")
 launcherClient.env.rejectTexture = Arcade.Artwork["tetris-hero"].file
 Arcade.UI:Refresh()
-check(Arcade.UI.heroArt.color and Arcade.UI.soloPlay.enabled, "A rejected texture broke native Play")
+check(
+    Arcade.UI.heroArt.color and Arcade.UI.heroFallback:IsShown() and Arcade.UI.soloPlay.enabled,
+    "A rejected texture lost its native fallback or broke Play"
+)
 launcherClient.env.rejectTexture = nil
 for _, scale in ipairs({ 1, 1.2 }) do
     Arcade.UI:SetWindowScale(scale)
@@ -1947,6 +1971,126 @@ for _ = 1, 5 do
     Arcade.UI:Refresh()
 end
 check(#launcherClient.frames == cardFrames, "Launcher refresh leaked decorative/UI frames")
+do
+    local owner = client("ComponentChecks", "ArcadeRealm")
+    local C, ui = owner.games.Theme, owner.games.UI
+    local parent = owner.env.CreateFrame("Frame", nil, ui.content)
+    local f = C:PremiumFrame(parent, 400, 220, 0, 0)
+    check(
+        f.component == "PremiumFrame"
+            and #f.premium.outer == 4
+            and #f.premium.inner == 4
+            and #f.premium.corners == 16
+            and #f.premium.glow == 8,
+        "Premium frame lost its layered native decoration"
+    )
+    local count = #owner.frames
+    C:StylePremiumFrame(f, "window-frame")
+    check(#owner.frames == count and not f.scripts.OnUpdate, "Frame decoration is duplicated or continuously updated")
+    for _, part in ipairs(f.premium.corners) do
+        check(
+            part.kind == "texture" and not part.scripts.OnMouseDown and not part.scripts.OnUpdate,
+            "Decorative corners intercept input or animate continuously"
+        )
+    end
+    local clicked = 0
+    local b = C:NeonButton(parent, "Test action", 180, 0, -230, function()
+        clicked = clicked + 1
+    end, 34, true)
+    check(b.visualState == "normal" and b.component == "NeonButton", "Neon button lacks normal styling")
+    local normal = b.sheen.alpha
+    b.scripts.OnEnter()
+    check(b.visualState == "hover" and b.sheen.alpha > normal, "Neon hover does not brighten")
+    C:Select(b, true)
+    b.scripts.OnMouseDown()
+    check(b.visualState == "pressed" and b.sheen.alpha < normal, "Selected button ignores pressed state")
+    b.scripts.OnMouseUp()
+    b.scripts.OnLeave()
+    check(b.visualState == "selected", "Neon selection was lost after pressing")
+    b:Disable()
+    check(
+        b.visualState == "disabled" and not b.pressed and b.premium.glow[1].alpha == 0,
+        "Disabled button retains a pressed appearance or glow"
+    )
+    b:Enable()
+    b.scripts.OnClick()
+    check(clicked == 1 and b.visualState == "selected", "Neon styling disconnected the functional action")
+    local stat = C:StatPanel(parent, "BEST", 400, 112, 0, 0)
+    stat:SetStat(0, "Recorded score")
+    check(stat.value.text == "0" and stat.detail.text == "Recorded score", "StatPanel loses zero values")
+    stat:SetStat(nil)
+    check(stat.value.text == "No record" and stat.detail.text == "", "StatPanel invents a missing statistic")
+    stat:SetWidth(300)
+    check(stat.value.width == 268, "StatPanel does not resize its contents")
+    local status = C:StatusPanel(parent, 264, 54, 0, 0)
+    status:SetStatus("No group", "Solo play mode", false)
+    check(status.pip.color[1] == C.Colors.muted[1], "Disconnected status uses a live-state indicator")
+    status:SetStatus("Party connected", "2 members", true)
+    check(
+        status.title.text == "Party connected" and status.pip.color[2] == C.Colors.success[2],
+        "StatusPanel lost actual connection data"
+    )
+    local heading = C:SectionHeader(parent, "STATISTICS", 400, 0, 0)
+    heading:SetWidth(240)
+    heading:SetText("SCORE")
+    check(
+        heading.text == "SCORE" and heading.line.points[1][2] < 240 and heading.pip.kind == "texture",
+        "SectionHeader divider or label did not reflow"
+    )
+    local card = C:GameCard(parent, 280, 226)
+    card:SetGame(owner.games.Registry.tetris, {
+        art = "tetris-card",
+        enabled = true,
+        onPlay = function()
+            clicked = clicked + 1
+        end,
+    })
+    local before = #owner.frames
+    card:SetSize(360, 226)
+    card.play.scripts.OnClick()
+    check(
+        card.title.text == "Tetris"
+            and card.play.text == "Play"
+            and card.play.width == 256
+            and card.art.width == 360
+            and clicked == 2
+            and #owner.frames == before,
+        "Reusable GameCard lost data/action, resize support or frame reuse"
+    )
+    check(
+        card.art.subLevel < card.shade.subLevel and card.shade.subLevel < card.icon.subLevel,
+        "GameCard shading obscures the artwork/icon stack"
+    )
+    local original = owner.games.Artwork["stat-frame"].file
+    owner.games.Artwork["stat-frame"].file = "Interface\\AddOns\\KIC-Games\\Media\\KICUI\\missing-test.tga"
+    owner.env.rejectTexture = owner.games.Artwork["stat-frame"].file
+    local fallback = C:StatPanel(parent, "Fallback", 300, 112, 0, 0)
+    check(
+        not fallback.premium.custom:IsShown() and #fallback.premium.corners == 16,
+        "Failed skin texture removed the native premium fallback"
+    )
+    owner.env.rejectTexture = nil
+    local replacement = C:StatPanel(parent, "Replacement", 300, 112, 0, 0)
+    check(
+        replacement.premium.custom:IsShown() and replacement.premium.outer == nil,
+        "Artwork registry replacement is not used by the component"
+    )
+    owner.games.Artwork["stat-frame"].file = original
+    check(
+        ui.frame.premium
+            and ui.sidebar.premium
+            and ui.hero.premium
+            and ui.lobbyPanel.premium
+            and ui.groupPanel.component == "StatusPanel"
+            and ui.bestPanel.component == "StatPanel"
+            and ui.installedTitle.component == "SectionHeader",
+        "Launcher proof of concept does not use the shared components"
+    )
+    check(
+        not owner.games.Tetris.root and not owner.games.Bejeweled.root,
+        "Shared component checks constructed individual game screens"
+    )
+end
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))
 
 -- Optional layout snapshots from the actual UI constructors, for offline visual review.
@@ -1993,12 +2137,17 @@ if arg[1] == "--preview" then
                 "vertexColor",
                 "verticalScroll",
                 "clipsChildren",
+                "drawLayer",
+                "subLevel",
+                "component",
             }) do
                 if frame[key] ~= nil then
                     fields[#fields + 1] = json(key) .. ":" .. json(frame[key])
                 end
             end
             fields[#fields + 1] = '"visible":' .. json(frame:IsVisible())
+            fields[#fields + 1] = '"backdropFill":'
+                .. json(frame.backdropInfo ~= nil and frame.backdropInfo.bgFile ~= nil)
             fields[#fields + 1] = '"parent":' .. json(ids[frame.parent])
             fields[#fields + 1] = '"allPoints":' .. json(ids[frame.allPoints])
             fields[#fields + 1] = '"scrollChild":' .. json(ids[frame.scrollChild])
@@ -2061,7 +2210,10 @@ if arg[1] == "--preview" then
     snapshot("launcher", launcherClient)
     Arcade.UI:SetWindowScale(1.2)
     snapshot("launcher-120", launcherClient)
+    Arcade.UI:FeatureGame("tetris")
+    snapshot("launcher-tetris-120", launcherClient)
     Arcade.UI:SetWindowScale(1)
+    snapshot("launcher-tetris", launcherClient)
     for _, page in ipairs({ "singleplayer", "multiplayer", "options", "results" }) do
         Arcade.UI:OpenLauncher(page)
         snapshot("page-" .. page, launcherClient)

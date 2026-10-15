@@ -132,7 +132,7 @@ function UI:InitializeLauncher()
     self.multiplayerPage = CreateFrame("Frame", nil, self.content)
     self.multiplayerPage:SetAllPoints(self.content)
     self.hallArt = Theme:Art(self.home, "hall", 1088, 562, 16, -82, 0.13)
-    self.sidebar = Theme:Panel(self.home, 188, 548, 18, -96)
+    self.sidebar = Theme:PremiumFrame(self.home, 188, 548, 18, -96)
     self.sidebarCrest = Theme:Art(self.sidebar, "crest", 142, 142, 23, -325, 0.09, "ARTWORK")
     self.sidebarArt = Theme:Art(self.sidebar, "sidebar", 186, 265, 1, -282, 0.48)
     self.nav = {}
@@ -152,11 +152,34 @@ function UI:InitializeLauncher()
     place(self.browserPanel, self.multiplayerPage, 0, -284, 340, 264)
     place(self.browser:GetParent(), nil, 14, -44, 312, 204)
     place(self.lobbyPanel, self.multiplayerPage, 356, 0, 526, 548)
+    Theme:StylePremiumFrame(self.browserPanel, "status-frame")
+    Theme:StylePremiumFrame(self.lobbyPanel, "status-frame")
+    self.browserTitle:Hide()
+    self.browserHeading = Theme:SectionHeader(self.browserPanel, "PARTY LOBBIES", 212, 14, -14, 14)
+    self.lobbyTitle:Hide()
+    self.lobbyTitle = Theme:SectionHeader(self.lobbyPanel, "YOUR LOBBY", 494, 16, -14, 16)
+    for _, b in ipairs({
+        self.create,
+        self.leave,
+        self.ready,
+        self.start,
+        self.showGame,
+        self.endGame,
+        self.browserRefresh,
+        self.optionsButton,
+        self.resultsButton,
+        self.homeButton,
+        self.abortButton,
+    }) do
+        Theme:StyleNeonButton(b)
+    end
     self.hero = self.singlePanel
     self.soloSection:Hide()
     place(self.hero, self.content, 0, 0, 882, 256)
-    -- BackdropTemplate owns BACKGROUND/BORDER. Keep the hero stack explicitly
-    -- above its opaque Center when the panel is reparented, resized or refreshed.
+    -- Artwork surfaces have no opaque native Center at all. Only an edge-only
+    -- backdrop and OVERLAY ornaments can overlap the explicit ARTWORK stack.
+    Theme:StylePremiumFrame(self.hero, "window-frame", { artwork = true })
+    -- Keep art, translucent text-side shade and fallback icon in explicit order.
     self.heroArt = Theme:Art(self.hero, "bejeweled-hero", 880, 254, 1, -1, 1, "ARTWORK")
     self.heroShade = self.hero:CreateTexture(nil, "ARTWORK", nil, 1)
     self.heroShade:SetColorTexture(0.008, 0.02, 0.05, 0.72)
@@ -189,10 +212,8 @@ function UI:InitializeLauncher()
     )
     self.soloHint:Hide()
     self.soloLeave:SetText("Leave lobby")
-    self.installedTitle = Theme:Label(self.content, "RECENT GAMES", 0, -274, 550, "GameFontNormalLarge")
-    self.installedTitle:SetFont(Theme.Fonts.display, 18, "")
-    self.installedTitle:SetTextColor(unpack(Theme.Colors.accent))
-    self.pageTitle = Theme:Label(self.content, "", 0, -6, 600, "GameFontNormalLarge")
+    self.installedTitle = Theme:SectionHeader(self.content, "RECENT GAMES", 650, 0, -274, 18)
+    self.pageTitle = Theme:SectionHeader(self.content, "", 600, 0, -6, 22)
     self.pageSubtitle = Theme:Label(self.content, "", 0, -36, 700, "GameFontHighlightSmall")
     self.cardList, self.cardScroll = Theme:Scroll(self.content, 882, 238, 0, -310)
     self.noGames = Theme:Label(self.cardList, "", 24, -24, 650, "GameFontNormalLarge")
@@ -203,23 +224,22 @@ function UI:InitializeLauncher()
         self:OpenLauncher("singleplayer")
     end, 36)
     Theme:Primary(self.browseGames)
-    self.recentPrevious = Theme:Button(self.content, "Prev", 60, 0, 0, function()
+    self.recentPrevious = Theme:NeonButton(self.content, "Prev", 60, 0, 0, function()
         self.recentPage = self.recentPage - 1
         self:RefreshLauncher()
     end)
-    self.recentNext = Theme:Button(self.content, "Next", 60, 0, 0, function()
+    self.recentNext = Theme:NeonButton(self.content, "Next", 60, 0, 0, function()
         self.recentPage = self.recentPage + 1
         self:RefreshLauncher()
     end)
     self.recentIndicator = Theme:Label(self.content, "", 0, 0, 70, "GameFontHighlightSmall")
     self.recentIndicator:SetJustifyH("CENTER")
-    self.pageBack = Theme:Button(self.content, "Back to game", 140, 0, 0, function()
+    self.pageBack = Theme:NeonButton(self.content, "Back to game", 140, 0, 0, function()
         self:ShowGame()
     end)
     self.pageBack:SetFrameLevel(self.content:GetFrameLevel() + 5)
-    self.groupPanel = Theme:Panel(self.frame, 264, 54, 796, -18)
-    self.groupStatus = Theme:Label(self.groupPanel, "", 14, -8, 236)
-    self.groupDetail = Theme:Label(self.groupPanel, "", 14, -31, 236, "GameFontHighlightSmall")
+    self.groupPanel = Theme:StatusPanel(self.frame, 264, 54, 796, -18)
+    self.groupStatus, self.groupDetail = self.groupPanel.title, self.groupPanel.detail
     self.launcherMotto =
         Theme:Label(self.frame, "Games today. Raids tomorrow.", 810, -669, 220, "GameFontHighlightSmall")
     self.launcherMotto:SetTextColor(unpack(Theme.Colors.accent))
@@ -270,8 +290,8 @@ function UI:RefreshLauncherStatus()
             count = count + 1
         end
     end
-    self.groupStatus:SetText(channel and (IsInRaid() and "Raid connected" or "Party connected") or "No group")
-    self.groupDetail:SetText(
+    self.groupPanel:SetStatus(
+        channel and (IsInRaid() and "Raid connected" or "Party connected") or "No group",
         channel
                 and (string.format(
                     "%d member%s / %s",
@@ -279,7 +299,8 @@ function UI:RefreshLauncherStatus()
                     count == 1 and "" or "s",
                     channel == "INSTANCE_CHAT" and "Instance group" or "Ready for party games"
                 ))
-            or "Solo play mode"
+            or "Solo play mode",
+        channel ~= nil
     )
     self.footer:SetText(
         string.format(
@@ -350,6 +371,7 @@ function UI:RefreshLauncher()
         place(self.browserPanel, nil, 0, -308, gridWidth, height - 308)
         place(self.browser:GetParent(), nil, 14, -44, gridWidth - 28, height - 368)
         place(self.browserRefresh, nil, gridWidth - 104, -9, 90, 28)
+        self.browserHeading:SetWidth(gridWidth - 132)
         self.browser:SetWidth(gridWidth - 44)
         for _, row in ipairs(self.listingRows) do
             row:SetWidth(gridWidth - 44)
@@ -394,6 +416,7 @@ function UI:RefreshLauncher()
     local last = home and math.min(#games, first + columns - 1) or #games
     local cardWidth = (available - (columns - 1) * 14) / columns
     self.installedTitle:SetText("RECENT GAMES")
+    self.installedTitle:SetWidth(width - 232)
     self.pageTitle:SetText(multi and "MULTIPLAYER" or "SINGLEPLAYER")
     self.pageTitle:SetWidth(multi and gridWidth or width)
     self.pageSubtitle:SetWidth(multi and gridWidth or width)
@@ -457,56 +480,26 @@ function UI:RefreshLauncher()
             cardWidth,
             226
         )
-        card.art:SetSize(cardWidth, 226)
-        Theme:SetArt(card.art, art and art.card or "generic-card", cardWidth, 226, 0.19)
-        Theme:SetArt(card.icon, art and art.card or "generic-card", 80, 80, 1)
-        if not art then
-            card.icon:SetTexture(game.icon or "Interface\\Icons\\INV_Misc_Dice_01")
-        end
-        card.title:SetWidth(cardWidth - 126)
-        card.title:SetHeight(48)
-        card.title:SetText(game.title)
-        place(card.mode, nil, 110, -77, cardWidth - 126)
-        card.mode:SetText(
-            game.mode == "singleplayer" and "SOLO" or string.format("PARTY / %d-%d", game.minPlayers, game.maxPlayers)
-        )
-        card.detail:SetWidth(cardWidth - 32)
-        card.detail:SetText(art and art.summary or game.description or "")
-        card.play:SetWidth(cardWidth - 104)
-        card.play:SetText(
-            Games.ActiveGame and Games.ActiveGame.game.id == id and "Resume"
-                or game.mode == "singleplayer" and "Play"
-                or "View lobby"
-        )
-        card.play:SetScript(
-            "OnClick",
-            invoke(function()
+        card:SetGame(game, {
+            art = art and art.card,
+            description = art and art.summary,
+            resume = Games.ActiveGame and Games.ActiveGame.game.id == id,
+            enabled = self:CanLaunch(game),
+            selected = (multi and self.selectedMulti or self.featuredID) == id,
+            onPlay = invoke(function()
                 return self:LaunchGame(id)
-            end)
-        )
-        if self:CanLaunch(game) then
-            card.play:Enable()
-        else
-            card.play:Disable()
-        end
-        place(card.details, nil, cardWidth - 72, -178, 56, 34)
-        card.details:SetScript(
-            "OnClick",
-            invoke(function()
+            end),
+            onDetails = invoke(function()
                 local ok, err = self:FeatureGame(id)
                 if ok then
                     self:OpenLauncher(multi and "multiplayer" or "home")
                 end
                 return ok, err
-            end)
-        )
-        card:SetScript(
-            "OnClick",
-            invoke(function()
+            end),
+            onSelect = invoke(function()
                 return self:FeatureGame(id)
-            end)
-        )
-        Theme:Select(card, (multi and self.selectedMulti or self.featuredID) == id)
+            end),
+        })
         card:Show()
     end
     self.cardList:SetHeight(
@@ -548,7 +541,7 @@ function UI:RefreshFeature(width)
     self.heroShade:ClearAllPoints()
     self.heroShade:SetPoint("TOPLEFT", x - 12, -1)
     self.heroShade:SetSize(456, 254)
-    self.heroFallback:SetShown(art == nil)
+    self.heroFallback:SetShown(not self.heroArt.artLoaded)
     self.heroFallback:SetTexture(selected.icon or "Interface\\Icons\\INV_Misc_Dice_01")
     place(self.heroBadge, nil, x, -22, textWidth)
     self.heroBadge:SetText(selected.mode == "singleplayer" and "SOLO GAME" or "PARTY GAME")

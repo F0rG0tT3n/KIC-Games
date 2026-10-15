@@ -14,10 +14,8 @@ function UI:CreateResultsWindow()
     self.resultGameButtons = {}
     self.resultList, self.resultScroll = Theme:Scroll(frame, 642, 482, 232, -66)
     self.resultSummary = Theme:Label(self.resultList, "", 16, -8, 600)
-    self.bestPanel = Theme:Panel(self.resultList, 610, 112, 0, -86)
-    Theme:Label(self.bestPanel, "PERSONAL BEST", 16, -12, 500, "GameFontHighlightSmall")
-    self.bestScore = Theme:Label(self.bestPanel, "", 16, -36, 500, "GameFontNormalLarge")
-    self.bestMetadata = Theme:Label(self.bestPanel, "", 16, -76, 500, "GameFontHighlightSmall")
+    self.bestPanel = Theme:StatPanel(self.resultList, "PERSONAL BEST", 610, 112, 0, -86)
+    self.bestScore, self.bestMetadata = self.bestPanel.value, self.bestPanel.detail
     self.historyHeading = Theme:Label(self.resultList, "MATCH HISTORY", 16, -222, 500, "GameFontNormalLarge")
     self.resultText = Theme:Label(self.resultList, "", 16, -260, 600)
     self.resultText:SetSpacing(4)

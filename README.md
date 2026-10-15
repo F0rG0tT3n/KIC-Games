@@ -1,7 +1,7 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.10.1. Intended for waiting for the group to fill and the time between dungeons.
+0.11.0. Intended for waiting for the group to fill and the time between dungeons.
 Includes **[Tetris](TETRIS.md)** with 13 class icon presets and
 **[Bejeweled](BEJEWELED.md)** with animated gem swaps and cascades.
 Both singleplayer modules have saved high scores, editable chat sharing and
@@ -15,6 +15,9 @@ width changes; multiplayer keeps its lobby browser and host/join/ready controls.
 Results displays each registered game's real saved best and framework history.
 See [launcher checkpoint 2](design/CHECKPOINT_2.md) for validation and live tests,
 and [replaceable artwork slots](design/MISSING_ASSETS.md) for remaining art.
+The [shared component checkpoint](design/CHECKPOINT_3.md) adds opt-in premium
+frames, stateful neon buttons, statistic/status panels, game cards and section
+headings. See the [component API](design/COMPONENTS.md) for module reuse.
 Bejeweled and Tetris gameplay UI redesigns remain deferred.
 
 Choose your class once in **Options**; it updates both games immediately without

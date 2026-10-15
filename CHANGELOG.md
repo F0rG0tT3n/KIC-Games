@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.0 - 2026-10-15 - Shared premium UI components
+
+- Removed the Featured Game surface's opaque native backdrop fill and normalized texture tint/blend/visibility when refreshing artwork.
+- Added opt-in PremiumFrame, NeonButton, StatPanel, GameCard, SectionHeader and StatusPanel components, with static corner ornaments, pips, dividers and highlights.
+- Applied shared styling to the Launcher shell/sidebar, feature panel, cards, party/lobby information, headings, actions and saved-best panel.
+- Centralized card presentation and responsive updates in GameCard:SetGame; retained real launch/resume/details actions.
+- Added replaceable stat/card/status skin slots to Artwork.lua and documented native placeholders and the component API.
+- Added component-state, missing-skin, data/action, responsive reuse and hero-surface regressions. No gameplay-screen redesign, protocol change or ZIP.
+
 ## 0.10.1 - 2026-10-15 - Featured artwork layering fix
 
 - Put Featured Game artwork above the native panel backdrop, with explicit image/shade/fallback draw order and native text/buttons on top.

@@ -1,7 +1,7 @@
 local addonName, Games = ...
 _G.KICGames = Games
 
-Games.VERSION = "0.10.1"
+Games.VERSION = "0.11.0"
 Games.API_VERSION = 3
 Games.PREFIX = "KICGames3"
 Games.CONTROL_PREFIX = "KICGames3Ctl"

@@ -42,7 +42,7 @@ function UI:Initialize()
     local frame = panel(UIParent, self.BASE_WIDTH, self.BASE_HEIGHT, 0, 0)
     frame:ClearAllPoints()
     frame:SetPoint("CENTER")
-    Theme:Window(frame)
+    Theme:Window(frame, false, true)
     frame:SetScript("OnHide", function()
         if UI.StopResize then
             UI.StopResize()
@@ -86,7 +86,7 @@ function UI:Initialize()
 
     local browser = panel(self.home, 355, 186, 20, -384)
     self.browserPanel = browser
-    label(browser, "PARTY LOBBIES", 14, -14, 205, "GameFontNormal")
+    self.browserTitle = label(browser, "PARTY LOBBIES", 14, -14, 205, "GameFontNormal")
     self.browserRefresh = button(browser, "Refresh", 90, 248, -9, function()
         Games:Discover()
     end)

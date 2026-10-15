@@ -12,6 +12,9 @@ Games.Artwork = {
     -- Replace file=false with final TGA paths. All fallback geometry stays native.
     ["window-frame"] = { file = false, width = 1120, height = 700, fallback = "border" },
     ["button-frame"] = { file = false, width = 256, height = 64, fallback = "border" },
+    ["stat-frame"] = { file = false, width = 512, height = 128, fallback = "premium-border" },
+    ["card-frame"] = { file = false, width = 512, height = 512, fallback = "premium-border" },
+    ["status-frame"] = { file = false, width = 512, height = 128, fallback = "premium-border" },
     ["generic-hero"] = { file = false, width = 1024, height = 512, fallback = "module-icon" },
     ["generic-card"] = { file = false, width = 256, height = 256, fallback = "module-icon" },
     ["nav-home"] = { file = base .. "Navigation/nav-home.tga", width = 64, height = 64 },
