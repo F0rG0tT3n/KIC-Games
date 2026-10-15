@@ -88,6 +88,7 @@ function Games:GetSettings()
         s.schemaVersion = 2
     end
     s.soundVolume = math.max(0, math.min(1, s.soundVolume))
+    s.effectsLevel = finite(s.effectsLevel) and math.max(0, math.min(2, math.floor(s.effectsLevel + 0.5))) or 1
     s.windowScale = math.max(0.75, math.min(1.5, math.floor(s.windowScale * 20 + 0.5) / 20))
     s.followCharacter = s.followCharacter ~= false
     s.soundsEnabled = s.soundsEnabled ~= false
@@ -172,12 +173,29 @@ function Games:SetOption(key, value)
             return false
         end
         value = math.max(0, math.min(1, value))
+    elseif key == "effectsLevel" then
+        if not finite(value) or value < 0 or value > 2 or value % 1 ~= 0 then
+            return false
+        end
     else
         return false
     end
     s[key] = value
     if key == "graphicsTheme" or key == "followCharacter" then
         self:ApplyCosmetics()
+    elseif key == "effectsLevel" then
+        if self.Tetris and self.Tetris.ClearLineEffect then
+            self.Tetris:ClearLineEffect()
+        end
+        if self.Bejeweled and self.Bejeweled.ClearMatchEffect then
+            self.Bejeweled:ClearMatchEffect()
+            if self.Bejeweled.scorePulse then
+                self.Bejeweled.scorePulse:SetAlpha(0)
+            end
+        end
+        if self.UI and self.UI.RefreshOptions then
+            self.UI:RefreshOptions()
+        end
     else
         if self.Audio then
             self.Audio:StopAll()

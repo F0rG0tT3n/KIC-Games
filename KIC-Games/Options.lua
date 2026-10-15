@@ -214,7 +214,7 @@ local function profilePanel(parent, popupParent, root, mode)
     p.detail:Hide()
     return p
 end
-function Theme:SettingsSlider(parent, minimum, maximum, step, callback)
+function Theme:SettingsSlider(parent, minimum, maximum, step, callback, formatValue)
     local f = CreateFrame("Slider", nil, parent, "BackdropTemplate")
     f:SetOrientation("HORIZONTAL")
     f:SetMinMaxValues(minimum, maximum)
@@ -241,7 +241,7 @@ function Theme:SettingsSlider(parent, minimum, maximum, step, callback)
     f:SetScript("OnValueChanged", function(_, value)
         value = math.max(minimum, math.min(maximum, math.floor(value / step + 0.5) * step))
         f.current = value
-        f.valueLabel:SetText(value .. "%")
+        f.valueLabel:SetText(formatValue and formatValue(value) or value .. "%")
         f.fill:SetWidth(math.max(1, (f:GetWidth() - 4) * (value - minimum) / (maximum - minimum)))
         if not UI.optionsSync then
             callback(value)
@@ -402,6 +402,14 @@ function UI:CreateOptions()
         self:SetWindowScale(1)
     end, 32)
     self.scaleNote = label(self.windowPanel, "", 12, Theme.Colors.muted)
+    self.effectsPanel = panel(w, "EFFECTS", "Match and line-clear visuals in both games. Sound is unchanged.")
+    self.effectsSlider = Theme:SettingsSlider(self.effectsPanel, 0, 2, 1, function(value)
+        Games:SetOption("effectsLevel", value)
+    end, function(value)
+        return ({ "Off", "Subtle", "Full" })[value + 1]
+    end)
+    self.effectsSlider.low:SetText("Off")
+    self.effectsSlider.high:SetText("Full")
     f:Hide()
     self:RefreshOptions()
 end
@@ -499,7 +507,9 @@ function UI:LayoutOptions()
     self.scaleSlider:Layout(24, 146, available - 48)
     place(self.resetScale, 24, 218, 150, 32)
     place(self.scaleNote, 192, 218, available - 216, 48)
-    self.optionsPages.window:SetHeight(284)
+    section(self.effectsPanel, 292, 112)
+    self.effectsSlider:Layout(18, 66, available - 36)
+    self.optionsPages.window:SetHeight(404)
     for key, page in pairs(self.optionsPages) do
         page:SetShown(key == self.optionsTab)
     end
@@ -581,6 +591,7 @@ function UI:RefreshOptions()
         self.volumeSlider:Disable()
     end
     self.volumeSlider:SetValue(math.floor(s.soundVolume * 100 + 0.5))
+    self.effectsSlider:SetValue(s.effectsLevel)
     local entry, hasFiles
     for _, event in ipairs(Games.Audio.events) do
         local sound = Games.Audio:Resolve(self.previewGame, event)

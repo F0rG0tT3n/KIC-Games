@@ -121,6 +121,89 @@ function T:Pause(value)
     self:ReleaseKeys()
     self:Render()
 end
+local clearColors = {
+    { 0.35, 0.85, 1 },
+    { 0.45, 1, 0.68 },
+    { 1, 0.75, 0.28 },
+    { 1, 0.42, 0.9 },
+}
+local clearTitles = { "LINE CLEAR!", "DOUBLE CLEAR!", "TRIPLE CLEAR!", "TETRIS!" }
+function T:ClearLineEffect()
+    self.lineEffect = nil
+    if not self.lineFlash then
+        return
+    end
+    self.lineFlash:SetAlpha(0)
+    self.lineTitle:Hide()
+    for _, strip in ipairs(self.lineStrips) do
+        strip:Hide()
+    end
+    for _, spark in ipairs(self.lineSparks) do
+        spark:Hide()
+    end
+end
+function T:ShowLineEffect(lines)
+    self:ClearLineEffect()
+    local level = Games:GetSettings().effectsLevel
+    if not self.lineFlash or level == 0 or lines < 1 or lines > 4 then
+        return
+    end
+    self.lineEffect = { lines = lines, level = level, time = 0, duration = 0.45 + lines * 0.11 }
+    local color = clearColors[lines]
+    self.lineFlash:SetColorTexture(color[1], color[2], color[3], 1)
+    self.lineTitle:SetText(clearTitles[lines])
+    self.lineTitle:SetTextColor(color[1], color[2], color[3], 1)
+    self.lineTitle:Show()
+    for i, strip in ipairs(self.lineStrips) do
+        strip:SetShown(i <= lines)
+        strip:SetColorTexture(color[1], color[2], color[3], 1)
+    end
+    local count = level == 2 and lines * 4 or lines * 2
+    for i, spark in ipairs(self.lineSparks) do
+        spark:SetShown(i <= count)
+        if i <= count then
+            spark:SetColorTexture(color[1], color[2], color[3], 1)
+            local size = level == 2 and 8 or 5
+            spark:SetSize(size, size)
+        end
+    end
+    self:UpdateLineEffect(0)
+end
+function T:UpdateLineEffect(dt)
+    local effect = self.lineEffect
+    if not effect then
+        return
+    end
+    effect.time = effect.time + dt
+    local progress = math.min(1, effect.time / effect.duration)
+    local fade = 1 - progress
+    local strength = effect.level == 2 and 1 or 0.35
+    self.lineFlash:SetAlpha(fade * strength * (0.06 + effect.lines * 0.045))
+    self.lineTitle:SetAlpha(fade * (effect.level == 2 and 1 or 0.7))
+    for i, strip in ipairs(self.lineStrips) do
+        if i <= effect.lines then
+            strip:SetAlpha(fade * strength * 0.5)
+        end
+    end
+    local width, height = self.cellSize * 10, self.cellSize * 20
+    local count = effect.level == 2 and effect.lines * 4 or effect.lines * 2
+    for i = 1, count do
+        local spark = self.lineSparks[i]
+        local angle = i * 2.399963
+        spark:ClearAllPoints()
+        spark:SetPoint(
+            "CENTER",
+            self.lineLayer,
+            "TOPLEFT",
+            12 + width / 2 + math.cos(angle) * progress * width * 0.42,
+            -(12 + height / 2 + math.sin(angle) * progress * height * 0.32)
+        )
+        spark:SetAlpha(fade * strength)
+    end
+    if progress >= 1 then
+        self:ClearLineEffect()
+    end
+end
 function T:KeyDown(key)
     if not self.running or not self.root:IsVisible() or self:HasFocus() or not captured[key] then
         self.root:SetPropagateKeyboardInput(true)
@@ -173,6 +256,7 @@ function T:Advance(dt)
     end
     if not self.paused then
         dt = math.min(dt, 0.25)
+        self:UpdateLineEffect(dt)
         for _, key in ipairs({ "LEFT", "RIGHT", "DOWN" }) do
             local held = self.keys[key]
             if held then
@@ -253,6 +337,31 @@ function T:CreateUI(parent)
             self.cells[#self.cells + 1] = cell(board, 0, 0, 20)
         end
     end
+    self.lineLayer = CreateFrame("Frame", nil, board)
+    self.lineLayer:SetAllPoints(board)
+    self.lineLayer:SetFrameLevel(board:GetFrameLevel() + 8)
+    self.lineLayer:EnableMouse(false)
+    self.lineFlash = self.lineLayer:CreateTexture(nil, "OVERLAY")
+    self.lineFlash:SetBlendMode("ADD")
+    self.lineFlash:SetAlpha(0)
+    self.lineStrips = {}
+    for i = 1, 4 do
+        local strip = self.lineLayer:CreateTexture(nil, "OVERLAY")
+        strip:SetBlendMode("ADD")
+        strip:Hide()
+        self.lineStrips[i] = strip
+    end
+    self.lineSparks = {}
+    for i = 1, 16 do
+        local spark = self.lineLayer:CreateTexture(nil, "OVERLAY")
+        spark:SetTexture("Interface\\Buttons\\WHITE8X8")
+        spark:SetBlendMode("ADD")
+        spark:Hide()
+        self.lineSparks[i] = spark
+    end
+    self.lineTitle = Theme:GameLabel(self.lineLayer, "", 22, Theme.Colors.gold)
+    self.lineTitle:SetJustifyH("CENTER")
+    self.lineTitle:Hide()
     self.pauseOverlay = Theme:PauseMenu(board, "tetris", self)
     self.pauseText = self.pauseOverlay.title
     self.right = CreateFrame("Frame", nil, root)
@@ -356,6 +465,11 @@ function T:LayoutUI()
             12 + math.floor((i - 1) / 10) * self.cellSize,
             self.cellSize
         )
+    end
+    Theme:PlaceGame(self.lineFlash, 12, 12, self.cellSize * 10, self.cellSize * 20)
+    Theme:PlaceGame(self.lineTitle, 12, 12 + self.cellSize * 9, self.cellSize * 10, 36)
+    for i, strip in ipairs(self.lineStrips) do
+        Theme:PlaceGame(strip, 12, 12 + self.cellSize * (4 * i - 1), self.cellSize * 10, math.max(3, self.cellSize / 4))
     end
     self.pauseOverlay:Layout(bw - 20, 10, (bh - 180) / 2)
     local statsH = math.max(176, math.min(250, math.floor(h * 0.32)))

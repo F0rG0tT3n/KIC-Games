@@ -3106,7 +3106,7 @@ do
         "Unavailable spell file did not fall back to a verified kit"
     )
     owner.env.rejectSound = nil
-    -- Window contains one scale slider and its optional 100% reset, no size controls.
+    -- Window has scale and three-step visual effects, without size controls.
     ui:SelectOptionsTab("window")
     local sliders, buttons = 0, 0
     for _, frame in ipairs(owner.frames) do
@@ -3121,6 +3121,19 @@ do
         sliders == 1 and buttons == 1 and not ui.resizeGrip and not ui.scaleUp and not ui.scaleDown,
         "Window page contains extra size controls"
     )
+    check(settings.effectsLevel == 1 and ui.effectsSlider.valueLabel.text == "Subtle", "Effects default is not subtle")
+    for level, name in ipairs({ "Off", "Subtle", "Full" }) do
+        ui.effectsSlider:SetValue(level - 1)
+        check(
+            settings.effectsLevel == level - 1 and ui.effectsSlider.valueLabel.text == name,
+            "Effects slider did not save or label its selected level"
+        )
+    end
+    check(
+        not games:SetOption("effectsLevel", 1.5) and not games:SetOption("effectsLevel", 3),
+        "Effects accepted a value outside its three positions"
+    )
+    ui.effectsSlider:SetValue(1)
     ui.scaleSlider:SetValue(120)
     check(
         settings.windowScale == 1.2 and ui.scaleSlider.valueLabel.text == "120%",
@@ -3165,6 +3178,7 @@ do
             and r.soundVolume == settings.soundVolume
             and r.soundsEnabled == settings.soundsEnabled
             and r.windowScale == settings.windowScale
+            and r.effectsLevel == settings.effectsLevel
             and reload.games.DB.tetris.best.score >= 321
             and reload.games.DB.bejeweled.best.score >= 654,
         "Reload lost Options 2.0 preferences or saved scores"
@@ -3241,28 +3255,61 @@ do
         heard("tetris:move") and heard("tetris:select") and heard("tetris:land"),
         "Tetris movement/hold/landing sound events are disconnected"
     )
-    for count = 0, 4 do
-        t.model.board = {}
-        for y = 1, 22 do
-            t.model.board[y] = {}
-        end
-        for y = 23 - count, 22 do
-            for x = 1, 10 do
-                if x ~= 3 then
-                    t.model.board[y][x] = "O"
+    local clearFlash = {}
+    for level = 0, 2 do
+        clearFlash[level] = {}
+        games:SetOption("effectsLevel", level)
+        for count = 0, 4 do
+            t.model.board = {}
+            for y = 1, 22 do
+                t.model.board[y] = {}
+            end
+            for y = 23 - count, 22 do
+                for x = 1, 10 do
+                    if x ~= 3 then
+                        t.model.board[y][x] = "O"
+                    end
                 end
             end
+            local before, lines = #log, t.model.lines
+            t.model.kind, t.model.rotation, t.model.x, t.model.y = "I", 1, 1, 19
+            now = now + 0.2
+            t.model:Lock()
+            local event = count == 0 and "land" or "tetris_" .. count .. (count == 1 and "_line" or "_lines")
+            check(
+                #log == before + 1 and log[#log] == "tetris:" .. event and t.model.lines - lines == count,
+                "Tetris 0/1/2/3/4-line dispatch changed the actual lock operation"
+            )
+            check(
+                (count > 0 and level > 0) == (t.lineEffect ~= nil)
+                    and (not t.lineEffect or (t.lineEffect.lines == count and t.lineEffect.level == level))
+                    and (count == 0 or level > 0 or t.lineFlash.alpha == 0),
+                "Tetris line-clear visuals ignored the effects level or clear size"
+            )
+            if count > 0 and level > 0 then
+                clearFlash[level][count] = t.lineFlash.alpha
+                check(
+                    t.lineTitle.text == ({ "LINE CLEAR!", "DOUBLE CLEAR!", "TRIPLE CLEAR!", "TETRIS!" })[count]
+                        and t.lineStrips[count]:IsShown()
+                        and not (t.lineStrips[count + 1] and t.lineStrips[count + 1]:IsShown())
+                        and t.lineFlash.alpha > 0
+                        and t.lineSparks[count * (level == 2 and 4 or 2)]:IsShown()
+                        and (
+                            not t.lineSparks[count * (level == 2 and 4 or 2) + 1]
+                            or not t.lineSparks[count * (level == 2 and 4 or 2) + 1]:IsShown()
+                        ),
+                    "Tetris clear tier did not select its own visual treatment"
+                )
+            end
         end
-        local before, lines = #log, t.model.lines
-        t.model.kind, t.model.rotation, t.model.x, t.model.y = "I", 1, 1, 19
-        now = now + 0.2
-        t.model:Lock()
-        local event = count == 0 and "land" or "tetris_" .. count .. (count == 1 and "_line" or "_lines")
-        check(
-            #log == before + 1 and log[#log] == "tetris:" .. event and t.model.lines - lines == count,
-            "Tetris 0/1/2/3/4-line dispatch changed the actual lock operation"
-        )
     end
+    for count = 1, 4 do
+        check(clearFlash[1][count] < clearFlash[2][count], "Subtle Tetris flashes are as bright as Full")
+        if count > 1 then
+            check(clearFlash[2][count - 1] < clearFlash[2][count], "Larger Tetris clears did not get stronger flashes")
+        end
+    end
+    games:SetOption("effectsLevel", 2)
     t.model.gameover = true
     local silent = #log
     t.model:Lock()
@@ -3379,6 +3426,28 @@ do
     matchRound({ { 1, 1, 3 } }, "bejeweled_match_3", 2)
     matchRound({ { 1, 1, 3 }, { 2, 1, 3, true } }, "bejeweled_match_3", 3)
     matchRound({ { 1, 1, 3 } }, "bejeweled_match_3", 4)
+    matchRound({ { 1, 1, 3 }, { 4, 5, 4 } }, "bejeweled_match_4")
+    local fullFlash = b.effectFlash.alpha
+    games:SetOption("effectsLevel", 1)
+    check(not b.matchEffect and b.effectFlash.alpha == 0, "Changing effects left an old Bejeweled flash active")
+    b:StartMatchEffect(4, 4, { { x = 1, y = 1 }, { x = 2, y = 1 }, { x = 3, y = 1 }, { x = 4, y = 1 } }, 1, 200)
+    check(
+        b.matchEffect
+            and #b.matchEffect.particles == 6
+            and b.effectFlash.alpha < fullFlash
+            and b.effectParticles[1].alpha < 1,
+        "Subtle Bejeweled effects are not visibly reduced"
+    )
+    games:SetOption("effectsLevel", 0)
+    b:StartMatchEffect(5, 5, { { x = 1, y = 1 } }, 1, 250)
+    check(
+        not b.matchEffect
+            and b.effectFlash.alpha == 0
+            and not b.effectBanner:IsShown()
+            and not b.effectParticles[1]:IsShown(),
+        "Off did not suppress Bejeweled effects"
+    )
+    games:SetOption("effectsLevel", 2)
     matchRound({ { 1, 1, 3 }, { 4, 5, 4 } }, "bejeweled_match_4")
     b:UpdateMatchEffect(0.6)
     check(

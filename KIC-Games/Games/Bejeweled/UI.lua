@@ -60,19 +60,39 @@ local matchTitles = {
     [7] = "MYTHIC MATCH!",
     [8] = "UNBELIEVABLE!",
 }
-function B:StartMatchEffect(tier, length, matched, cascade, points)
+function B:ClearMatchEffect()
     if self.matchEffect then
         for i in pairs(self.matchEffect.cells) do
             self.cells[i].spark:SetAlpha(0)
         end
     end
-    for _, particle in ipairs(self.effectParticles) do
-        particle:Hide()
+    self.matchEffect = nil
+    if self.effectBanner then
+        self.effectBanner:Hide()
+        self.effectDetail:Hide()
+        self.effectFlash:SetAlpha(0)
+        for _, particle in ipairs(self.effectParticles) do
+            particle:Hide()
+        end
+    end
+end
+function B:StartMatchEffect(tier, length, matched, cascade, points)
+    self:ClearMatchEffect()
+    local level = Games:GetSettings().effectsLevel
+    if level == 0 then
+        return
     end
     local duration = tier == 5 and 1.05 or tier == 4 and 0.75 or 0.45
     local color = effectColors[tier]
-    local effect =
-        { tier = tier, duration = duration, labelDuration = duration + 0.45, time = 0, cells = {}, particles = {} }
+    local effect = {
+        tier = tier,
+        level = level,
+        duration = duration,
+        labelDuration = duration + 0.45,
+        time = 0,
+        cells = {},
+        particles = {},
+    }
     for _, c in ipairs(matched) do
         local index = key(c.x, c.y)
         effect.cells[index] = true
@@ -91,12 +111,15 @@ function B:StartMatchEffect(tier, length, matched, cascade, points)
     self.effectDetail:SetTextColor(detailColor[1], detailColor[2], detailColor[3], 1)
     self.effectDetail:Show()
     self.effectFlash:SetColorTexture(color[1], color[2], color[3], 1)
-    local count = tier == 5 and 32 or tier == 4 and 12 or 4
+    local count = level == 2 and (tier == 5 and 32 or tier == 4 and 12 or 4)
+        or (tier == 5 and 12 or tier == 4 and 6 or 2)
     for i = 1, count do
         local c = matched[(i - 1) % #matched + 1]
         local angle = i * 2.399963 -- Evenly dispersed without changing the game RNG.
         effect.particles[i] = { x = c.x, y = c.y, dx = math.cos(angle), dy = math.sin(angle) }
         local particle = self.effectParticles[i]
+        local size = level == 2 and (i % 3 == 0 and 12 or 8) or 6
+        particle:SetSize(size, size)
         particle:SetColorTexture(color[1], color[2], color[3], 1)
         particle:Show()
     end
@@ -113,11 +136,15 @@ function B:UpdateMatchEffect(dt)
     local textFade =
         math.max(0, math.min(1, (effect.labelDuration - effect.time) / (effect.labelDuration - effect.duration * 0.4)))
     for i in pairs(effect.cells) do
-        self.cells[i].spark:SetAlpha(fade * (effect.tier == 5 and 0.85 or effect.tier == 4 and 0.7 or 0.55))
+        self.cells[i].spark:SetAlpha(
+            fade * (effect.tier == 5 and 0.85 or effect.tier == 4 and 0.7 or 0.55) * (effect.level == 2 and 1 or 0.35)
+        )
     end
-    self.effectBanner:SetAlpha(textFade)
-    self.effectDetail:SetAlpha(textFade)
-    self.effectFlash:SetAlpha(fade * (effect.tier == 5 and 0.32 or effect.tier == 4 and 0.16 or 0.08))
+    self.effectBanner:SetAlpha(textFade * (effect.level == 2 and 1 or 0.75))
+    self.effectDetail:SetAlpha(textFade * (effect.level == 2 and 1 or 0.75))
+    self.effectFlash:SetAlpha(
+        fade * (effect.tier == 5 and 0.32 or effect.tier == 4 and 0.16 or 0.08) * (effect.level == 2 and 1 or 0.25)
+    )
     for i, point in ipairs(effect.particles) do
         local particle = self.effectParticles[i]
         local spread = progress * self.step * (effect.tier == 5 and 1.7 or 0.9)
@@ -129,16 +156,10 @@ function B:UpdateMatchEffect(dt)
             (point.x - 0.5) * self.step + point.dx * spread,
             -(point.y - 0.5) * self.step + point.dy * spread
         )
-        particle:SetAlpha(fade)
+        particle:SetAlpha(fade * (effect.level == 2 and 1 or 0.4))
     end
     if effect.time >= effect.labelDuration then
-        self.matchEffect = nil
-        self.effectBanner:Hide()
-        self.effectDetail:Hide()
-        self.effectFlash:SetAlpha(0)
-        for _, particle in ipairs(self.effectParticles) do
-            particle:Hide()
-        end
+        self:ClearMatchEffect()
     end
 end
 function B:CancelDrag()
@@ -494,7 +515,8 @@ function B:Advance(dt)
     dt = math.min(idleDt, 0.1)
     if self.scorePulseLeft and self.scorePulseLeft > 0 then
         self.scorePulseLeft = math.max(0, self.scorePulseLeft - dt)
-        self.scorePulse:SetAlpha(0.13 * self.scorePulseLeft / 0.35)
+        local level = Games:GetSettings().effectsLevel
+        self.scorePulse:SetAlpha(0.13 * (level == 2 and 1 or level == 1 and 0.35 or 0) * self.scorePulseLeft / 0.35)
     end
     self.scoreIdleTime = self.scoreIdleTime + idleDt
     self:UpdateMatchEffect(dt)

@@ -117,6 +117,9 @@ function T:AttachAudio(model)
         if not ended then
             local cleared = m.lines - lines
             Games.Audio:Play("tetris", lineEvents[cleared] or "land")
+            if cleared > 0 then
+                T:ShowLineEffect(cleared)
+            end
         end
         return result
     end
@@ -141,6 +144,7 @@ Games:RegisterGame({
         T:AttachAudio(T.model)
         T.running, T.paused, T.drawRevision = true, false, nil
         T.lastSavedScore = nil
+        T:ClearLineEffect()
         T:ReleaseKeys()
         T:Storage()
         T:ApplyPreset(Games:GetClassPreset())
@@ -150,6 +154,7 @@ Games:RegisterGame({
     OnStop = function()
         T:SaveBest()
         T.running = false
+        T:ClearLineEffect()
         T:ReleaseKeys()
         T.root:EnableKeyboard(false)
         T.summary:Hide()
