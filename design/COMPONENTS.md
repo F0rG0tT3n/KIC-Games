@@ -107,8 +107,10 @@ PremiumFrame menu. `SetOptions(entries, selectedKey, enabled)` takes entries wit
 `key`, `name` and `icon`; `Layout(x,y,width)` places its label and field. Menus
 inherit the window scale and live outside the clipped settings scroll child,
 opening above the field when space below is limited. Selection, Escape, outside
-clicks and Options navigation close the menu. Graphics places class and filtered
-specialization dropdowns side by side; Follow mode disables both.
+clicks and Options navigation close the menu. Both Graphics and Audio place class
+and filtered specialization dropdowns side by side in a compact profile panel,
+with a shared Follow switch. Follow mode disables manual dropdowns; an original
+theme dims and disables its entire profile panel without changing saved values.
 
 `Theme:SettingsSlider(parent, min, max, step, onValue)` is a native horizontal
 slider with the shared navy track, cyan fill, icy thumb, current percentage and

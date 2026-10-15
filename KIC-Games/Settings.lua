@@ -76,8 +76,8 @@ function Games:GetSettings()
         s.manualSpecID = spec and spec.class == token and spec.id or class and class.specs[1] and class.specs[1].id
         s.manualSpecs[token] = s.manualSpecID
         s.graphicsTheme = s.graphicsTheme == "original" and "original" or "class"
-        s.followCharacter = s.followCharacter == true
-        s.soundTheme = s.soundTheme == "class" and "class" or "arcade"
+        s.followCharacter = s.followCharacter ~= false
+        s.soundTheme = s.soundTheme == "arcade" and "arcade" or "class"
         s.soundsEnabled = s.soundsEnabled ~= false
         s.soundVolume = finite(s.soundVolume) and math.max(0, math.min(1, s.soundVolume)) or 0.6
         s.windowScale = finite(s.windowScale)
@@ -89,7 +89,7 @@ function Games:GetSettings()
     end
     s.soundVolume = math.max(0, math.min(1, s.soundVolume))
     s.windowScale = math.max(0.75, math.min(1.5, math.floor(s.windowScale * 20 + 0.5) / 20))
-    s.followCharacter = s.followCharacter == true
+    s.followCharacter = s.followCharacter ~= false
     s.soundsEnabled = s.soundsEnabled ~= false
     return s
 end

@@ -33,11 +33,17 @@ the current Launcher page open.
 Options is a full Launcher page with **Graphics**, **Audio** and **Window** tabs.
 Graphics offers original colored gems/blocks or distinct class/spec spell sets,
 side-by-side class/spec dropdowns, **Follow My Character**, and a read-only live
-preview. The class/spec catalog comes from the Retail client APIs; curated artwork
+preview, all visible without scrolling. Original Graphics dims and disables the
+profile controls while remembering their values. The class/spec catalog comes
+from the Retail client APIs; curated artwork
 covers 40 specs, including Devourer. Changes preserve the active board and score.
 
 Audio has independent Arcade/Class-Spec themes, an enable toggle, volume and real
-event previews. Arcade SoundKits support independent volume on current Retail.
+event previews on one page. Both tabs offer the same shared Follow/class/spec
+controls; Arcade Sounds disables the audio profile controls. New settings default
+to Class Spells, Follow My Character ON and Class & Specialization audio. Existing
+saved choices are retained. Arcade SoundKits support independent volume on current
+Retail.
 Spell-file effects follow WoW's SFX volume; Off or 0% silences all addon effects.
 Some profiles/events use documented arcade fallbacks. No global audio CVars change.
 

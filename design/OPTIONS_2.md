@@ -8,10 +8,14 @@ controls. No release ZIP was made.
 
 ## Implemented systems and changed files
 
-- `Options.lua`: full-page tabs; premium graphics/audio choices; class and spec
-  side-by-side icon dropdowns (class, then filtered specialization); Follow/Enable
-  toggles; read-only six-piece game-specific preview;
-  real audio preview buttons; shared native slider component; clipped scrolling.
+- `Options.lua`: compact single-page Graphics/Audio tabs; premium theme choices;
+  side-by-side class/spec icon dropdowns and Follow controls on both pages, sharing
+  one saved profile. Original Graphics disables and dims the graphics profile
+  controls; Arcade Sounds does the same on Audio, preserving all saved choices.
+  Includes a read-only six-piece game-specific preview, real audio preview
+  buttons, Enable toggle and shared native sliders. The base/minimum canvas fits
+  both pages including previews without scrolling; clipped scrolling remains a
+  fallback for future modules with extra preview events.
   Window has one 75%-150% Interface Scale slider, 5% increments, and optional
   Reset to 100%. No presets, dimension fields, aspect controls or resize grip.
 - `Profiles.lua`: one runtime class/spec catalog from `GetNumClasses`,
@@ -51,8 +55,11 @@ Under `KICGamesDB.settings`: `schemaVersion=2`, `graphicsTheme` (`class/original
 (0..1, default .6), `windowScale` (.75..1.5, default 1).
 
 Existing `classPreset` or old Tetris preset migrates to manual class selection;
-the initial spec is the first available one from the client API. Class graphics
-remain the default to preserve existing preferences. Follow defaults off.
+the initial manual spec is the first available one from the client API. Missing
+preferences default to Class Spells, Follow My Character ON and Class &
+Specialization audio. Explicit saved Original/Arcade/manual choices survive;
+disabled profile controls keep their values, and each page's theme only gates its
+own controls. Class audio can be configured while graphics uses Original.
 Legacy windowWidth/windowHeight are retained as unused data. The user canvas
 starts at 1120x700; the old public sizing hook remains only for module/testing
 compatibility and does not persist or expose dimension settings.
@@ -122,9 +129,10 @@ and `git diff --check`. The full integration suite covers API catalog expansion,
 all 40 curated specs and distinct icons, profile selection/follow events/manual
 restore, live original/class previews, unchanged active game models, audio
 enabled/volume/preview/failure/legacy/throttle/game-event paths, persisted settings
-and bests, screen fitting, and layout/scroll accessibility at 75/100/120/150%.
+and bests, screen fitting, disabled-theme profile behavior, shared audio profile
+controls, and single-page layout at 75/100/120/150% on the minimum canvas.
 Standalone engine suites and multiplayer integration regressions remain included.
-Final results: **2,529** framework assertions, **44,303** Tetris assertions and
+Final results: **2,549** framework assertions, **44,303** Tetris assertions and
 **68,272** Bejeweled assertions; all texture/profile/TOC, Lua51 and whitespace
 checks pass. Tetris best records also retain optional graphics/spec metadata so
 an Original-block record is shared accurately after later theme changes; old
@@ -138,19 +146,23 @@ performed on 2026-10-15; IDs are not invented.
 
 Offline constructor JSON/Pillow previews were inspected under
 `D:/WowAddons/.tools/kic-games-ui-preview/options2-*.png`, including each tab at
-75/100/120/150%, scrolling, original gems/blocks and class audio limitations.
+75/100/120/150%, compact audio, original gems/blocks, disabled profile controls
+and class audio limitations.
 These are not live WoW screenshots. Approximate font metrics and mocked native
 slider positioning cannot replace in-client visual/input/listening checks.
 
 ## Live WoW checklist
 
 1. `/reload`; open Options from the sidebar and each game's Options action.
-   Confirm a full Launcher page with three tabs and safe Back to game.
+   Confirm three tabs, safe Back to game, and the entire Graphics/Audio content
+   including previews visible without scrolling, especially at 1000x700.
 2. Inspect every class and its client-provided spec list, especially Devourer and
    all Evoker/Druid specs. Compare Arcane/Fire/Frost and all same-class profiles;
    verify seven visible matching symbols in Bejeweled and NEXT/HOLD/ghost in Tetris.
 3. Switch Original/Class graphics during each active run. Verify the same board,
    queue, held piece, score and high score; resume normal input/one-tile drag.
+   Original must dim and disable Follow/class/spec. Class audio remains editable
+   on Audio; Arcade Sounds must dim only that page's profile controls.
 4. Select a manual class/spec, enable Follow, change actual character spec through
    WoW, then disable Follow. Confirm automatic update, locked selectors and manual
    restoration. Changing addon settings must never change the player's real spec.

@@ -1464,6 +1464,7 @@ local originalModel = S.Tetris.model
 S.UI.optionsButton.scripts.OnClick()
 S.Tetris:Advance(0.1)
 check(S.Tetris.paused and S.UI.optionsFrame:IsShown(), "Options did not pause Tetris")
+S.UI.appearancePanel.switch.scripts.OnClick()
 S.UI.classDropdown.buttons.SHAMAN.scripts.OnClick()
 check(
     S:GetClassPreset() == "SHAMAN" and S.Tetris.icons.I == S:GetPieceIcons("tetris")[1],
@@ -1529,6 +1530,11 @@ check(
 local legacy = client("LegacySettings", "OptionsRealm")
 legacy.env.KICGamesDB = { tetris = { preset = "WARLOCK" } }
 legacy:event("ADDON_LOADED", "KIC-Games")
+check(
+    legacy.games:GetSettings().manualClass == "WARLOCK" and legacy.games:GetSettings().followCharacter,
+    "Legacy manual choice was lost when initializing the new Follow default"
+)
+legacy.games:SetOption("followCharacter", false)
 check(legacy.games:GetClassPreset() == "WARLOCK", "Legacy Tetris class selection was not migrated")
 S:AbortGame()
 -- Native drag handlers: scaled hit-testing, animation, cancellation and late clicks.
@@ -1993,10 +1999,11 @@ check(
 )
 Arcade.UI.nav.options.scripts.OnClick()
 check(Arcade.UI.launcherPage == "options" and not Arcade.UI.resultsFrame:IsShown(), "Options did not replace Results")
+Arcade:SetOption("followCharacter", false)
 Arcade.UI.classDropdown.buttons.HUNTER.scripts.OnClick()
 check(Arcade:GetClassPreset() == "HUNTER", "Embedded class controls did not save settings")
 Arcade.UI.optionsScroll.scripts.OnMouseWheel(Arcade.UI.optionsScroll, -1)
-check(Arcade.UI.optionsScroll:GetVerticalScroll() > 0, "Long Options page did not scroll")
+check(Arcade.UI.optionsScroll:GetVerticalScroll() == 0, "Compact Options still requires scrolling")
 for _, page in ipairs({ "home", "singleplayer", "multiplayer", "results", "options", "home" }) do
     Arcade.UI.nav[page].scripts.OnClick()
     check(
@@ -2196,6 +2203,7 @@ do
     M.UI:RefreshResults()
     check(M.UI.resultText.text:find("Interrupted", 1, true), "Results API history disappeared")
     M.UI:ShowOptions()
+    M:SetOption("followCharacter", false)
     M.UI.classDropdown.buttons.SHAMAN.scripts.OnClick()
     M.UI:SetWindowSize(1300, 820)
     M.UI:SetWindowScale(1.1)
@@ -2607,7 +2615,8 @@ do
         settings.schemaVersion == 2
             and settings.soundVolume == 0.6
             and settings.soundsEnabled
-            and settings.soundTheme == "arcade"
+            and settings.soundTheme == "class"
+            and settings.followCharacter
             and settings.graphicsTheme == "class",
         "Options defaults/migration are incomplete"
     )
@@ -2629,6 +2638,14 @@ do
         "Retail catalog omitted available classes or Devourer"
     )
     ui:ShowOptions()
+    check(
+        not ui.classDropdown:IsEnabled()
+            and ui.appearancePanel.switch:IsEnabled()
+            and ui.audioAppearancePanel.switch:IsEnabled()
+            and not ui.audioAppearancePanel.classDropdown:IsEnabled(),
+        "New Follow default did not consistently lock both pages' manual selectors"
+    )
+    ui.appearancePanel.switch.scripts.OnClick()
     check(
         ui.classDropdown.parent == ui.appearancePanel
             and ui.specDropdown.parent == ui.appearancePanel
@@ -2729,6 +2746,52 @@ do
         "API-discovered specialization did not get a selector and safe icon fallback"
     )
     games:SetClassPreset("MAGE")
+    games:SetManualSpec(63)
+    games:SetOption("graphicsTheme", "original")
+    ui.appearancePanel.switch.scripts.OnClick()
+    ui.classDropdown.buttons.HUNTER.scripts.OnClick()
+    check(
+        not settings.followCharacter
+            and settings.manualClass == "MAGE"
+            and settings.manualSpecID == 63
+            and ui.appearancePanel.alpha < 1
+            and not ui.appearancePanel.switch:IsEnabled()
+            and not ui.classDropdown:IsEnabled()
+            and not ui.specDropdown:IsEnabled(),
+        "Original Graphics did not visibly disable Follow/class/spec or changed the saved profile"
+    )
+    local audioProfile = ui.audioAppearancePanel
+    check(
+        audioProfile.switch:IsEnabled() and audioProfile.classDropdown:IsEnabled(),
+        "Original graphics incorrectly disabled independent class audio preferences"
+    )
+    audioProfile.specDropdown.buttons[64].scripts.OnClick()
+    check(
+        settings.manualSpecID == 64 and ui.specDropdown.text == "Frost",
+        "Audio profile selector did not update the shared class/spec preference"
+    )
+    audioProfile.switch.scripts.OnClick()
+    check(
+        settings.followCharacter and not audioProfile.specDropdown:IsEnabled(),
+        "Audio Follow switch did not control the shared profile"
+    )
+    games:SetOption("soundTheme", "arcade")
+    audioProfile.switch.scripts.OnClick()
+    check(
+        settings.followCharacter
+            and audioProfile.alpha < 1
+            and not audioProfile.switch:IsEnabled()
+            and not audioProfile.classDropdown:IsEnabled()
+            and not audioProfile.specDropdown:IsEnabled(),
+        "Arcade audio did not visibly disable its profile controls or overwrote Follow"
+    )
+    games:SetOption("graphicsTheme", "class")
+    ui.appearancePanel.switch.scripts.OnClick()
+    check(
+        not settings.followCharacter and ui.classDropdown:IsEnabled() and settings.manualSpecID == 64,
+        "Re-enabling Class Spells failed to restore the remembered manual profile"
+    )
+    games:SetOption("soundTheme", "class")
     games:SetManualSpec(63)
     check(not ui.specDropdown.buttons[90001], "Spec dropdown retained another class's options")
     ui.classDropdown.scripts.OnClick()
@@ -2994,6 +3057,7 @@ do
     )
     games:SetOption("soundsEnabled", true)
     owner.env.UIParent:SetSize(1920, 1080)
+    ui:SetWindowSize(1000, 700)
     for _, scale in ipairs({ 0.75, 1, 1.2, 1.5 }) do
         ui:SetWindowScale(scale)
         for _, tab in ipairs({ "graphics", "audio", "window" }) do
@@ -3011,11 +3075,18 @@ do
             end
             ui.optionsScroll.scrollBar:SetValue(10000)
             check(
+                ui.optionsContent.height <= ui.optionsScroll.height
+                    and not ui.optionsScroll.scrollBar:IsShown()
+                    and ui.optionsScroll:GetVerticalScroll() == 0,
+                "An Options page does not fit without scrolling at the minimum canvas size"
+            )
+            check(
                 ui.optionsScroll:GetVerticalScroll() <= math.max(0, ui.optionsContent.height - ui.optionsScroll.height),
                 "Options content cannot be reached through its clipped scrollbar"
             )
         end
     end
+    ui:ResetWindowSize()
     -- A client's legacy playback must be reported honestly, with mute still functional.
     local modern = owner.env.C_Sound
     owner.env.C_Sound = nil
@@ -3219,6 +3290,7 @@ if arg[1] == "--preview" then
     local op = optionPreview.games
     op:SetClassPreset("MAGE")
     op:SetManualSpec(62)
+    op:SetOption("followCharacter", true)
     op.UI:ShowOptions()
     for _, tab in ipairs({ "graphics", "audio", "window" }) do
         op.UI:SelectOptionsTab(tab)
@@ -3228,8 +3300,9 @@ if arg[1] == "--preview" then
         end
     end
     op.UI:SetWindowScale(1)
+    op:SetOption("followCharacter", false)
     op.UI:SelectOptionsTab("graphics")
-    op.UI.optionsScroll:SetVerticalScroll(208)
+    op.UI.optionsScroll.scrollBar:SetValue(208)
     snapshot("options2-selectors", optionPreview)
     op.UI.classDropdown.scripts.OnClick()
     snapshot("options2-class-dropdown", optionPreview)
@@ -3238,6 +3311,7 @@ if arg[1] == "--preview" then
     op.UI:CloseProfileDropdowns()
     op.UI.optionsScroll.scrollBar:SetValue(10000)
     snapshot("options2-class-preview", optionPreview)
+    op:SetOption("followCharacter", true)
     op:SetOption("graphicsTheme", "original")
     snapshot("options2-original-gems", optionPreview)
     op.UI.previewGame = "tetris"
@@ -3245,8 +3319,12 @@ if arg[1] == "--preview" then
     snapshot("options2-original-blocks", optionPreview)
     op:SetOption("soundTheme", "class")
     op.UI:SelectOptionsTab("audio")
-    op.UI.optionsScroll:SetVerticalScroll(208)
+    op.UI.optionsScroll.scrollBar:SetValue(208)
     snapshot("options2-spell-audio", optionPreview)
+    op.UI:SetWindowSize(1000, 700)
+    snapshot("options2-compact-audio", optionPreview)
+    op:SetOption("soundTheme", "arcade")
+    snapshot("options2-arcade-audio", optionPreview)
     G.UI:SelectTab("singleplayer")
     G:StartSingleplayer("tetris")
     T:SelectPreset("DRUID")

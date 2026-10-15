@@ -15,12 +15,12 @@ local function panel(parent, title, detail)
 end
 local function selector(parent, title, detail, icon, onClick)
     local b = Theme:NeonButton(parent, "", 360, 0, 0, onClick, 88)
-    b.icon = Theme:Art(b, icon, 52, 52, 14, -17, 1, "ARTWORK")
-    b.title = label(b, title, 17)
-    b.detail = label(b, detail, 12, Theme.Colors.muted)
+    b.icon = Theme:Art(b, icon, 40, 40, 14, -14, 1, "ARTWORK")
+    b.title = label(b, title, 16)
+    b.detail = label(b, detail, 11, Theme.Colors.muted)
     b:SetScript("OnSizeChanged", function()
-        place(b.title, 80, 16, b:GetWidth() - 96, 24)
-        place(b.detail, 80, 44, b:GetWidth() - 96, 32)
+        place(b.title, 68, 9, b:GetWidth() - 82, 22)
+        place(b.detail, 68, 33, b:GetWidth() - 82, 28)
     end)
     return b
 end
@@ -74,7 +74,7 @@ function Theme:SettingsDropdown(parent, popupParent, root, title, callback)
     end
     b.Layout = function(_, x, y, width)
         place(b.label, x, y, width, 20)
-        place(b, x, y + 26, width, 44)
+        place(b, x, y + 26, width, 36)
         b.caption:SetWidth(width - 82)
         b.menu:SetWidth(width)
         b.scroll:SetWidth(width - 16)
@@ -134,6 +134,8 @@ function Theme:SettingsDropdown(parent, popupParent, root, title, callback)
             b.icon:SetTexture(fallback)
         end
         b.icon:SetAlpha(enabled and 1 or 0.4)
+        b.label:SetAlpha(enabled and 1 or 0.5)
+        b.arrow:SetTextColor(unpack(enabled and self.Colors.accent or self.Colors.muted))
         b.items:SetHeight(math.max(1, #entries * 38 - 2))
         b.scroll:SetHeight(math.min(226, b.items:GetHeight()))
         b.menu:SetHeight(b.scroll:GetHeight() + 16)
@@ -171,12 +173,28 @@ function Theme:SettingsDropdown(parent, popupParent, root, title, callback)
     return b
 end
 function UI:CloseProfileDropdowns()
-    if self.classDropdown then
-        self.classDropdown:Close()
+    for _, p in ipairs(self.profilePanels or {}) do
+        p.classDropdown:Close()
+        p.specDropdown:Close()
     end
-    if self.specDropdown then
-        self.specDropdown:Close()
-    end
+end
+local function profilePanel(parent, popupParent, root, mode)
+    local p = panel(parent, "CLASS & SPECIALIZATION", "")
+    p.mode = mode
+    p.followLabel = label(p, "Follow my character", 12, Theme.Colors.muted)
+    p.switch = Theme:NeonButton(p, "ON", 60, 0, 0, function()
+        if p.switch:IsEnabled() then
+            Games:SetOption("followCharacter", not Games:GetSettings().followCharacter)
+        end
+    end, 26)
+    p.classDropdown = Theme:SettingsDropdown(p, popupParent, root, "CLASS", function(token)
+        Games:SetManualClass(token)
+    end)
+    p.specDropdown = Theme:SettingsDropdown(p, popupParent, root, "SPECIALIZATION", function(id)
+        Games:SetManualSpec(id)
+    end)
+    p.detail:Hide()
+    return p
 end
 function Theme:SettingsSlider(parent, minimum, maximum, step, callback)
     local f = CreateFrame("Slider", nil, parent, "BackdropTemplate")
@@ -260,22 +278,9 @@ function UI:CreateOptions()
             end
         ),
     }
-    self.followPanel = toggle(
-        g,
-        "FOLLOW MY CHARACTER",
-        "Use my current class and specialization. Manual choices are remembered.",
-        function()
-            Games:SetOption("followCharacter", not Games:GetSettings().followCharacter)
-        end
-    )
-    self.appearancePanel =
-        panel(g, "CLASS & SPECIALIZATION", "Choose a profile for graphics and specialization sounds.")
-    self.classDropdown = Theme:SettingsDropdown(self.appearancePanel, f, self.frame, "CLASS", function(token)
-        Games:SetManualClass(token)
-    end)
-    self.specDropdown = Theme:SettingsDropdown(self.appearancePanel, f, self.frame, "SPECIALIZATION", function(id)
-        Games:SetManualSpec(id)
-    end)
+    self.appearancePanel = profilePanel(g, f, self.frame, "graphicsTheme")
+    self.profilePanels = { self.appearancePanel }
+    self.classDropdown, self.specDropdown = self.appearancePanel.classDropdown, self.appearancePanel.specDropdown
     f:SetScript("OnHide", function()
         self:CloseProfileDropdowns()
     end)
@@ -328,22 +333,20 @@ function UI:CreateOptions()
             end
         ),
     }
-    self.soundEnabledPanel = toggle(
-        a,
-        "ENABLE GAME SOUNDS",
-        "Turn off to stop all KIC Games effects immediately.",
-        function()
-            Games:SetOption("soundsEnabled", not Games:GetSettings().soundsEnabled)
-        end
-    )
+    self.audioAppearancePanel = profilePanel(a, f, self.frame, "soundTheme")
+    self.profilePanels[#self.profilePanels + 1] = self.audioAppearancePanel
+    self.soundEnabledPanel = toggle(a, "GAME SOUNDS", "Mute all game effects.", function()
+        Games:SetOption("soundsEnabled", not Games:GetSettings().soundsEnabled)
+    end)
     self.volumePanel = panel(a, "GAME SOUND VOLUME", "")
     self.volumeSlider = Theme:SettingsSlider(self.volumePanel, 0, 100, 1, function(value)
         Games:SetOption("soundVolume", value / 100)
     end)
+    self.volumePanel.detail:SetFont(Theme.Fonts.body, 11, "")
+    self.volumeSlider.low:Hide()
+    self.volumeSlider.high:Hide()
     self.audioProfilePanel = panel(a, "SOUND PREVIEW", "")
-    self.audioProfileLink = Theme:NeonButton(self.audioProfilePanel, "Choose class / spec", 172, 0, 0, function()
-        self:SelectOptionsTab("graphics")
-    end, 28)
+    self.audioProfilePanel.detail:SetFont(Theme.Fonts.body, 11, "")
     self.audioGameButtons = {}
     for _, game in ipairs(Games:GetGames()) do
         if Games.Audio.games[game.id] then
@@ -398,73 +401,79 @@ function UI:LayoutOptions()
     local width, height = self.content:GetWidth(), self.content:GetHeight()
     local available = width - 18
     place(self.optionsHeading, 0, 2, width - 176, 30)
-    place(self.optionsSubtitle, 0, 38, width - 8, 20)
+    place(self.optionsSubtitle, 0, 30, width - 8, 18)
     local tabW = math.min(180, (available - 16) / 3)
     for i, key in ipairs({ "graphics", "audio", "window" }) do
-        place(self.optionTabs[key], (i - 1) * (tabW + 8), 68, tabW, 34)
+        place(self.optionTabs[key], (i - 1) * (tabW + 8), 52, tabW, 30)
     end
-    place(self.optionsScroll, 0, 116, width, height - 116)
+    place(self.optionsScroll, 0, 92, width, height - 92)
     self.optionsContent:SetWidth(available)
     for _, page in pairs(self.optionsPages) do
         page:SetSize(available, 1)
         place(page, 0, 0)
     end
-    local function section(f, y, h)
-        place(f, 0, y, available, h)
-        f.heading:SetWidth(available - 36)
-        place(f.detail, 18, 46, available - 36, 34)
+    local function section(f, y, h, x, w)
+        w = w or available
+        place(f, x or 0, y, w, h)
+        place(f.heading, 18, 10, w - 36, 26)
+        f.heading.title:SetFont(Theme.Fonts.display, 14, "")
+        f.heading:SetText(f.heading.text)
+        place(f.detail, 18, 36, w - 36, 28)
     end
     local half = (available - 12) / 2
-    place(self.graphicsChoices.original, 0, 0, half, 94)
-    place(self.graphicsChoices.class, half + 12, 0, half, 94)
-    section(self.followPanel, 108, 86)
-    place(self.followPanel.switch, available - 104, 16, 86, 30)
-    self.followPanel.heading:SetWidth(available - 140)
-    section(self.appearancePanel, 208, 176)
     local dropdownWidth = (available - 48) / 2
-    self.classDropdown:Layout(18, 86, dropdownWidth)
-    self.specDropdown:Layout(30 + dropdownWidth, 86, dropdownWidth)
-    local previewY = 398
-    section(self.graphicsPreview, previewY, 220)
+    for _, p in ipairs(self.profilePanels) do
+        section(p, 76, 112)
+        p.heading:SetWidth(available - 288)
+        place(p.followLabel, available - 256, 12, 160, 24)
+        place(p.switch, available - 78, 10, 60, 26)
+        p.classDropdown:Layout(18, 38, dropdownWidth)
+        p.specDropdown:Layout(30 + dropdownWidth, 38, dropdownWidth)
+    end
+    place(self.graphicsChoices.original, 0, 0, half, 68)
+    place(self.graphicsChoices.class, half + 12, 0, half, 68)
+    section(self.graphicsPreview, 196, 208)
+    self.graphicsPreview.heading:SetWidth(available - 36 - #self.previewGameButtons * 112)
     for i, b in ipairs(self.previewGameButtons) do
-        place(b, 18 + (i - 1) * 130, 86, 120, 28)
+        place(b, available - 18 - (#self.previewGameButtons - i + 1) * 112, 10, 104, 26)
     end
     local cellSize = math.min(64, math.floor((available - 36 - 5 * 10) / 6))
     for i, cell in ipairs(self.previewCells) do
-        place(cell, 18 + (i - 1) * (cellSize + 10), 136, cellSize, cellSize)
+        place(cell, 18 + (i - 1) * (cellSize + 10), 88, cellSize, cellSize)
         cell.icon:SetSize(cellSize - 10, cellSize - 10)
     end
-    self.optionsPages.graphics:SetHeight(previewY + 220)
-    place(self.audioChoices.arcade, 0, 0, half, 94)
-    place(self.audioChoices.class, half + 12, 0, half, 94)
-    section(self.soundEnabledPanel, 108, 86)
-    place(self.soundEnabledPanel.switch, available - 104, 16, 86, 30)
-    self.soundEnabledPanel.heading:SetWidth(available - 140)
-    section(self.volumePanel, 208, 200)
-    place(self.volumePanel.detail, 18, 132, available - 36, 52)
-    self.volumeSlider:Layout(24, 88, available - 48)
-    section(self.audioProfilePanel, 422, 300)
-    place(self.audioProfilePanel.detail, 18, 48, available - 36, 42)
-    place(self.audioProfileLink, available - 190, 12, 172, 28)
-    self.audioProfilePanel.heading:SetWidth(available - 226)
+    self.optionsPages.graphics:SetHeight(404)
+    place(self.audioChoices.arcade, 0, 0, half, 68)
+    place(self.audioChoices.class, half + 12, 0, half, 68)
+    local enableWidth = math.max(200, math.floor(available * 0.26))
+    local volumeWidth = available - enableWidth - 12
+    section(self.soundEnabledPanel, 196, 104, 0, enableWidth)
+    place(self.soundEnabledPanel.switch, 18, 66, 72, 26)
+    section(self.volumePanel, 196, 104, enableWidth + 12, volumeWidth)
+    self.volumePanel.heading:SetWidth(volumeWidth - 108)
+    place(self.volumePanel.detail, 18, 68, volumeWidth - 36, 28)
+    self.volumeSlider:Layout(18, 44, volumeWidth - 36)
+    section(self.audioProfilePanel, 308, 148)
+    place(self.audioProfilePanel.detail, 18, 36, available - 36, 26)
+    self.audioProfilePanel.heading:SetWidth(available - 36 - #self.audioGameButtons * 112)
     for i, b in ipairs(self.audioGameButtons) do
-        place(b, 18 + (i - 1) * 130, 100, 120, 28)
+        place(b, available - 18 - (#self.audioGameButtons - i + 1) * 112, 10, 104, 26)
     end
-    local audioCols = math.max(2, math.floor((available - 36) / 150))
+    local audioCols = math.max(4, math.floor((available - 36) / 140))
     local aw = (available - 36 - (audioCols - 1) * 8) / audioCols
     for i, event in ipairs(Games.Audio.events) do
         place(
             self.soundPreviewButtons[event],
             18 + ((i - 1) % audioCols) * (aw + 8),
-            146 + math.floor((i - 1) / audioCols) * 42,
+            66 + math.floor((i - 1) / audioCols) * 30,
             aw,
-            32
+            26
         )
     end
-    local previewBottom = 146 + math.ceil(#Games.Audio.events / audioCols) * 42
-    place(self.audioPreviewStatus, 18, previewBottom + 12, available - 36, 32)
-    self.audioProfilePanel:SetHeight(previewBottom + 56)
-    self.optionsPages.audio:SetHeight(422 + previewBottom + 56)
+    local previewBottom = 66 + math.ceil(#Games.Audio.events / audioCols) * 30
+    place(self.audioPreviewStatus, 18, previewBottom, available - 36, 16)
+    self.audioProfilePanel:SetHeight(previewBottom + 22)
+    self.optionsPages.audio:SetHeight(308 + previewBottom + 22)
     section(self.windowPanel, 0, 284)
     place(self.scaleTitle, 24, 88, available - 150, 28)
     self.scaleSlider:Layout(24, 146, available - 48)
@@ -504,12 +513,6 @@ function UI:RefreshOptions()
     for key, b in pairs(self.audioChoices) do
         Theme:Select(b, key == s.soundTheme)
     end
-    self.followPanel.switch:SetText(s.followCharacter and "ON" or "OFF")
-    Theme:Select(self.followPanel.switch, s.followCharacter)
-    self.followPanel.detail:SetText(
-        s.followCharacter and ("Following " .. profileName .. ". Manual selection is disabled.")
-            or "Choose any class/spec. Your manual selection is saved when following your character."
-    )
     local classes = {}
     for _, entry in ipairs(Games.Profiles.classes) do
         classes[#classes + 1] = {
@@ -518,14 +521,28 @@ function UI:RefreshOptions()
             icon = Games.IconPresets.FallbackIcons[entry.token] or entry.specs[1] and entry.specs[1].icon,
         }
     end
-    self.classDropdown:SetOptions(classes, token, not s.followCharacter)
     local specs = class and class.specs or {}
     self.specCount = #specs
     local choices = {}
     for i, entry in ipairs(specs) do
         choices[i] = { key = entry.id, name = entry.name, icon = entry.icon or Games.IconPresets.FallbackIcons[token] }
     end
-    self.specDropdown:SetOptions(choices, id, not s.followCharacter)
+    for _, p in ipairs(self.profilePanels) do
+        local available = s[p.mode] == "class"
+        local manual = available and not s.followCharacter
+        p:SetAlpha(available and 1 or 0.42)
+        p.heading.title:SetTextColor(unpack(available and Theme.Colors.accent or Theme.Colors.muted))
+        p.followLabel:SetTextColor(unpack(available and Theme.Colors.text or Theme.Colors.muted))
+        p.switch:SetText(s.followCharacter and "ON" or "OFF")
+        Theme:Select(p.switch, s.followCharacter)
+        if available then
+            p.switch:Enable()
+        else
+            p.switch:Disable()
+        end
+        p.classDropdown:SetOptions(classes, token, manual)
+        p.specDropdown:SetOptions(choices, id, manual)
+    end
     for _, b in ipairs(self.previewGameButtons) do
         Theme:Select(b, b.gameID == self.previewGame)
     end
