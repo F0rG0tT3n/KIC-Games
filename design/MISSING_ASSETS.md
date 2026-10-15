@@ -87,5 +87,6 @@ Nine matching gameplay action/instruction masks (`gem`, `hint`, `share`, `swap`,
 64x64 antialiased RGBA TGAs in `Media/KICUI/Icons/`. They use shared Theme tint,
 are centrally replaceable, and avoid missing Blizzard atlas dependencies.
 `tools/generate_gameplay_icons.py` is their editable geometric source and belongs
-outside installable packages. The Tetris brand uses four native violet squares.
+outside installable packages. The Tetris title icon uses the supplied `tetris-card`
+artwork, matching its Launcher icon.
 All eight supplied artwork TGAs and five existing navigation TGAs remain unchanged.

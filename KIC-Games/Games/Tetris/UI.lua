@@ -207,12 +207,7 @@ function T:CreateUI(parent)
     root:SetPoint("TOPLEFT", 0, 0)
     self.root, self.keys = root, {}
     self.left = Theme:PremiumFrame(root, 320, 550, 0, 0)
-    self.brandBlocks = {}
-    for i, point in ipairs({ { 1, 0 }, { 0, 1 }, { 1, 1 }, { 2, 1 } }) do
-        local block = Theme:Highlight(self.left, 0, 0, 18, 18, Theme.Colors.violet)
-        block.gridX, block.gridY = point[1], point[2]
-        self.brandBlocks[i] = block
-    end
+    self.brandIcon = Theme:Art(self.left, "tetris-card", 64, 64, 18, -18, 1, "ARTWORK")
     self.title = Theme:GameLabel(self.left, "TETRIS", 36)
     self.tagline = Theme:GameLabel(self.left, "STACK / CLEAR / BEAT YOUR BEST", 12, Theme.Colors.accent)
     self.intro = Theme:GameLabel(
@@ -334,9 +329,7 @@ function T:LayoutUI()
     Theme:PlaceGame(self.left, 0, 0, leftW, h)
     Theme:PlaceGame(self.board, leftW + 16, math.floor((h - bh) / 2), bw, bh)
     Theme:PlaceGame(self.right, rightX, 0, rightW, h)
-    for _, block in ipairs(self.brandBlocks) do
-        Theme:PlaceGame(block, 18 + block.gridX * 20, 28 + block.gridY * 20)
-    end
+    Theme:PlaceGame(self.brandIcon, 18, 18, 64, 64)
     Theme:PlaceGame(self.title, 92, 22, leftW - 108, 46)
     Theme:PlaceGame(self.tagline, 18, 86, leftW - 36, 26)
     Theme:PlaceGame(self.intro, 18, 126, leftW - 36, 64)

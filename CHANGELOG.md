@@ -2,6 +2,7 @@
 
 ## 0.12.0 - 2026-10-15 - Both gameplay screens
 
+- Replaced the Tetris gameplay title's flat block placeholder with the supplied Tetris artwork used by the Launcher.
 - Renamed the Launcher header action to Stop game; it ends the active instance and keeps the current Launcher page open.
 - Pause-menu Stop match returns to the visible Launcher after ending the run; the urgent-stop command still closes the addon window.
 - Rebuilt Bejeweled around the supplied artwork/instructions/actions, centered square 8x8 class-icon board, and score/gold-best/statistics/tip composition.
