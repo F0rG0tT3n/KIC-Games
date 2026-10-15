@@ -289,6 +289,9 @@ function UI:PauseGameplay()
 end
 
 function UI:ShowHome()
+    if self.gameContainer:IsShown() and Games.ActiveGame then
+        self.featuredID = Games.ActiveGame.game.id
+    end
     self:PauseGameplay()
     self:HideAuxiliaryWindows()
     self.home:Show()

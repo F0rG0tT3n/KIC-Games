@@ -2505,10 +2505,19 @@ do
             game:KeyDown("LEFT")
         end
         local recents = #games.DB.recentGames
+        ui:FeatureGame(id == "tetris" and "bejeweled" or "tetris")
         ui.homeButton.scripts.OnClick()
         check(
             game.paused and game.model == model and games.ActiveGame == active and #games.DB.recentGames == recents,
             "Back reset session/history or did not pause immediately"
+        )
+        check(
+            ui.featuredID == id
+                and ui.heroArt.artKey == id .. "-hero"
+                and ui.soloTitle.text == id:upper()
+                and ui.soloOpen:IsShown()
+                and not ui.soloPlay:IsShown(),
+            "Returning from gameplay left another game featured instead of the active game's artwork/title/resume"
         )
         if id == "tetris" then
             check(next(game.keys) == nil, "Back left held keyboard input active")
