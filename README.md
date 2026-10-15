@@ -1,11 +1,17 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.8.0. Intended for waiting for the group to fill and the time between dungeons.
+0.9.0. Intended for waiting for the group to fill and the time between dungeons.
 Includes **[Tetris](TETRIS.md)** with 13 class icon presets and
 **[Bejeweled](BEJEWELED.md)** with animated gem swaps and cascades.
 Both singleplayer modules have saved high scores, editable chat sharing and
 shared WoW class icon presets from **Options**.
+
+The Neon Arcade Launcher checkpoint adds supplied artwork, sidebar navigation,
+registry-backed game cards, a featured-game Play/Resume action and real group
+status. See [checkpoint verification](design/CHECKPOINT_1.md) and
+[replaceable artwork slots](design/MISSING_ASSETS.md). The Bejeweled, Tetris and
+Options layout redesigns are intentionally deferred to later checkpoints.
 
 Choose your class once in **Options**; it updates both games immediately without
 resetting the board or score. Your previous Tetris class selection migrates on
@@ -144,6 +150,8 @@ stopping, managed timers, sender checks and transport.
 - `Countdown.lua`: all-ready scheduling, shared countdown and cancellation.
 - `UI.lua`: library, lobby browser, participants and minimap launcher.
 - `Theme.lua`: shared dark cards, typography, custom buttons and movable layered windows.
+- `Artwork.lua`, `Media/KICUI/`: centralized decorative runtime textures and native fallbacks.
+- `Launcher.lua`: artwork feature panel, sidebar, registry-driven cards and group status.
 - `IconPresets.lua`: shared audited textures and class colors for both games.
 - `Settings.lua`, `Options.lua`: persistent class selection, options window and proportional window resizing.
 - `Games/Tetris/`: independent rules engine, game UI and module lifecycle.
@@ -156,6 +164,7 @@ Run the isolated-client integration checks from the repository root:
 lua tests/framework.lua
 lua tests/tetris.lua
 lua tests/bejeweled.lua
+python tests/artwork.py
 ```
 
 The checks load the real bundled libraries and addon files with mocked WoW APIs,

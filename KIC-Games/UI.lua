@@ -1,5 +1,6 @@
 local _, Games = ...
 local UI = { gameRows = {}, listingRows = {} }
+UI.BASE_WIDTH, UI.BASE_HEIGHT = 1120, 700
 Games.UI = UI
 local Theme = Games.Theme
 local GOLD = Theme.Colors.accent
@@ -38,7 +39,7 @@ local function enable(widget, condition)
 end
 
 function UI:Initialize()
-    local frame = panel(UIParent, 900, 630, 0, 0)
+    local frame = panel(UIParent, self.BASE_WIDTH, self.BASE_HEIGHT, 0, 0)
     frame:ClearAllPoints()
     frame:SetPoint("CENTER")
     Theme:Window(frame)
@@ -53,9 +54,11 @@ function UI:Initialize()
     _G.KICGamesWindow = frame
     UISpecialFrames[#UISpecialFrames + 1] = "KICGamesWindow"
     self.frame = frame
-    local title = label(frame, "KIC GAMES", 22, -18, 360, "GameFontNormalLarge")
-    title:SetTextColor(unpack(GOLD))
-    label(frame, "A little play between adventures", 22, -47, 490, "GameFontHighlightSmall")
+    Theme:Art(frame, "logo", 64, 64, 18, -9, 1, "ARTWORK")
+    local title = label(frame, "|cff14d6ffKIC|r GAMES", 94, -18, 360, "GameFontNormalLarge")
+    title:SetFont("Fonts\\ARIALN.TTF", 28, "")
+    title:SetTextColor(unpack(Theme.Colors.text))
+    label(frame, "A little play between adventures", 94, -53, 410, "GameFontHighlightSmall")
     Theme:CloseButton(frame)
     self.optionsButton = button(frame, "Options", 90, 440, -34, function()
         UI:ShowOptions()
@@ -157,7 +160,7 @@ function UI:Initialize()
     )
 
     self.singlePanel = panel(self.home, 485, 450, 395, -120)
-    label(self.singlePanel, "PLAY SOLO", 16, -14, 450, "GameFontNormal")
+    self.soloSection = label(self.singlePanel, "PLAY SOLO", 16, -14, 450, "GameFontNormal")
     self.soloTitle = label(self.singlePanel, "", 16, -58, 450, "GameFontNormalLarge")
     self.soloDescription = label(self.singlePanel, "", 16, -100, 450)
     self.soloDescription:SetHeight(90)
@@ -179,11 +182,12 @@ function UI:Initialize()
     self.soloLeave = button(self.singlePanel, "Leave current lobby", 190, 16, -350, function()
         Games:LeaveLobby()
     end)
-    self.footer = label(frame, "", 22, -591, 780, "GameFontHighlightSmall")
-    self.gameContainer = panel(frame, 860, 450, 20, -80)
+    self.footer = label(frame, "", 22, -669, 980, "GameFontHighlightSmall")
+    self.gameContainer = panel(frame, 860, 450, 130, -116)
     self.gameContainer:Hide()
     self:CreateResultsWindow()
     self:CreateOptions()
+    self:InitializeLauncher()
     self:InitializeResize()
     self:CreateMinimapButton()
     frame:SetScript("OnUpdate", function()
@@ -196,7 +200,9 @@ function UI:SelectTab(mode)
     if mode ~= "singleplayer" and mode ~= "multiplayer" then
         return
     end
-    local changed = self.tab ~= mode
+    local changed = self.tab ~= mode or self.launcherPage ~= mode
+    self.launcherPage = mode
+    Games.DB.launcherPage = mode
     if changed then
         self:HideAuxiliaryWindows()
     end
@@ -650,6 +656,7 @@ function UI:Refresh()
             Games:GroupChannel() and "Group connected" or "No group"
         )
     )
+    self:RefreshLauncher()
 end
 
 function UI:CreateMinimapButton()

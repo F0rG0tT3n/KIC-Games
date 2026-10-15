@@ -56,7 +56,10 @@ function UI:ShowOptions()
     self.optionsFrame:Raise()
 end
 function UI:MaxWindowScale()
-    return math.max(0.5, math.min(2, UIParent:GetWidth() / 920, UIParent:GetHeight() / 650))
+    return math.max(
+        0.5,
+        math.min(2, UIParent:GetWidth() / (self.BASE_WIDTH + 20), UIParent:GetHeight() / (self.BASE_HEIGHT + 20))
+    )
 end
 function UI:SetWindowScale(scale)
     if type(scale) ~= "number" or scale ~= scale then
@@ -116,7 +119,7 @@ function UI:InitializeResize()
         end
         local x, y = GetCursorPosition()
         local uiScale = UIParent:GetEffectiveScale()
-        local dx, dy = (x - start.x) / 900, (start.y - y) / 630
+        local dx, dy = (x - start.x) / self.BASE_WIDTH, (start.y - y) / self.BASE_HEIGHT
         local delta = (math.abs(dx) > math.abs(dy) and dx or dy) / uiScale
         self:SetWindowScale(start.scale + delta)
     end)

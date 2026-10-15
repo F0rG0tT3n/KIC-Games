@@ -143,7 +143,12 @@ local function client(name, realm)
         return self.shown and (not self.parent or self.parent:IsVisible())
     end
     function methods:GetFrameLevel()
-        return self.frameLevel or 1
+        if self.frameLevel then
+            return self.frameLevel
+        end
+        return self.parent
+                and self.parent:GetFrameLevel() + ((self.kind == "texture" or self.kind == "font") and 0 or 1)
+            or 0
     end
     function methods:EnableKeyboard(value)
         self.keyboardEnabled = value
@@ -192,6 +197,12 @@ local function client(name, realm)
     function methods:GetScale()
         return self.scale or 1
     end
+    function methods:GetParent()
+        return self.parent
+    end
+    function methods:SetParent(parent)
+        self.parent = parent
+    end
     function methods:SetScale(value)
         self.scale = value
     end
@@ -205,8 +216,6 @@ local function client(name, realm)
         return 900 / (self.scale or 1)
     end
     for _, method in ipairs({
-        "SetAlpha",
-        "SetJustifyH",
         "SetSpacing",
         "SetBackdrop",
         "SetClampedToScreen",
@@ -220,7 +229,6 @@ local function client(name, realm)
         "RegisterForDrag",
         "SetScrollChild",
         "SetHighlightTexture",
-        "SetTexCoord",
         "SetToplevel",
         "SetFontString",
         "SetOwner",
@@ -276,6 +284,16 @@ local function client(name, realm)
     end
     function methods:SetColorTexture(...)
         self.color = { ... }
+        self.textureValue = nil
+    end
+    function methods:SetAlpha(value)
+        self.alpha = value
+    end
+    function methods:SetJustifyH(value)
+        self.justify = value
+    end
+    function methods:SetTexCoord(...)
+        self.texCoord = { ... }
     end
     function methods:SetTextColor(...)
         self.textColor = { ... }
@@ -309,6 +327,7 @@ local function client(name, realm)
             return false
         end
         self.textureValue = value
+        self.color = nil
         return true
     end
     local function widget(parent)
@@ -320,10 +339,14 @@ local function client(name, realm)
         return w
     end
     function methods:CreateFontString()
-        return widget(self)
+        local w = widget(self)
+        w.kind = "font"
+        return w
     end
     function methods:CreateTexture()
-        return widget(self)
+        local w = widget(self)
+        w.kind = "texture"
+        return w
     end
     function methods:SetNormalTexture()
         self.texture = widget(self)
@@ -331,8 +354,9 @@ local function client(name, realm)
     function methods:GetNormalTexture()
         return self.texture
     end
-    env.CreateFrame = function(_, globalName, parent)
+    env.CreateFrame = function(kind, globalName, parent)
         local w = widget(parent)
+        w.kind = kind
         if globalName then
             env[globalName] = w
         end
@@ -1367,7 +1391,7 @@ check(
 S.UI.optionsFrame:Hide()
 sharedClient.env.cursorX, sharedClient.env.cursorY, sharedClient.env.mouseDown = 100, 100, true
 S.UI.resizeGrip.scripts.OnMouseDown(nil, "LeftButton")
-sharedClient.env.cursorX = 190
+sharedClient.env.cursorX = 100 + S.UI.BASE_WIDTH * 0.1
 S.UI.resizeGrip.scripts.OnUpdate()
 check(math.abs(S.UI.frame:GetScale() - 1.5) < 0.001, "Resize grip did not enlarge the window")
 sharedClient.env.mouseDown = false
@@ -1483,6 +1507,124 @@ dragRound()
 source = dragFrom(2, 1)
 DragGames:AbortGame()
 check(not Drag.running and not Drag.drag and not Drag.dragFrame:IsShown(), "Quick stop left a floating icon behind")
+local launcherClient = client("ArcadePlayer", "ArcadeRealm")
+launcherClient.grouped = false
+local Arcade = launcherClient.games
+Arcade.UI:OpenLauncher("home")
+check(#Arcade:GetGames() == 2 and not Arcade.Registry.pug, "Concept artwork registered a fake game")
+check(
+    Arcade.UI.launcherCards[1].title.text == "Bejeweled" and Arcade.UI.launcherCards[2].title.text == "Tetris",
+    "Launcher cards are not sourced from the actual registry"
+)
+check(
+    Arcade.UI.groupStatus.text == "No group" and Arcade.UI.footer.text:find("2 installed", 1, true),
+    "Home shows inaccurate group or installed-game status"
+)
+check(
+    not Arcade.UI.soloSection:IsShown() and not Arcade.UI.optionsButton:IsShown(),
+    "Legacy hero heading or duplicate header options remain visible at home"
+)
+Arcade.UI.launcherCards[2].details.scripts.OnClick()
+check(
+    Arcade.UI.featuredID == "tetris"
+        and Arcade.UI.soloTitle.text == "TETRIS"
+        and Arcade.UI.heroArt.textureValue == Arcade.Artwork["tetris-hero"].file,
+    "Game details did not update the hero"
+)
+local arcadePackets = #packets
+Arcade.UI.soloPlay.scripts.OnClick()
+check(
+    Arcade.ActiveGame and Arcade.ActiveGame.game.id == "tetris" and #packets == arcadePackets,
+    "Featured Play did not launch the actual game locally"
+)
+local arcadeModel = Arcade.Tetris.model
+Arcade.UI:OpenLauncher("home")
+check(
+    Arcade.UI.launcherCards[2].play.text == "Resume" and not Arcade.UI.launcherCards[1].play.enabled,
+    "Launcher failed to distinguish resume from a blocked second game"
+)
+check(
+    Arcade.UI.abortButton:IsShown()
+        and Arcade.UI.abortButton.points[1][2] + Arcade.UI.abortButton.width <= Arcade.UI.groupPanel.points[1][2],
+    "Home group status covers the immediate Stop match action"
+)
+Arcade.UI.launcherCards[2].play.scripts.OnClick()
+check(Arcade.Tetris.model == arcadeModel and Arcade.UI.gameContainer:IsShown(), "Card Resume restarted the round")
+Arcade:AbortGame()
+Arcade.UI:OpenLauncher("singleplayer")
+check(
+    Arcade.UI.launcherPage == "singleplayer" and Arcade.UI.cardScroll:IsShown() and not Arcade.UI.browserPanel:IsShown(),
+    "Singleplayer sidebar did not filter the launcher"
+)
+Arcade.UI.nav.results.scripts.OnClick()
+check(Arcade.UI.resultsFrame:IsShown(), "Sidebar Results action is inert")
+Arcade.UI.resultsFrame:Hide()
+Arcade.UI.nav.options.scripts.OnClick()
+check(Arcade.UI.optionsFrame:IsShown(), "Sidebar Options action is inert")
+Arcade.UI.optionsFrame:Hide()
+Arcade:RegisterGame({
+    id = "external_arcade",
+    title = "External Arcade",
+    version = "1",
+    mode = "multiplayer",
+    CreateUI = function(_, parent)
+        return launcherClient.env.CreateFrame("Frame", nil, parent)
+    end,
+    OnStart = function() end,
+})
+Arcade.UI:OpenLauncher("home")
+check(
+    #Arcade:GetGames() == 3 and Arcade.UI.launcherCards[3]:IsShown(),
+    "Third-party registration did not create a real card"
+)
+Arcade.UI:FeatureGame("external_arcade")
+check(
+    Arcade.UI.soloPlay.text == "View lobby" and Arcade.UI.heroFallback:IsShown(),
+    "Unknown artwork did not use a functional styled fallback"
+)
+Arcade.UI.soloPlay.scripts.OnClick()
+check(
+    Arcade.UI.launcherPage == "multiplayer"
+        and Arcade.UI.browserPanel:IsShown()
+        and Arcade.UI.lobbyPanel:IsShown()
+        and not Arcade.UI.cardScroll:IsShown(),
+    "Multiplayer CTA did not expose real lobby actions"
+)
+check(not Arcade.UI.create.enabled, "Solo player was offered a fake enabled host action")
+launcherClient.grouped, launcherClient.roster = true, { a.name, b.name }
+launcherClient:event("GROUP_ROSTER_UPDATE")
+check(
+    Arcade.UI.groupStatus.text == "Party connected" and Arcade.UI.groupDetail.text:find("3 members", 1, true),
+    "Group status did not update from the real roster event"
+)
+check(Arcade.UI.create.enabled, "Eligible group could not host the selected multiplayer module")
+Arcade.UI.create.scripts.OnClick()
+check(
+    Arcade.Lobby and Arcade.Lobby.gameID == "external_arcade",
+    "Host action was disconnected from the registry selection"
+)
+Arcade:LeaveLobby()
+Arcade.UI:OpenLauncher("home")
+Arcade.UI:FeatureGame("tetris")
+launcherClient.env.rejectTexture = Arcade.Artwork["tetris-hero"].file
+Arcade.UI:Refresh()
+check(Arcade.UI.heroArt.color and Arcade.UI.soloPlay.enabled, "A rejected texture broke the native Play control")
+launcherClient.env.rejectTexture = nil
+Arcade.UI:Refresh()
+for _, scale in ipairs({ 1, 1.2 }) do
+    Arcade.UI:SetWindowScale(scale)
+    check(
+        Arcade.UI.frame:GetScale() == scale
+            and Arcade.UI.hero:GetEffectiveScale() == scale
+            and Arcade.UI.launcherCards[1].icon:GetEffectiveScale() == scale,
+        "Launcher artwork or controls do not scale together"
+    )
+end
+local cardFrames = #launcherClient.frames
+for _ = 1, 5 do
+    Arcade.UI:Refresh()
+end
+check(#launcherClient.frames == cardFrames, "Launcher refresh leaked decorative/UI frames")
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))
 
 -- Optional layout snapshots from the actual UI constructors, for offline visual review.
@@ -1521,6 +1663,11 @@ if arg[1] == "--preview" then
                 "textureValue",
                 "strata",
                 "frameLevel",
+                "kind",
+                "alpha",
+                "justify",
+                "texCoord",
+                "scale",
             }) do
                 if frame[key] ~= nil then
                     fields[#fields + 1] = json(key) .. ":" .. json(frame[key])
@@ -1581,4 +1728,11 @@ if arg[1] == "--preview" then
     cursorOn(2, 2)
     Drag:Advance(0.1)
     snapshot("bejeweled-drag", dragClient)
+    Arcade.UI:SetWindowScale(1)
+    Arcade.UI:OpenLauncher("home")
+    Arcade.Registry.external_arcade = nil
+    Arcade.UI:FeatureGame("bejeweled")
+    snapshot("launcher", launcherClient)
+    Arcade.UI:SetWindowScale(1.2)
+    snapshot("launcher-120", launcherClient)
 end

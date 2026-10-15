@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0 - 2026-10-15 — Launcher redesign checkpoint
+
+- Added the supplied Neon Arcade artwork to a centralized runtime texture catalog with documented native replacement slots.
+- Added Home/Singleplayer/Multiplayer/Results/Options navigation, a feature artwork panel, live game cards, real records and group status.
+- Preserved launch/resume, multiplayer controls, saved settings, slash/minimap access and proportional resizing in a 1120×700 shell.
+- Added native shared palette, typography tokens, primary/button states, static neon corners and reusable card/artwork helpers.
+- Added runtime artwork checks and Launcher integration/100%-120% scale coverage; documented required live WoW visual checks.
+- Deferred Bejeweled, Tetris and Options layout redesigns to their own checkpoints. No ZIP was produced.
+
 ## 0.8.0 - 2026-10-15
 
 - Added Bejeweled drag-and-drop swaps with a floating class icon, neighbor highlighting and scale-aware drop targets.
