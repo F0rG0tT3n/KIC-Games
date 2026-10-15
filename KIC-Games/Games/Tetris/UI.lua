@@ -437,7 +437,7 @@ function T:LayoutUI()
     local parent = self.root:GetParent()
     local w, h = parent:GetWidth(), parent:GetHeight()
     self.root:SetSize(w, h)
-    self.cellSize = math.floor(math.min((h - 108) / 20, (w - 616) / 10))
+    self.cellSize = math.floor(math.min((h - 40) / 20, (w - 616) / 10))
     local bw, bh = 10 * self.cellSize + 24, 20 * self.cellSize + 24
     local leftW = math.max(280, math.floor((w - bw - 32) * 0.48))
     local rightX, rightW = leftW + bw + 32, w - leftW - bw - 32

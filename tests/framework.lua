@@ -3248,6 +3248,11 @@ do
     end
     games:StartSingleplayer("tetris")
     local t = games.Tetris
+    local boardParent = t.root:GetParent()
+    check(
+        t.cellSize == math.floor(math.min((boardParent:GetHeight() - 40) / 20, (boardParent:GetWidth() - 616) / 10)),
+        "Tetris clear callout reduced the original board size"
+    )
     t.model:Move(-1, 0)
     t.model:Hold()
     t.model:HardDrop()
