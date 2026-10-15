@@ -9,6 +9,7 @@ function B:Blocked()
         or not self.root:IsVisible()
         or (GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus() ~= nil)
         or Games.UI.resultsFrame:IsShown()
+        or (Games.UI.optionsFrame and Games.UI.optionsFrame:IsShown())
 end
 function B:Pause(value)
     self.paused = value
@@ -80,8 +81,11 @@ function B:Render()
             local hint = self.hint
                 and ((self.hint.x == x and self.hint.y == y) or (self.hint.tx == x and self.hint.ty == y))
             cell:SetBackdropColor(c[1] * 0.11 + 0.025, c[2] * 0.11 + 0.025, c[3] * 0.11 + 0.025, 1)
+            cell.selection:SetShown(selected == true)
+            cell.marker:SetShown(selected == true)
             if selected then
-                cell:SetBackdropBorderColor(unpack(Theme.Colors.accent))
+                cell:SetBackdropColor(0.28, 0.22, 0.045, 1)
+                cell:SetBackdropBorderColor(1, 0.88, 0.25, 1)
             elseif hint then
                 cell:SetBackdropBorderColor(1, 0.85, 0.25, 1)
             elseif matches[index] then
@@ -107,8 +111,8 @@ function B:Render()
             end
             cell.icon:SetPoint("TOPLEFT", 5 + dx, -5 + dy)
             if kind then
-                if cell.icon:SetTexture(self.Gems[kind].icon) == false then
-                    cell.icon:SetTexture(237189)
+                if cell.icon:SetTexture(self.icons[kind]) == false then
+                    cell.icon:SetTexture(self.fallbackIcon)
                 end
                 cell.icon:SetAlpha(matches[index] and (0.35 + 0.65 * math.abs(math.cos(self.phaseTime * 12))) or 1)
                 cell.icon:Show()
@@ -200,14 +204,18 @@ function B:CreateUI(parent)
     local left = Theme:Panel(root, 192, 418, 16, -16)
     Theme:Label(left, "BEJEWELED", 14, -18, 168, "GameFontNormalLarge"):SetTextColor(unpack(Theme.Colors.accent))
     Theme:Label(left, "MATCH / CASCADE / REPEAT", 14, -50, 170, "GameFontHighlightSmall")
+    self.presetLabel = Theme:Label(left, "", 14, -76, 164)
     local help = Theme:Label(
         left,
-        "Click two neighboring gems.\n\nMatch 3+ in a row or column.\n\nCascades multiply points.\n\nNo timer. Take your time.\n\nEnds when no swaps remain.",
+        "Click two neighboring icons.\n\nMatch 3+ in a row or column.\n\nCascades multiply points.\n\nNo timer. Take your time.\n\nNo swaps left? Run complete.",
         14,
-        -82,
+        -110,
         164
     )
-    help:SetFont("Fonts\\ARIALN.TTF", 13, "")
+    help:SetFont("Fonts\\ARIALN.TTF", 12, "")
+    Theme:Button(left, "Class options", 164, 14, -263, function()
+        Games.UI:ShowOptions()
+    end)
     Theme:Button(left, "Hint", 164, 14, -298, function()
         self:Hint()
     end)
@@ -246,6 +254,23 @@ function B:CreateUI(parent)
             cell.icon = cell:CreateTexture(nil, "ARTWORK")
             cell.icon:SetSize(34, 34)
             cell.icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
+            cell.selection = CreateFrame("Frame", nil, cell, "BackdropTemplate")
+            cell.selection:SetPoint("TOPLEFT", -2, 2)
+            cell.selection:SetPoint("BOTTOMRIGHT", 2, -2)
+            cell.selection:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 3 })
+            cell.selection:SetBackdropBorderColor(1, 0.9, 0.25, 1)
+            cell.selection:SetFrameLevel(cell:GetFrameLevel() + 3)
+            cell.selection:Hide()
+            local strip = cell.selection:CreateTexture(nil, "BACKGROUND")
+            strip:SetSize(44, 11)
+            strip:SetPoint("BOTTOM", 0, 2)
+            strip:SetColorTexture(0.12, 0.09, 0.01, 1)
+            cell.marker = Theme:Label(cell.selection, "SELECTED", 0, 0, 44, "GameFontHighlightSmall")
+            cell.marker:ClearAllPoints()
+            cell.marker:SetPoint("BOTTOM", 0, 2)
+            cell.marker:SetFont("Fonts\\ARIALN.TTF", 8, "")
+            cell.marker:SetJustifyH("CENTER")
+            cell.marker:SetTextColor(1, 1, 0.65, 1)
             self.cells[key(x, y)] = cell
         end
     end

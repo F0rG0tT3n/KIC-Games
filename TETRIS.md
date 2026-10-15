@@ -21,14 +21,16 @@ Each piece kind has its own bright color and spell icon. A translucent ghost
 shows where hard drop will land. Five upcoming pieces and the held piece are
 shown beside the board. Pieces come from shuffled seven-piece bags.
 
-Choose any of the 13 **class icon presets** during play. Your selection is saved;
+Choose any of the 13 **class icon presets** in the shared **Options** menu. The
+same selection applies immediately to Tetris and Bejeweled. Your selection is saved;
 the default is your own class. Presets are cosmetic and use the same rules and
 high score. Each preset uses seven fixed spell texture FileDataIDs supplied by WoW,
 independent of spell availability or the spell cache. All 91 slots were checked
 against the [WoW archive file list](https://github.com/wowdev/wow-listfile).
 If the client rejects a texture, the renderer uses that class's icon instead.
 Selecting another preset does not
-restart the game.
+restart the game. Opening Options pauses play; close it, then resume when ready.
+The former Tetris class picker now lives entirely in Options.
 
 ## Score and speed
 
@@ -73,8 +75,8 @@ their normal WoW behavior. Combat-specific handling is outside this addon scope.
 
 ## Module layout
 
-`Games/Tetris/Engine.lua` contains standalone rules; `Presets.lua` contains spell
-texture IDs and colors; `UI.lua` handles rendering and input; `Module.lua` registers the
+`Games/Tetris/Engine.lua` contains standalone rules; `Presets.lua` adapts the
+shared `IconPresets.lua` catalog; `UI.lua` handles rendering and input; `Module.lua` registers the
 game and connects persistence, completion and chat sharing to the framework.
 They are bundled in the existing addon folder, so one KIC-Games installation or
 junction is enough. The multiplayer protocol remains API v3.

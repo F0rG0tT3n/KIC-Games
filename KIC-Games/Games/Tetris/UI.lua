@@ -86,17 +86,16 @@ function T:Render(force)
     self.pauseButton:SetText(self.paused and "Resume (P)" or "Pause (P)")
 end
 function T:SelectPreset(token)
+    return Games:SetClassPreset(token)
+end
+function T:ApplyPreset(token)
     if not self.ByToken[token] then
         return
     end
-    self:Storage().preset = token
     self.icons = self:GetIcons(token)
     self.fallbackIcon = self.FallbackIcons[token]
-    for _, preset in ipairs(self.Presets) do
-        Theme:Select(self.presetButtons[preset.token], token == preset.token)
-        self.presetButtons[preset.token]:SetText(
-            (token == preset.token and "> " or "") .. "|cff" .. preset.color .. preset.name .. "|r"
-        )
+    if self.presetLabel then
+        self.presetLabel:SetText(self.ByToken[token].name .. " icons")
     end
     self:Render(true)
 end
@@ -105,6 +104,7 @@ local captured =
 function T:HasFocus()
     return (GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus() ~= nil)
         or (Games.UI.resultsFrame and Games.UI.resultsFrame:IsShown())
+        or (Games.UI.optionsFrame and Games.UI.optionsFrame:IsShown())
 end
 function T:ReleaseKeys()
     self.keys = {}
@@ -206,29 +206,19 @@ function T:CreateUI(parent)
     root:SetAllPoints(parent)
     self.root, self.keys = root, {}
     text(root, "TETRIS", 20, -12, 260, true):SetTextColor(unpack(Theme.Colors.accent))
-    text(root, "ICON COLLECTION / CLASS", 20, -46, 260):SetTextColor(unpack(Theme.Colors.muted))
-    self.presetButtons = {}
-    for i, preset in ipairs(self.Presets) do
-        local token = preset.token
-        self.presetButtons[token] = button(
-            root,
-            preset.name,
-            20 + ((i - 1) % 2) * 134,
-            -70 - math.floor((i - 1) / 2) * 27,
-            130,
-            function()
-                self:SelectPreset(token)
-            end
-        )
-    end
-    button(root, "Share best to chat", 20, -274, 264, function()
+    self.presetLabel = text(root, "", 20, -48, 260)
+    button(root, "Options", 20, -82, 264, function()
+        Games.UI:ShowOptions()
+    end)
+    text(root, "Stack, clear lines, beat your best.", 20, -132, 265)
+    button(root, "Share best to chat", 20, -188, 264, function()
         self:ShareBest()
     end)
     text(
         root,
         "Left / Right: move\nUp / X: rotate   Z: reverse\nDown: soft drop\nSpace: hard drop\nC: hold   P: pause\nHidden window / chat: auto-pause",
         20,
-        -314,
+        -246,
         275
     )
     local board = panel(root, 202, 402, 312, -20)

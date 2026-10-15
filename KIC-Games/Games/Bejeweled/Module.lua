@@ -1,15 +1,9 @@
 local _, Games = ...
 local B = Games.Bejeweled
--- Texture FileDataIDs checked against the same archive index as the Tetris presets.
-B.Gems = {
-    { icon = 133251, name = "Ruby", color = { 1, 0.25, 0.35 } }, -- inv_jewelcrafting_livingruby_02
-    { icon = 133268, name = "Sapphire", color = { 0.25, 0.6, 1 } }, -- inv_jewelcrafting_starofelune_02
-    { icon = 133241, name = "Dawnstone", color = { 1, 0.85, 0.2 } }, -- inv_jewelcrafting_dawnstone_02
-    { icon = 133255, name = "Amethyst", color = { 0.72, 0.35, 1 } }, -- inv_jewelcrafting_nightseye_02
-    { icon = 133258, name = "Topaz", color = { 1, 0.5, 0.15 } }, -- inv_jewelcrafting_nobletopaz_02
-    { icon = 133271, name = "Emerald", color = { 0.25, 0.95, 0.55 } }, -- inv_jewelcrafting_talasite_02
-    { icon = 237236, name = "Diamond", color = { 0.8, 0.95, 1 } }, -- inv_jewelcrafting_icediamond_02
-}
+B.Gems = {}
+for i, kind in ipairs(Games.IconPresets.Kinds) do
+    B.Gems[i] = { color = Games.IconPresets.Colors[kind] }
+end
 local function number(value)
     return type(value) == "number" and value == value and value >= 0 and value <= 2147483647 and math.floor(value) or 0
 end
@@ -25,6 +19,22 @@ function B:Storage()
         s.best[key] = number(s.best[key])
     end
     return s
+end
+function B:ApplyPreset(token)
+    local shared = Games.IconPresets
+    local preset = shared.ByToken[token]
+    if not preset then
+        return
+    end
+    self.icons = {}
+    for i, icon in ipairs(preset.icons) do
+        self.icons[i] = icon
+    end
+    self.fallbackIcon = shared.FallbackIcons[token]
+    if self.presetLabel then
+        self.presetLabel:SetText(preset.name .. " icons")
+    end
+    self:Render()
 end
 function B:SaveBest()
     local m, s = self.model, self:Storage()
@@ -86,12 +96,13 @@ function B:Complete()
 end
 Games:RegisterGame({
     id = "bejeweled",
+    icon = 133251,
     title = "Bejeweled",
     version = "1",
     mode = "singleplayer",
     minPlayers = 1,
     maxPlayers = 1,
-    description = "Swap neighboring WoW gems to match three or more. Chain cascades, beat your saved best and share it. Relaxed play, no time limit.",
+    description = "Swap neighboring class ability icons to match three or more. Chain cascades, beat your saved best and share it. Relaxed play, no time limit.",
     CreateUI = function(_, parent)
         return B:CreateUI(parent)
     end,
@@ -100,6 +111,7 @@ Games:RegisterGame({
         B.running, B.paused = true, false
         B.selected, B.hint, B.swap, B.fall = nil, nil, nil, nil
         B.phaseTime, B.message = 0, "Select a gem, then a neighbor."
+        B:ApplyPreset(Games:GetClassPreset())
         B.root:Show()
         B:Render()
     end,

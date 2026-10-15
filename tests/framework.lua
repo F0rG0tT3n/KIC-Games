@@ -54,7 +54,10 @@ local function client(name, realm)
     end
     env.hooksecurefunc = function() end
     env.GetCursorPosition = function()
-        return 0, 0
+        return env.cursorX or 0, env.cursorY or 0
+    end
+    env.IsMouseButtonDown = function()
+        return env.mouseDown == true
     end
     env.UnitClass = function()
         return "Mage", "MAGE"
@@ -184,7 +187,22 @@ local function client(name, realm)
         return 0, 0
     end
     function methods:GetEffectiveScale()
-        return 1
+        return (self.scale or 1) * (self.parent and self.parent:GetEffectiveScale() or 1)
+    end
+    function methods:GetScale()
+        return self.scale or 1
+    end
+    function methods:SetScale(value)
+        self.scale = value
+    end
+    function methods:GetWidth()
+        return self.width or 0
+    end
+    function methods:GetLeft()
+        return 100 / (self.scale or 1)
+    end
+    function methods:GetTop()
+        return 900 / (self.scale or 1)
     end
     for _, method in ipairs({
         "SetAlpha",
@@ -321,6 +339,7 @@ local function client(name, realm)
         return w
     end
     env.UIParent, env.Minimap, env.GameTooltip = widget(), widget(), widget()
+    env.UIParent:SetSize(1920, 1080)
     env.DEFAULT_CHAT_FRAME = {
         AddMessage = function(_, value)
             notices[#notices + 1] = value
@@ -1159,7 +1178,7 @@ reload:event("ADDON_LOADED", "KIC-Games")
 check(reload.games.Tetris:Storage().best.score == T.model.score, "Reload lost SavedVariables high score")
 G.DB.tetris = { preset = "invalid", best = { score = 0 / 0, lines = -10, level = math.huge } }
 check(
-    T:Storage().best.score == 0 and T:Storage().best.level == 1 and G.DB.tetris.preset == "MAGE",
+    T:Storage().best.score == 0 and T:Storage().best.level == 1 and G.DB.tetris.preset == G:GetClassPreset(),
     "Invalid saved values were not repaired"
 )
 local jewel = client("Jeweler", "GemRealm")
@@ -1169,15 +1188,15 @@ local jewelPackets = #packets
 check(Q:StartSingleplayer("bejeweled"), "Bejeweled did not start from the registry")
 check(Bj.running and Bj.root:IsVisible() and #Bj.cells == 64, "Bejeweled board did not initialize")
 check(not Bj.root.keyboardEnabled, "Mouse game unnecessarily captured keyboard input")
-local jewelAssets = assert(loadfile(root .. "../tests/bejeweled-icon-files.lua"))()
+local jewelAssets = assert(loadfile(root .. "../tests/tetris-icon-files.lua"))()
 local seenGems = {}
 check(#Bj.Gems == 7, "Bejeweled does not have seven gem kinds")
-for _, gem in ipairs(Bj.Gems) do
+for i, gem in ipairs(Bj.Gems) do
     check(
-        gem.icon ~= 134400 and jewelAssets[gem.icon] and not seenGems[gem.icon],
+        Bj.icons[i] ~= 134400 and jewelAssets[Bj.icons[i]] and not seenGems[Bj.icons[i]],
         "Bejeweled has a missing or duplicate gem icon"
     )
-    seenGems[gem.icon] = true
+    seenGems[Bj.icons[i]] = true
 end
 -- Use an exact stable board so UI checks do not depend on random cascades.
 local function jewelBoard(playable)
@@ -1191,9 +1210,9 @@ local function jewelBoard(playable)
     end
 end
 jewelBoard(true)
-jewel.env.rejectTexture = Bj.Gems[1].icon
+jewel.env.rejectTexture = Bj.icons[1]
 Bj:Render()
-check(Bj.cells[1].icon.textureValue == 237189, "Rejected jewel texture did not use a known gem fallback")
+check(Bj.cells[1].icon.textureValue == Bj.fallbackIcon, "Rejected texture did not use the class fallback")
 jewel.env.rejectTexture = nil
 local refillIndex = 0
 Bj.model.random = function(n)
@@ -1281,6 +1300,90 @@ jewelReload:event("ADDON_LOADED", "KIC-Games")
 check(jewelReload.games.Bejeweled:Storage().best.score == jewelSaved.best.score, "Reload lost Bejeweled high score")
 Q.DB.bejeweled = { best = { score = 0 / 0, moves = -1, cleared = math.huge } }
 check(Bj:Storage().best.score == 0 and Bj:Storage().best.moves == 0, "Malformed Bejeweled save was not repaired")
+-- Shared settings, launcher icons, selection visibility and proportional resizing.
+local sharedClient = client("SharedOptions", "OptionsRealm")
+local S = sharedClient.games
+sharedClient.grouped = false
+S.UI:SelectTab("singleplayer")
+check(
+    S.UI.gameRows[1].icon:IsShown() and S.UI.gameRows[1].title.text == "Bejeweled",
+    "Bejeweled library icon is missing"
+)
+check(not S.UI.gameRows[2].icon:IsShown() and S.UI.gameRows[2].iconTiles[1]:IsShown(), "Tetris block icon is missing")
+check(S:StartSingleplayer("tetris"), "Could not start Tetris for options checks")
+local originalModel = S.Tetris.model
+S.UI.optionsButton.scripts.OnClick()
+S.Tetris:Advance(0.1)
+check(S.Tetris.paused and S.UI.optionsFrame:IsShown(), "Options did not pause Tetris")
+S.UI.classButtons.SHAMAN.scripts.OnClick()
+check(
+    S:GetClassPreset() == "SHAMAN" and S.Tetris.icons.I == S.IconPresets.ByToken.SHAMAN.icons[1],
+    "Class menu did not update Tetris"
+)
+check(S.Tetris.model == originalModel and not S.Tetris.presetButtons, "Options reset game or left the old class picker")
+S.UI.optionsFrame:Hide()
+S:AbortGame()
+S:StartSingleplayer("bejeweled")
+check(S.Bejeweled.icons[1] == S.Tetris.icons.I, "Shared class was not applied when switching games")
+local jewelModel = S.Bejeweled.model
+S.Bejeweled:Click(1, 1, "LeftButton")
+check(
+    S.Bejeweled.cells[1].selection:IsShown() and S.Bejeweled.cells[1].marker:IsShown(),
+    "Selected icon lacks a visible frame and marker"
+)
+S.Bejeweled:Click(1, 1, "RightButton")
+check(not S.Bejeweled.cells[1].selection:IsShown(), "Selection frame remained after deselection")
+S.UI:ShowOptions()
+S.Bejeweled:Advance(0.1)
+check(S.Bejeweled.paused, "Options did not pause Bejeweled")
+for _, preset in ipairs(S.IconPresets.Presets) do
+    S.UI.classButtons[preset.token].scripts.OnClick()
+    for i, kind in ipairs(S.IconPresets.Kinds) do
+        check(
+            S.Bejeweled.icons[i] == S.Tetris.icons[kind] and S.Bejeweled.icons[i] == preset.icons[i],
+            "Games disagree on shared class icons"
+        )
+    end
+end
+check(S.Bejeweled.model == jewelModel, "Live class changes reset the Bejeweled board")
+S.UI:SetWindowScale(1.4)
+check(
+    S.UI.frame:GetScale() == 1.4 and S.UI.optionsFrame:GetScale() == 1.4 and S.Bejeweled.root:GetEffectiveScale() == 1.4,
+    "Window resize did not enlarge games and options"
+)
+check(
+    S.Bejeweled.summary:GetScale() == 1.4 and S.Tetris.summary:GetScale() == 1.4,
+    "Result overlays did not follow window scaling"
+)
+S.UI.optionsFrame:Hide()
+sharedClient.env.cursorX, sharedClient.env.cursorY, sharedClient.env.mouseDown = 100, 100, true
+S.UI.resizeGrip.scripts.OnMouseDown(nil, "LeftButton")
+sharedClient.env.cursorX = 190
+S.UI.resizeGrip.scripts.OnUpdate()
+check(math.abs(S.UI.frame:GetScale() - 1.5) < 0.001, "Resize grip did not enlarge the window")
+sharedClient.env.mouseDown = false
+S.UI.resizeGrip.scripts.OnUpdate()
+check(not S.UI.resizeStart and S.UI.frame.movable, "Resize did not release after mouse-up outside grip")
+S.UI:SetWindowScale(999)
+check(S.UI.frame:GetScale() <= S.UI:MaxWindowScale(), "Resize exceeded the visible screen")
+S.UI:SetWindowScale(0 / 0)
+check(S.UI.frame:GetScale() == 1, "Invalid scale was not normalized")
+S.UI:SetWindowScale(1.25)
+S:SetClassPreset("HUNTER")
+local sharedSaved = S.DB
+local restored = client("RestoredSettings", "OptionsRealm")
+restored.env.KICGamesDB = sharedSaved
+restored:event("ADDON_LOADED", "KIC-Games")
+restored.games.UI:SetWindowScale(restored.games:GetSettings().windowScale)
+check(
+    restored.games:GetClassPreset() == "HUNTER" and restored.games.UI.frame:GetScale() == 1.25,
+    "Shared class/size settings did not survive reload"
+)
+local legacy = client("LegacySettings", "OptionsRealm")
+legacy.env.KICGamesDB = { tetris = { preset = "WARLOCK" } }
+legacy:event("ADDON_LOADED", "KIC-Games")
+check(legacy.games:GetClassPreset() == "WARLOCK", "Legacy Tetris class selection was not migrated")
+S:AbortGame()
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))
 
 -- Optional layout snapshots from the actual UI constructors, for offline visual review.
@@ -1358,12 +1461,19 @@ if arg[1] == "--preview" then
     T:Advance(0)
     snapshot("game-over")
     Q.UI:SelectTab("singleplayer")
+    Q:SetClassPreset("MAGE")
     Q:StartSingleplayer("bejeweled")
-    Bj:Hint()
+    Bj:Click(3, 3, "LeftButton")
     snapshot("bejeweled", jewel)
     jewelBoard(false)
     Bj.model.score, Bj.model.moves, Bj.model.cleared, Bj.model.bestCascade = 3200, 12, 50, 3
     Bj.model:CheckEnd()
     Bj:Advance(0)
     snapshot("bejeweled-results", jewel)
+    S.UI:SetWindowScale(1)
+    S.UI.frame:ClearAllPoints()
+    S.UI.frame:SetPoint("CENTER")
+    S.UI.frame:Show()
+    S.UI:ShowOptions()
+    snapshot("options", sharedClient)
 end

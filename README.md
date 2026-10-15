@@ -1,10 +1,17 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.6.0. Intended for waiting for the group to fill and the time between dungeons.
+0.7.0. Intended for waiting for the group to fill and the time between dungeons.
 Includes **[Tetris](TETRIS.md)** with 13 class icon presets and
 **[Bejeweled](BEJEWELED.md)** with animated gem swaps and cascades.
-Both singleplayer modules have saved high scores and editable chat sharing.
+Both singleplayer modules have saved high scores, editable chat sharing and
+shared WoW class icon presets from **Options**.
+
+Choose your class once in **Options**; it updates both games immediately without
+resetting the board or score. Your previous Tetris class selection migrates on
+first load. Drag **Resize** at the bottom-right of the main window to enlarge the
+whole UI and game board proportionally. The size is saved and constrained to the
+screen; **Options → Reset size** returns to 100% when it fits.
 
 ## Install and open
 
@@ -137,7 +144,9 @@ stopping, managed timers, sender checks and transport.
 - `Countdown.lua`: all-ready scheduling, shared countdown and cancellation.
 - `UI.lua`: library, lobby browser, participants and minimap launcher.
 - `Theme.lua`: shared dark cards, typography, custom buttons and movable layered windows.
-- `Games/Tetris/`: independent rules engine, class presets, game UI and module lifecycle.
+- `IconPresets.lua`: shared audited textures and class colors for both games.
+- `Settings.lua`, `Options.lua`: persistent class selection, options window and proportional window resizing.
+- `Games/Tetris/`: independent rules engine, game UI and module lifecycle.
 - `Games/Bejeweled/`: independent match-three rules, animations, gem UI and module lifecycle.
 - `Libs/`: bundled Ace3 libraries; no separate Ace3 addon installation required.
 

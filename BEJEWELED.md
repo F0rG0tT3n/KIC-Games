@@ -1,11 +1,15 @@
 # Bejeweled
 
 Open **Singleplayer → Bejeweled → Play**, or use `/kicbejeweled`.
-This is a relaxed, untimed singleplayer match-three game on an 8×8 board.
+This is a relaxed, untimed singleplayer match-three game on an 8×8 board, using
+the same class ability icons as Tetris. Choose one of 13 classes in **Options**;
+the setting applies to both games immediately and is saved between sessions.
 
 ## Playing
 
-Click a gem, then click a gem immediately above, below, left or right to swap.
+Click an icon, then click an icon immediately above, below, left or right to swap.
+The selected cell has a thick gold outline, a bright background and a selection
+label so it stays distinct from the board and yellow hint outlines.
 A swap must create a horizontal or vertical line of at least three matching gems.
 An invalid swap animates back and does not count as a move. Click the selected
 gem again, or right-click any cell, to clear your selection. Clicking a different
@@ -53,8 +57,8 @@ with **Play again / Share best**. Closing the launcher also closes that dialog.
 `Games/Bejeweled/Engine.lua` contains pure rules, move search and staged cascades.
 `UI.lua` handles the board, animations, hints, pauses and result dialog.
 `Module.lua` registers the game and handles saved records, results and chat drafts.
-It uses seven fixed WoW jewel texture FileDataIDs, independent of spell lookups;
-the fallback is another known jewel icon. No separate addon installation is needed,
+It uses seven fixed WoW class texture FileDataIDs from `IconPresets.lua`, independent
+of spell lookups; the fallback is the selected class icon. No separate addon installation is needed,
 and the game sends no multiplayer addon messages. Combat handling is outside scope.
 
 Run `lua tests/bejeweled.lua` for the rules checks and `lua tests/framework.lua`

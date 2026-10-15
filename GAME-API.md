@@ -235,6 +235,16 @@ local player are stored. The framework owns history persistence and presentation
 
 ## Other public entry points
 
+`KICGames:GetClassPreset()` and `KICGames:SetClassPreset(classToken)` access the
+shared class appearance setting. The audited catalog lives in `KICGames.IconPresets`.
+Changing this cosmetic setting does not reset a session. Bundled modules apply
+it through `ApplyPreset`; their rule engines keep numeric piece kinds.
+
+Registry entries may supply `icon` (WoW texture ID/path) for the library. A small
+four-block `iconPattern` plus `iconColor` can draw a native tetromino icon instead.
+Game UIs inherit the launcher's proportional scale; register independent dialogs
+as auxiliary windows to keep their scale synchronized too.
+
 `KICGames.API_VERSION`, `KICGames.VERSION`, `KICGames:GetGames(mode)`,
 `KICGames:IsHost()`, `KICGames:CreateLobby(gameID)`, `KICGames:StartSingleplayer(gameID)`, `KICGames:Discover()`,
 `KICGames:JoinLobby(host, id)`, `KICGames:SelectGame(id)`,

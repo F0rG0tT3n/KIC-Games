@@ -1,5 +1,6 @@
 -- Pure engine checks; no WoW APIs required. Run: lua tests/tetris.lua
 local Games = {}
+assert(loadfile("KIC-Games/IconPresets.lua"))("KIC-Games", Games)
 assert(loadfile("KIC-Games/Games/Tetris/Engine.lua"))("KIC-Games", Games)
 assert(loadfile("KIC-Games/Games/Tetris/Presets.lua"))("KIC-Games", Games)
 local E, tests = Games.Tetris.Engine, 0

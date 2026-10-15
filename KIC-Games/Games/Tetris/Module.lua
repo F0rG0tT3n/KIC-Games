@@ -9,10 +9,7 @@ function T:Storage()
         db.tetris = {}
     end
     local s = db.tetris
-    if not self.ByToken[s.preset] then
-        local _, token = UnitClass("player")
-        s.preset = self.ByToken[token] and token or "MAGE"
-    end
+    s.preset = Games:GetClassPreset()
     if type(s.best) ~= "table" then
         s.best = {}
     end
@@ -82,6 +79,9 @@ function T:Complete()
 end
 Games:RegisterGame({
     id = "tetris",
+    icon = 237284, -- inv_misc_dice_01; small blocks for the launcher
+    iconPattern = { { 1, 0 }, { 0, 1 }, { 1, 1 }, { 2, 1 } },
+    iconColor = { 0.8, 0.3, 1 },
     title = "Tetris",
     version = "1",
     mode = "singleplayer",

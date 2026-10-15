@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0 - 2026-10-15
+
+- Moved class icon presets out of Tetris into a shared Options menu; one saved selection now updates both games live.
+- Migrated existing Tetris class preferences and replaced Bejeweled jewel tiles with class ability icons.
+- Made Bejeweled selection more visible with a thick gold frame, bright tile background and selection label.
+- Added a bottom-right proportional resize handle, saved screen-bounded UI scale and Reset size in Options.
+- Renamed the main heading to KIC GAMES and added jewel / tetromino icons to the game library.
+- Added regression checks for shared class changes, migration, live board preservation, selection and resizing.
+
 ## 0.6.0 - 2026-10-15
 
 - Added Bejeweled as a second independent singleplayer module with an 8×8 board and seven fixed WoW gem icons.

@@ -43,6 +43,9 @@ function UI:Initialize()
     frame:SetPoint("CENTER")
     Theme:Window(frame)
     frame:SetScript("OnHide", function()
+        if UI.StopResize then
+            UI.StopResize()
+        end
         frame:StopMovingOrSizing()
         UI:HideAuxiliaryWindows()
     end)
@@ -50,10 +53,13 @@ function UI:Initialize()
     _G.KICGamesWindow = frame
     UISpecialFrames[#UISpecialFrames + 1] = "KICGamesWindow"
     self.frame = frame
-    local title = label(frame, "KIC / GAMES", 22, -18, 400, "GameFontNormalLarge")
+    local title = label(frame, "KIC GAMES", 22, -18, 360, "GameFontNormalLarge")
     title:SetTextColor(unpack(GOLD))
     label(frame, "A little play between adventures", 22, -47, 490, "GameFontHighlightSmall")
     Theme:CloseButton(frame)
+    self.optionsButton = button(frame, "Options", 90, 440, -34, function()
+        UI:ShowOptions()
+    end)
     self.homeButton = button(frame, "Launcher", 100, 742, -34, function()
         UI:ShowHome()
     end)
@@ -173,10 +179,12 @@ function UI:Initialize()
     self.soloLeave = button(self.singlePanel, "Leave current lobby", 190, 16, -350, function()
         Games:LeaveLobby()
     end)
-    self.footer = label(frame, "", 22, -591, 850, "GameFontHighlightSmall")
+    self.footer = label(frame, "", 22, -591, 780, "GameFontHighlightSmall")
     self.gameContainer = panel(frame, 860, 450, 20, -80)
     self.gameContainer:Hide()
     self:CreateResultsWindow()
+    self:CreateOptions()
+    self:InitializeResize()
     self:CreateMinimapButton()
     frame:SetScript("OnUpdate", function()
         UI:UpdateCountdown()
@@ -239,6 +247,7 @@ end
 function UI:RegisterAuxiliaryWindow(frame)
     self.auxiliaryWindows = self.auxiliaryWindows or {}
     self.auxiliaryWindows[#self.auxiliaryWindows + 1] = frame
+    frame:SetScale(self.frame:GetScale())
 end
 
 function UI:HideAuxiliaryWindows()
@@ -401,8 +410,18 @@ function UI:Refresh()
             row = CreateFrame("Button", nil, self.library, "BackdropTemplate")
             row:SetSize(301, 62)
             Theme:StyleButton(row)
-            row.title = label(row, "", 6, -5, 288, "GameFontNormal")
-            row.detail = label(row, "", 6, -28, 288, "GameFontHighlightSmall")
+            row.icon = row:CreateTexture(nil, "ARTWORK")
+            row.icon:SetSize(32, 32)
+            row.icon:SetPoint("TOPLEFT", 10, -14)
+            row.icon:SetTexCoord(0.06, 0.94, 0.06, 0.94)
+            row.iconTiles = {}
+            for tile = 1, 4 do
+                local texture = row:CreateTexture(nil, "ARTWORK")
+                texture:SetSize(9, 9)
+                row.iconTiles[tile] = texture
+            end
+            row.title = label(row, "", 52, -10, 238, "GameFontNormal")
+            row.detail = label(row, "", 52, -32, 238, "GameFontHighlightSmall")
             row.title:SetHeight(18)
             row.detail:SetHeight(32)
             self.gameRows[i] = row
@@ -411,6 +430,17 @@ function UI:Refresh()
         row:ClearAllPoints()
         row:SetPoint("TOPLEFT", 0, -(i - 1) * 68)
         row.title:SetText(game.title)
+        row.icon:SetTexture(game.icon or "Interface\\Icons\\INV_Misc_Dice_01")
+        row.icon:SetShown(game.iconPattern == nil)
+        for i, tile in ipairs(row.iconTiles) do
+            local point = game.iconPattern and game.iconPattern[i]
+            tile:SetShown(point ~= nil)
+            if point then
+                tile:ClearAllPoints()
+                tile:SetPoint("TOPLEFT", 10 + point[1] * 10, -19 - point[2] * 10)
+                tile:SetColorTexture(unpack(game.iconColor or GOLD))
+            end
+        end
         local selectedID = self.tab == "singleplayer" and self.selectedSolo or self.selectedMulti
         Theme:Select(row, game.id == selectedID)
         if game.id == selectedID then
