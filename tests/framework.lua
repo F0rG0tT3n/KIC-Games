@@ -2987,14 +2987,38 @@ do
         "SoundKit playback did not receive independent volume"
     )
     local played = #owner.sounds
-    games:SetOption("soundsEnabled", false)
+    ui.soundEnabledPanel.switch.scripts.OnClick()
     check(
         not games.Audio:Play("bejeweled", "clear", true) and #owner.sounds == played and #games.Audio.handles == 0,
         "Disabling sounds did not immediately stop/gate addon audio"
     )
-    games:SetOption("soundsEnabled", true)
+    check(
+        ui.soundEnabledPanel.switch.text == "ON"
+            and ui.soundEnabledPanel.switch.selected
+            and not ui.volumeSlider:IsEnabled()
+            and ui.volumePanel.alpha < 1,
+        "Mute ON did not disable and dim the volume controls"
+    )
+    for _, button in pairs(ui.soundPreviewButtons) do
+        check(not button:IsEnabled(), "Mute ON left a sound preview enabled")
+    end
+    ui.volumeSlider.scripts.OnValueChanged(ui.volumeSlider, 75)
+    check(settings.soundVolume == 0.25, "Muted volume control changed the saved level")
+    ui.soundEnabledPanel.switch.scripts.OnClick()
+    check(
+        ui.soundEnabledPanel.switch.text == "OFF"
+            and not ui.soundEnabledPanel.switch.selected
+            and ui.volumeSlider:IsEnabled()
+            and ui.volumePanel.alpha == 1
+            and ui.volumeSlider.current == 25,
+        "Mute OFF failed to restore the enabled controls and remembered volume"
+    )
+    for _, button in pairs(ui.soundPreviewButtons) do
+        check(button:IsEnabled(), "Mute OFF did not restore a sound preview")
+    end
     games:SetOption("soundVolume", 0)
     check(not games.Audio:Play("bejeweled", "clear", true) and #owner.sounds == played, "Volume zero was not silent")
+    check(ui.volumeSlider:IsEnabled(), "Zero volume locked the slider and prevented raising volume again")
     games:SetOption("soundVolume", 0.6)
     ui:ShowOptions()
     ui:SelectOptionsTab("audio")

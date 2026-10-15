@@ -335,12 +335,14 @@ function UI:CreateOptions()
     }
     self.audioAppearancePanel = profilePanel(a, f, self.frame, "soundTheme")
     self.profilePanels[#self.profilePanels + 1] = self.audioAppearancePanel
-    self.soundEnabledPanel = toggle(a, "GAME SOUNDS", "Mute all game effects.", function()
+    self.soundEnabledPanel = toggle(a, "MUTE SOUNDS", "Mute all game effects.", function()
         Games:SetOption("soundsEnabled", not Games:GetSettings().soundsEnabled)
     end)
     self.volumePanel = panel(a, "GAME SOUND VOLUME", "")
     self.volumeSlider = Theme:SettingsSlider(self.volumePanel, 0, 100, 1, function(value)
-        Games:SetOption("soundVolume", value / 100)
+        if Games:GetSettings().soundsEnabled then
+            Games:SetOption("soundVolume", value / 100)
+        end
     end)
     self.volumePanel.detail:SetFont(Theme.Fonts.body, 11, "")
     self.volumeSlider.low:Hide()
@@ -552,8 +554,14 @@ function UI:RefreshOptions()
     for i, cell in ipairs(self.previewCells) do
         Games.Graphics:Paint(cell.icon, self.previewGame, i, Games.IconPresets.Colors[Games.IconPresets.Kinds[i]])
     end
-    self.soundEnabledPanel.switch:SetText(s.soundsEnabled and "ON" or "OFF")
-    Theme:Select(self.soundEnabledPanel.switch, s.soundsEnabled)
+    self.soundEnabledPanel.switch:SetText(s.soundsEnabled and "OFF" or "ON")
+    Theme:Select(self.soundEnabledPanel.switch, not s.soundsEnabled)
+    self.volumePanel:SetAlpha(s.soundsEnabled and 1 or 0.42)
+    if s.soundsEnabled then
+        self.volumeSlider:Enable()
+    else
+        self.volumeSlider:Disable()
+    end
     self.volumeSlider:SetValue(math.floor(s.soundVolume * 100 + 0.5))
     local entry, hasFiles
     for _, event in ipairs(Games.Audio.events) do
@@ -568,8 +576,8 @@ function UI:RefreshOptions()
         supported and "Independent game volume. WoW audio settings are unchanged. 0% silences every KIC Games effect."
             or (
                 hasFiles
-                    and "Spell effects follow WoW SFX volume. This slider controls arcade effects; use 0% or Off to mute everything."
-                or "This client controls effects through WoW SFX volume. Use 0% or Off to mute all KIC Games effects."
+                    and "Spell effects use WoW Master volume. This slider controls supported SoundKits; use 0% or Mute to silence everything."
+                or "Effects use WoW Master volume on this client. Use 0% or Mute to silence all KIC Games effects."
             )
     )
     self.audioProfilePanel.detail:SetText(

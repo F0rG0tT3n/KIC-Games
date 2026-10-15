@@ -2,6 +2,7 @@
 
 ## 0.13.0 - 2026-10-15 - Options 2.0
 
+- Mute Sounds now shows ON when muted and OFF when audible. Muting disables previews and dims/disables the volume slider without losing its saved level; unmuting restores controls. Audio help now describes Master routing.
 - Replaced Options with embedded Graphics, Audio and Window tabs using shared premium frames, neon choices, class/spec selectors, toggles, sliders and live previews.
 - Class and specialization now use side-by-side icon dropdowns in one panel. The spec menu follows the selected class; long lists scroll, menus dismiss on selection/Escape/outside click/navigation, and Follow My Character locks both controls while preserving manual choices.
 - Graphics and Audio now fit on one page with their previews. Both tabs expose the same shared Follow/class/spec profile; Original Graphics and Arcade Sounds dim and disable their corresponding profile controls. New preferences default to Class Spells, Follow ON and Class & Specialization audio, preserving existing saved choices.
