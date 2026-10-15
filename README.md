@@ -1,7 +1,7 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.10.0. Intended for waiting for the group to fill and the time between dungeons.
+0.10.1. Intended for waiting for the group to fill and the time between dungeons.
 Includes **[Tetris](TETRIS.md)** with 13 class icon presets and
 **[Bejeweled](BEJEWELED.md)** with animated gem swaps and cascades.
 Both singleplayer modules have saved high scores, editable chat sharing and

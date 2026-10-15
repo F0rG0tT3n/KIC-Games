@@ -155,10 +155,12 @@ function UI:InitializeLauncher()
     self.hero = self.singlePanel
     self.soloSection:Hide()
     place(self.hero, self.content, 0, 0, 882, 256)
-    self.heroArt = Theme:Art(self.hero, "bejeweled-hero", 880, 254, 1, -1, 1)
-    self.heroShade = self.hero:CreateTexture(nil, "BACKGROUND", nil, 1)
+    -- BackdropTemplate owns BACKGROUND/BORDER. Keep the hero stack explicitly
+    -- above its opaque Center when the panel is reparented, resized or refreshed.
+    self.heroArt = Theme:Art(self.hero, "bejeweled-hero", 880, 254, 1, -1, 1, "ARTWORK")
+    self.heroShade = self.hero:CreateTexture(nil, "ARTWORK", nil, 1)
     self.heroShade:SetColorTexture(0.008, 0.02, 0.05, 0.72)
-    self.heroFallback = self.hero:CreateTexture(nil, "ARTWORK")
+    self.heroFallback = self.hero:CreateTexture(nil, "ARTWORK", nil, 2)
     self.heroFallback:SetSize(112, 112)
     self.heroFallback:SetPoint("TOPLEFT", 100, -70)
     self.heroBadge = Theme:Label(self.hero, "SOLO GAME", 0, 0, 220, "GameFontHighlightSmall")

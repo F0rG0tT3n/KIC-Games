@@ -356,14 +356,16 @@ local function client(name, realm, saved)
         frames[#frames + 1] = w
         return w
     end
-    function methods:CreateFontString()
+    function methods:CreateFontString(_, layer)
         local w = widget(self)
         w.kind = "font"
+        w.drawLayer = layer or "ARTWORK"
         return w
     end
-    function methods:CreateTexture()
+    function methods:CreateTexture(_, layer, _, subLevel)
         local w = widget(self)
         w.kind = "texture"
+        w.drawLayer, w.subLevel = layer or "ARTWORK", subLevel or 0
         return w
     end
     function methods:SetNormalTexture()
@@ -1527,6 +1529,46 @@ local launcherClient = client("ArcadePlayer", "ArcadeRealm")
 launcherClient.grouped = false
 local Arcade = launcherClient.games
 Arcade.UI:OpenLauncher("home")
+do
+    -- Native BackdropTemplate draws its opaque Center in BACKGROUND. Hero art
+    -- must have a strictly higher draw layer, independent of creation/reparent order.
+    for _, size in ipairs({ { 1000, 700 }, { 1120, 700 }, { 1500, 850 } }) do
+        Arcade.UI:SetWindowSize(size[1], size[2])
+        for _, id in ipairs({ "bejeweled", "tetris" }) do
+            for _, page in ipairs({ "options", "results", "home" }) do
+                Arcade.UI:OpenLauncher(page)
+            end
+            Arcade.UI:FeatureGame(id)
+            local ui = Arcade.UI
+            check(
+                ui.heroArt:IsVisible()
+                    and ui.heroArt.textureValue == Arcade.Artwork[id .. "-hero"].file
+                    and ui.heroArt.alpha == 1,
+                "Featured artwork disappeared after navigation/resize: " .. id
+            )
+            check(
+                ui.heroArt.drawLayer == "ARTWORK" and ui.heroArt.subLevel == 0,
+                "Featured image can be covered by the native BACKGROUND backdrop"
+            )
+            check(
+                ui.heroShade.drawLayer == "ARTWORK"
+                    and ui.heroShade.subLevel == 1
+                    and ui.heroShade.color[4] < 1
+                    and ui.heroShade.width < ui.hero.width,
+                "Featured shade must be translucent, text-side only and above the image"
+            )
+            check(
+                ui.heroFallback.drawLayer == "ARTWORK"
+                    and ui.heroFallback.subLevel == 2
+                    and not ui.heroFallback:IsShown()
+                    and ui.soloTitle.drawLayer == "OVERLAY"
+                    and ui.soloPlay.parent == ui.hero,
+                "Featured art obscures native text/actions or fallback icon"
+            )
+        end
+    end
+    Arcade.UI:ResetWindowSize()
+end
 check(#Arcade:GetGames() == 2 and not Arcade.Registry.pug, "Concept artwork registered a fake game")
 check(
     Arcade.UI.noGames:IsShown() and Arcade.UI.browseGames:IsShown() and #Arcade:GetRecentGames() == 0,

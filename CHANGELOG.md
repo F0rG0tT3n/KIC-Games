@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.1 - 2026-10-15 - Featured artwork layering fix
+
+- Put Featured Game artwork above the native panel backdrop, with explicit image/shade/fallback draw order and native text/buttons on top.
+- Kept both original hero TGAs, paths, crop logic and Play/Resume behavior unchanged.
+- Added draw-layer regression checks for both games after navigation and narrow/default/wide resizing.
+- Live WoW verification: reload, feature Bejeweled and Tetris, resize and visit other pages before returning Home; inspect artwork and text at 100%/120%.
+
 ## 0.10.0 - 2026-10-15 - Launcher organization checkpoint
 
 - Replaced Home's installed list with saved, unique recent launches and a responsive carousel (up to three cards), plus an empty-state library shortcut.
