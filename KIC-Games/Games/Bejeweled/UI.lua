@@ -43,14 +43,24 @@ function B:MatchSoundEvent()
         end
     end
     local tier = math.min(longest, 5)
-    return tier == 5 and "bejeweled_match_5_plus" or tier == 4 and "bejeweled_match_4" or "bejeweled_match_3", tier
+    return tier == 5 and "bejeweled_match_5_plus" or tier == 4 and "bejeweled_match_4" or "bejeweled_match_3",
+        tier,
+        longest
 end
 local effectColors = {
     [3] = { 0.32, 0.88, 1 },
     [4] = { 1, 0.78, 0.28 },
     [5] = { 1, 0.43, 0.95 },
 }
-function B:StartMatchEffect(tier, matched)
+local matchTitles = {
+    [3] = "MATCH!",
+    [4] = "GREAT MATCH!",
+    [5] = "EPIC MATCH!",
+    [6] = "LEGENDARY MATCH!",
+    [7] = "MYTHIC MATCH!",
+    [8] = "UNBELIEVABLE!",
+}
+function B:StartMatchEffect(tier, length, matched, cascade, points)
     if self.matchEffect then
         for i in pairs(self.matchEffect.cells) do
             self.cells[i].spark:SetAlpha(0)
@@ -66,9 +76,17 @@ function B:StartMatchEffect(tier, matched)
         effect.cells[key(c.x, c.y)] = true
     end
     self.matchEffect = effect
-    self.effectBanner:SetText(tier == 5 and "EPIC MATCH!" or tier == 4 and "GREAT MATCH!" or "MATCH!")
+    self.effectBanner:SetText(matchTitles[length])
     self.effectBanner:SetTextColor(color[1], color[2], color[3], 1)
     self.effectBanner:Show()
+    local combo = cascade >= 4 and "MEGA COMBO" or cascade == 3 and "SUPER COMBO" or "COMBO"
+    self.effectDetail:SetText(
+        cascade > 1 and string.format("%s x%d   +%d POINTS", combo, cascade, points)
+            or string.format("+%d POINTS", points)
+    )
+    local detailColor = cascade > 1 and Theme.Colors.gold or color
+    self.effectDetail:SetTextColor(detailColor[1], detailColor[2], detailColor[3], 1)
+    self.effectDetail:Show()
     local count = tier == 5 and 24 or tier == 4 and 8 or 0
     for i = 1, count do
         local c = matched[(i - 1) % #matched + 1]
@@ -92,6 +110,7 @@ function B:UpdateMatchEffect(dt)
         self.cells[i].spark:SetAlpha(fade * (effect.tier == 5 and 0.65 or 0.42))
     end
     self.effectBanner:SetAlpha(fade)
+    self.effectDetail:SetAlpha(fade)
     self.effectFlash:SetAlpha(effect.tier == 5 and fade * 0.18 or 0)
     for i, point in ipairs(effect.particles) do
         local particle = self.effectParticles[i]
@@ -109,6 +128,7 @@ function B:UpdateMatchEffect(dt)
     if progress >= 1 then
         self.matchEffect = nil
         self.effectBanner:Hide()
+        self.effectDetail:Hide()
         self.effectFlash:SetAlpha(0)
         for _, particle in ipairs(self.effectParticles) do
             particle:Hide()
@@ -497,13 +517,13 @@ function B:Advance(dt)
         redraw = true
         self.phaseTime = self.phaseTime + dt
         if self.phaseTime >= 0.3 then
-            local event, tier = self:MatchSoundEvent()
+            local event, tier, length = self:MatchSoundEvent()
             local cascade, matched = self.model.cascade, self.model.pending
             self.model:Step()
             self.scoreIdleTime = 0
             self.hintNextAt = 5
             self.hint = nil
-            self:StartMatchEffect(tier, matched)
+            self:StartMatchEffect(tier, length, matched, cascade, self.model.lastGain)
             self:SaveBest()
             Games.Audio:Play("bejeweled", event, nil, cascade)
             self.phaseTime = 0
@@ -656,11 +676,14 @@ function B:CreateUI(parent)
         particle:Hide()
         self.effectParticles[i] = particle
     end
-    self.effectBanner = Theme:GameLabel(self.effectLayer, "", 30, Theme.Colors.gold)
-    self.effectBanner:ClearAllPoints()
-    self.effectBanner:SetPoint("CENTER", self.effectLayer, "CENTER", 0, 0)
+    self.effectBanner = Theme:GameLabel(self.root, "", 24, Theme.Colors.gold)
+    self.effectBanner:SetHeight(26)
     self.effectBanner:SetJustifyH("CENTER")
     self.effectBanner:Hide()
+    self.effectDetail = Theme:GameLabel(self.root, "", 13, Theme.Colors.gold)
+    self.effectDetail:SetHeight(16)
+    self.effectDetail:SetJustifyH("CENTER")
+    self.effectDetail:Hide()
     self.pauseOverlay = Theme:PauseMenu(board, "bejeweled", self)
     self.right = Theme:PremiumFrame(self.root, 250, 550, 0, 0, { skin = "game-stats-frame" })
     self.crest = Theme:Art(self.right, "crest", 160, 160, 80, -18, 0.07, "ARTWORK")
@@ -717,6 +740,12 @@ function B:LayoutUI()
     local size = self.step * 8 + 24
     Theme:PlaceGame(self.left, 0, 0, leftW, h)
     Theme:PlaceGame(self.board, leftW + gap + (available - size) / 2, math.floor((h - size) / 2), size, size)
+    self.effectBanner:ClearAllPoints()
+    self.effectBanner:SetPoint("BOTTOM", self.board, "TOP", 0, 20)
+    self.effectBanner:SetWidth(math.min(size, 420))
+    self.effectDetail:ClearAllPoints()
+    self.effectDetail:SetPoint("BOTTOM", self.board, "TOP", 0, 2)
+    self.effectDetail:SetWidth(math.min(size, 420))
     Theme:PlaceGame(self.viewport, 12, 12, size - 24, size - 24)
     Theme:PlaceGame(self.right, w - rightW, 0, rightW, h)
     local artH = math.min(178, math.floor(h * (h < 550 and 0.21 or 0.24)))

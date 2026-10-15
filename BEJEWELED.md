@@ -50,8 +50,10 @@ glow until you interact. Interaction postpones the suggestion for five seconds;
 pausing freezes the clock, and scoring resets it. The
 signal never swaps gems or spends points.
 Three-in-a-row clears give a brief glow, four adds sparks, and five or more adds
-a stronger flash, more sparks and an epic banner. Crossings of triples still
-use the three-gem visual tier.
+a stronger flash and more sparks. Above the board, beneath Back to Launcher,
+each run length from three through eight has its own callout, with points beneath
+it. Cascades add Combo, Super Combo or Mega Combo labels. Crossings of triples
+still use the three-gem visual tier.
 There is no timer or move limit. A run ends when the settled board has no legal
 swaps left. This initial version uses ordinary gems; long matches clear all gems
 in their line, and crossing matches count their intersection once.

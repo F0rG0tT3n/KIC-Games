@@ -3331,6 +3331,22 @@ do
         )
         check(b.model.score - score == count * 50 * (cascade or 1), "Sound classification changed match scoring")
         local tier = expected == "bejeweled_match_5_plus" and 5 or expected == "bejeweled_match_4" and 4 or 3
+        local longest = 0
+        for _, run in ipairs(runs) do
+            longest = math.max(longest, run[3])
+        end
+        local title = (
+            { "MATCH!", "GREAT MATCH!", "EPIC MATCH!", "LEGENDARY MATCH!", "MYTHIC MATCH!", "UNBELIEVABLE!" }
+        )[longest - 2]
+        local combo = cascade and (cascade >= 4 and "MEGA COMBO" or cascade == 3 and "SUPER COMBO" or "COMBO")
+        check(
+            b.effectBanner.text == title
+                and b.effectBanner.parent == b.root
+                and b.effectBanner.points[1][1] == "BOTTOM"
+                and b.effectBanner.points[1][2] == b.board
+                and b.effectDetail.text:find(combo or "+" .. b.model.lastGain .. " POINTS", 1, true),
+            "Match and combo feedback was not centered above the board"
+        )
         check(
             b.matchEffect
                 and b.matchEffect.tier == tier
@@ -3351,11 +3367,13 @@ do
         end
     end
     matchRound({ { 1, 1, 3 }, { 5, 5, 3 } }, "bejeweled_match_3")
+    matchRound({ { 1, 1, 3 } }, "bejeweled_match_3", 2)
     matchRound({ { 1, 1, 3 }, { 2, 1, 3, true } }, "bejeweled_match_3", 3)
+    matchRound({ { 1, 1, 3 } }, "bejeweled_match_3", 4)
     matchRound({ { 1, 1, 3 }, { 4, 5, 4 } }, "bejeweled_match_4")
     b:UpdateMatchEffect(1)
     check(
-        not b.matchEffect and not b.effectBanner:IsShown() and b.effectFlash.alpha == 0,
+        not b.matchEffect and not b.effectBanner:IsShown() and not b.effectDetail:IsShown() and b.effectFlash.alpha == 0,
         "Match particles or banner persisted after the effect"
     )
     b.model.gameover = true
