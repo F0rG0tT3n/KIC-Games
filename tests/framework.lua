@@ -9,10 +9,11 @@ local function check(condition, message)
     tests = tests + 1
 end
 
-local function client(name, realm)
+local function client(name, realm, saved)
     local frames, notices, env = {}, {}, {}
     setmetatable(env, { __index = _G })
     env._G, env.unpack = env, table.unpack
+    env.KICGamesDB = saved
     env.table = setmetatable({
         wipe = function(t)
             for k in pairs(t) do
@@ -220,14 +221,12 @@ local function client(name, realm)
         "SetBackdrop",
         "SetClampedToScreen",
         "EnableMouse",
-        "SetClipsChildren",
         "RegisterForClicks",
         "EnableMouseWheel",
         "SetOrientation",
         "SetValueStep",
         "SetThumbTexture",
         "RegisterForDrag",
-        "SetScrollChild",
         "SetHighlightTexture",
         "SetToplevel",
         "SetFontString",
@@ -247,7 +246,26 @@ local function client(name, realm)
         self.allPoints = parent or self.parent
     end
     function methods:SetSize(width, height)
+        local changed = self.width ~= width or self.height ~= height
         self.width, self.height = width, height
+        if changed and self.scripts.OnSizeChanged then
+            self.scripts.OnSizeChanged(self, width, height)
+        end
+    end
+    function methods:SetClipsChildren(value)
+        self.clipsChildren = value
+    end
+    function methods:SetScrollChild(child)
+        self.scrollChild = child
+    end
+    function methods:SetVertexColor(...)
+        self.vertexColor = { ... }
+    end
+    function methods:SetBlendMode(mode)
+        self.blendMode = mode
+    end
+    function methods:SetMaxLines(value)
+        self.maxLines = value
     end
     function methods:SetHeight(height)
         self.height = height
@@ -1027,16 +1045,15 @@ J:RegisterGame({
 check(#J:GetGames("singleplayer") == 3 and #J:GetGames("multiplayer") == 1, "Game modes were not separated")
 J.UI.singleTab.scripts.OnClick()
 check(
-    J.UI.tab == "singleplayer" and not J.UI.browserPanel:IsShown() and J.UI.singlePanel:IsShown(),
+    J.UI.tab == "singleplayer" and not J.UI.browserPanel:IsShown() and J.UI.cardScroll:IsShown(),
     "Singleplayer tab kept multiplayer panels visible"
 )
 check(
-    J.UI.gameRows[2].title.text == "Solo fixture" and J.UI.soloPlay.enabled,
+    J.UI.launcherCards[2].title.text == "Solo fixture" and J.UI.soloPlay.enabled,
     "Singleplayer tab did not show an available offline game"
 )
 local queued = #packets
-J.UI.gameRows[2].scripts.OnClick()
-J.UI.soloPlay.scripts.OnClick()
+J.UI.launcherCards[2].play.scripts.OnClick()
 check(
     J.ActiveGame and J.Lobby.mode == "singleplayer" and soloMessages == 1,
     "Solo game failed to launch without a group"
@@ -1062,7 +1079,9 @@ check(
 )
 J.UI:SelectTab("multiplayer")
 check(
-    J.UI.browserPanel:IsShown() and not J.UI.singlePanel:IsShown() and J.UI.gameRows[1].title.text == "Party fixture",
+    J.UI.browserPanel:IsShown()
+        and not J.UI.singlePanel:IsShown()
+        and J.UI.launcherCards[1].title.text == "Party fixture",
     "Multiplayer tab did not restore party lobby panels and multiplayer games"
 )
 check(not pcall(function()
@@ -1081,19 +1100,11 @@ t.grouped = false
 local G, T = t.games, t.games.Tetris
 local before = #packets
 check(G:StartSingleplayer("tetris"), "Bundled Tetris could not start")
-check(
-    G.UI.frame.strata == "DIALOG" and G.UI.resultsFrame.strata == "FULLSCREEN_DIALOG",
-    "History can render underneath the launcher"
-)
-check(
-    G.UI.resultsFrame.movable and G.UI.resultsFrame.parent == t.env.UIParent,
-    "History is not an independent movable window"
-)
+check(G.UI.frame.strata == "DIALOG", "Main launcher strata changed")
 G.UI:ShowResults()
-G.UI.resultsFrame.scripts.OnDragStart()
-check(G.UI.resultsFrame.moving and G.UI.resultsFrame.raiseCount > 0, "History did not raise and start dragging")
-G.UI.resultsFrame.scripts.OnDragStop()
-check(not G.UI.resultsFrame.moving, "History did not stop dragging")
+check(G.UI.resultsFrame.parent == G.UI.content and G.UI.launcherPage == "results", "History is not an embedded page")
+check(not G.UI.resultsFrame.movable and not G.UI.resultsFrame.strata, "History created an independent popup")
+check(not G.UI.gameContainer:IsShown() and G.ActiveGame, "Results lost the active game")
 local historyScroll = G.UI.resultList.parent
 G.UI.resultList:SetHeight(900)
 historyScroll.scripts.OnMouseWheel(historyScroll, -1)
@@ -1109,7 +1120,7 @@ check(
 G.UI:RefreshResults()
 T:Advance(0.1)
 check(T.paused, "History overlay did not pause Tetris input")
-G.UI.resultsFrame:Hide()
+G.UI:ShowGame()
 T:Pause(false)
 check(T.running and T.root:IsVisible() and T.root.keyboardEnabled, "Tetris UI or keyboard did not start")
 check(#T.cells == 200 and #T.Presets == 13, "Missing board cells or class presets")
@@ -1289,7 +1300,7 @@ Bj:Pause(false)
 Q.UI:ShowResults()
 Bj:Advance(0.1)
 check(Bj.paused, "History did not pause Bejeweled")
-Q.UI.resultsFrame:Hide()
+Q.UI:ShowGame()
 Bj:Pause(false)
 for _ = 1, 200 do
     Bj:Advance(0.1)
@@ -1339,10 +1350,10 @@ local S = sharedClient.games
 sharedClient.grouped = false
 S.UI:SelectTab("singleplayer")
 check(
-    S.UI.gameRows[1].icon:IsShown() and S.UI.gameRows[1].title.text == "Bejeweled",
+    S.UI.launcherCards[1].icon:IsShown() and S.UI.launcherCards[1].title.text == "Bejeweled",
     "Bejeweled library icon is missing"
 )
-check(not S.UI.gameRows[2].icon:IsShown() and S.UI.gameRows[2].iconTiles[1]:IsShown(), "Tetris block icon is missing")
+check(S.UI.launcherCards[2].icon.textureValue == S.Artwork["tetris-card"].file, "Tetris block icon is missing")
 check(S:StartSingleplayer("tetris"), "Could not start Tetris for options checks")
 local originalModel = S.Tetris.model
 S.UI.optionsButton.scripts.OnClick()
@@ -1354,7 +1365,7 @@ check(
     "Class menu did not update Tetris"
 )
 check(S.Tetris.model == originalModel and not S.Tetris.presetButtons, "Options reset game or left the old class picker")
-S.UI.optionsFrame:Hide()
+S.UI:ShowGame()
 S:AbortGame()
 S:StartSingleplayer("bejeweled")
 check(S.Bejeweled.icons[1] == S.Tetris.icons.I, "Shared class was not applied when switching games")
@@ -1381,19 +1392,24 @@ end
 check(S.Bejeweled.model == jewelModel, "Live class changes reset the Bejeweled board")
 S.UI:SetWindowScale(1.4)
 check(
-    S.UI.frame:GetScale() == 1.4 and S.UI.optionsFrame:GetScale() == 1.4 and S.Bejeweled.root:GetEffectiveScale() == 1.4,
+    S.UI.frame:GetScale() == 1.4
+        and S.UI.optionsFrame:GetEffectiveScale() == 1.4
+        and S.Bejeweled.root:GetEffectiveScale() == 1.4,
     "Window resize did not enlarge games and options"
 )
 check(
     S.Bejeweled.summary:GetScale() == 1.4 and S.Tetris.summary:GetScale() == 1.4,
     "Result overlays did not follow window scaling"
 )
-S.UI.optionsFrame:Hide()
+S.UI:ShowGame()
 sharedClient.env.cursorX, sharedClient.env.cursorY, sharedClient.env.mouseDown = 100, 100, true
 S.UI.resizeGrip.scripts.OnMouseDown(nil, "LeftButton")
 sharedClient.env.cursorX = 100 + S.UI.BASE_WIDTH * 0.1
 S.UI.resizeGrip.scripts.OnUpdate()
-check(math.abs(S.UI.frame:GetScale() - 1.5) < 0.001, "Resize grip did not enlarge the window")
+check(
+    S.UI.frame:GetWidth() > S.UI.BASE_WIDTH and S.UI.frame:GetScale() == 1.4,
+    "Resize grip did not reflow the window while preserving UI scale"
+)
 sharedClient.env.mouseDown = false
 S.UI.resizeGrip.scripts.OnUpdate()
 check(not S.UI.resizeStart and S.UI.frame.movable, "Resize did not release after mouse-up outside grip")
@@ -1495,7 +1511,7 @@ source = dragFrom(2, 1)
 DragGames.UI:ShowOptions()
 Drag:Advance(0.1)
 check(Drag.paused and not Drag.drag and Drag.model.moves == 0, "Options did not cancel dragging safely")
-DragGames.UI.optionsFrame:Hide()
+DragGames.UI:ShowGame()
 Drag:Pause(false)
 source = dragFrom(2, 1)
 cursorOn(2, 2)
@@ -1513,55 +1529,163 @@ local Arcade = launcherClient.games
 Arcade.UI:OpenLauncher("home")
 check(#Arcade:GetGames() == 2 and not Arcade.Registry.pug, "Concept artwork registered a fake game")
 check(
-    Arcade.UI.launcherCards[1].title.text == "Bejeweled" and Arcade.UI.launcherCards[2].title.text == "Tetris",
-    "Launcher cards are not sourced from the actual registry"
+    Arcade.UI.noGames:IsShown() and Arcade.UI.browseGames:IsShown() and #Arcade:GetRecentGames() == 0,
+    "New Home did not show the recent-games empty state"
 )
 check(
     Arcade.UI.groupStatus.text == "No group" and Arcade.UI.footer.text:find("2 installed", 1, true),
-    "Home shows inaccurate group or installed-game status"
+    "Inaccurate footer or party status"
 )
+Arcade.UI.browseGames.scripts.OnClick()
 check(
-    not Arcade.UI.soloSection:IsShown() and not Arcade.UI.optionsButton:IsShown(),
-    "Legacy hero heading or duplicate header options remain visible at home"
+    Arcade.UI.launcherPage == "singleplayer"
+        and Arcade.UI.launcherCards[1].title.text == "Bejeweled"
+        and Arcade.UI.launcherCards[2].title.text == "Tetris",
+    "Browse did not show registered games"
 )
 Arcade.UI.launcherCards[2].details.scripts.OnClick()
 check(
-    Arcade.UI.featuredID == "tetris"
-        and Arcade.UI.soloTitle.text == "TETRIS"
+    Arcade.UI.launcherPage == "home"
+        and Arcade.UI.featuredID == "tetris"
         and Arcade.UI.heroArt.textureValue == Arcade.Artwork["tetris-hero"].file,
-    "Game details did not update the hero"
+    "Game details lost the feature art"
 )
 local arcadePackets = #packets
 Arcade.UI.soloPlay.scripts.OnClick()
 check(
     Arcade.ActiveGame and Arcade.ActiveGame.game.id == "tetris" and #packets == arcadePackets,
-    "Featured Play did not launch the actual game locally"
+    "Feature did not launch the game locally"
 )
+check(Arcade.DB.recentGames[1] == "tetris" and #Arcade.DB.recentGames == 1, "Actual launch did not persist history")
 local arcadeModel = Arcade.Tetris.model
 Arcade.UI:OpenLauncher("home")
-check(
-    Arcade.UI.launcherCards[2].play.text == "Resume" and not Arcade.UI.launcherCards[1].play.enabled,
-    "Launcher failed to distinguish resume from a blocked second game"
-)
+check(Arcade.UI.launcherCards[1].play.text == "Resume", "Recent game has no Resume action")
 check(
     Arcade.UI.abortButton:IsShown()
         and Arcade.UI.abortButton.points[1][2] + Arcade.UI.abortButton.width <= Arcade.UI.groupPanel.points[1][2],
-    "Home group status covers the immediate Stop match action"
+    "Party status covers quick stop"
 )
-Arcade.UI.launcherCards[2].play.scripts.OnClick()
-check(Arcade.Tetris.model == arcadeModel and Arcade.UI.gameContainer:IsShown(), "Card Resume restarted the round")
-Arcade:AbortGame()
-Arcade.UI:OpenLauncher("singleplayer")
+Arcade.UI.launcherCards[1].play.scripts.OnClick()
+check(Arcade.Tetris.model == arcadeModel and #Arcade.DB.recentGames == 1, "Resume restarted or duplicated the game")
+Arcade.UI:ShowOptions()
+Arcade.Tetris:Advance(0.1)
 check(
-    Arcade.UI.launcherPage == "singleplayer" and Arcade.UI.cardScroll:IsShown() and not Arcade.UI.browserPanel:IsShown(),
-    "Singleplayer sidebar did not filter the launcher"
+    Arcade.Tetris.paused and Arcade.UI.optionsFrame.parent == Arcade.UI.content and Arcade.UI.pageBack:IsShown(),
+    "Options is not a safe embedded page"
 )
+Arcade.UI.pageBack.scripts.OnClick()
+check(
+    Arcade.Tetris.model == arcadeModel and Arcade.UI.gameContainer:IsShown() and not Arcade.UI.optionsFrame:IsShown(),
+    "Options Back did not preserve the board or clear input blocker"
+)
+Arcade:AbortGame()
+Arcade:StartSingleplayer("bejeweled")
+Arcade:AbortGame()
+check(
+    Arcade.DB.recentGames[1] == "bejeweled" and Arcade.DB.recentGames[2] == "tetris",
+    "Recent games are not newest-first"
+)
+Arcade:StartSingleplayer("tetris")
+Arcade:AbortGame()
+check(
+    #Arcade.DB.recentGames == 2 and Arcade.DB.recentGames[1] == "tetris",
+    "Repeated launch did not move one unique game to the front"
+)
+do
+    local malformed = {
+        [1] = false,
+        [2] = "tetris",
+        [3] = {},
+        [4] = "removed_module",
+        [6] = "bejeweled",
+        [8] = "tetris",
+        wrong = "bejeweled",
+    }
+    Arcade.DB.recentGames = malformed
+    local recent = Arcade:GetRecentGames()
+    check(
+        #recent == 2 and recent[1].id == "tetris" and recent[2].id == "bejeweled",
+        "Invalid, sparse or duplicate history was not filtered"
+    )
+    check(
+        Arcade.DB.recentGames == malformed and Arcade.DB.recentGames[4] == "removed_module",
+        "Browsing corrupted unknown saved history"
+    )
+    Arcade:RecordGameLaunch("bejeweled")
+    check(
+        #Arcade.DB.recentGames == 3 and Arcade.DB.recentGames[3] == "removed_module",
+        "Recording a launch discarded a temporarily removed module"
+    )
+    local saved = Arcade.Copy(Arcade.DB)
+    local reloaded = client("ArcadeReload", "ArcadeRealm", saved)
+    check(
+        reloaded.games:GetRecentGames()[1].id == "bejeweled" and #reloaded.games:GetRecentGames() == 2,
+        "Reload lost recent-game ordering"
+    )
+    reloaded.games.UI:OpenLauncher("home")
+    check(reloaded.games.UI.launcherCards[1].title.text == "Bejeweled", "Reload did not render saved recent cards")
+    reloaded.games:RegisterGame({
+        id = "removed_module",
+        title = "Recovered module",
+        version = "1",
+        mode = "singleplayer",
+        CreateUI = function(_, parent)
+            return reloaded.env.CreateFrame("Frame", nil, parent)
+        end,
+        OnStart = function() end,
+    })
+    check(
+        reloaded.games:GetRecentGames()[3].id == "removed_module",
+        "Reinstalled module lost its saved history position"
+    )
+    for _, invalid in ipairs({ false, 17, "broken" }) do
+        Arcade.DB.recentGames = invalid
+        check(#Arcade:GetRecentGames() == 0, "Invalid history container was accepted")
+    end
+    Arcade.DB.recentGames = saved.recentGames
+end
+Arcade.UI:OpenLauncher("home")
 Arcade.UI.nav.results.scripts.OnClick()
-check(Arcade.UI.resultsFrame:IsShown(), "Sidebar Results action is inert")
-Arcade.UI.resultsFrame:Hide()
+check(
+    Arcade.UI.launcherPage == "results"
+        and Arcade.UI.resultsFrame.parent == Arcade.UI.content
+        and not Arcade.UI.optionsFrame:IsShown(),
+    "Results opened outside shared navigation"
+)
 Arcade.UI.nav.options.scripts.OnClick()
-check(Arcade.UI.optionsFrame:IsShown(), "Sidebar Options action is inert")
-Arcade.UI.optionsFrame:Hide()
+check(Arcade.UI.launcherPage == "options" and not Arcade.UI.resultsFrame:IsShown(), "Options did not replace Results")
+Arcade.UI.classButtons.HUNTER.scripts.OnClick()
+check(Arcade:GetClassPreset() == "HUNTER", "Embedded class controls did not save settings")
+Arcade.UI.optionsScroll.scripts.OnMouseWheel(Arcade.UI.optionsScroll, -1)
+check(Arcade.UI.optionsScroll:GetVerticalScroll() > 0, "Long Options page did not scroll")
+for _, page in ipairs({ "home", "singleplayer", "multiplayer", "results", "options", "home" }) do
+    Arcade.UI.nav[page].scripts.OnClick()
+    check(
+        Arcade.UI.launcherPage == page and Arcade.DB.launcherPage == page and Arcade.UI.nav[page].selected,
+        "Unified navigation failed: " .. page
+    )
+    check(
+        Arcade.UI.optionsFrame:IsShown() == (page == "options")
+            and Arcade.UI.resultsFrame:IsShown() == (page == "results"),
+        "Embedded page visibility is inconsistent"
+    )
+end
+for _, name in ipairs({ "home", "singleplayer", "multiplayer", "results", "options" }) do
+    local nav = Arcade.UI.nav[name]
+    check(
+        nav.navIcon.textureValue == Arcade.Artwork["nav-" .. name].file and nav.navIcon.width == nav.navIcon.height,
+        "Missing or stretched navigation texture"
+    )
+    nav.scripts.OnEnter()
+    check(
+        nav.navGlow.alpha > 0 and nav.border[2] == Arcade.Theme.Colors.accent[2],
+        "Navigation hover did not brighten the icon and border"
+    )
+    nav.scripts.OnLeave()
+    nav:Disable()
+    check(nav.navIcon.alpha == 0.35 and nav.navGlow.alpha == 0, "Disabled navigation has wrong styling")
+    nav:Enable()
+end
 Arcade:RegisterGame({
     id = "external_arcade",
     title = "External Arcade",
@@ -1572,53 +1696,209 @@ Arcade:RegisterGame({
     end,
     OnStart = function() end,
 })
-Arcade.UI:OpenLauncher("home")
-check(
-    #Arcade:GetGames() == 3 and Arcade.UI.launcherCards[3]:IsShown(),
-    "Third-party registration did not create a real card"
-)
 Arcade.UI:FeatureGame("external_arcade")
 check(
     Arcade.UI.soloPlay.text == "View lobby" and Arcade.UI.heroFallback:IsShown(),
-    "Unknown artwork did not use a functional styled fallback"
+    "External module lost native fallback and lobby action"
 )
 Arcade.UI.soloPlay.scripts.OnClick()
 check(
     Arcade.UI.launcherPage == "multiplayer"
         and Arcade.UI.browserPanel:IsShown()
         and Arcade.UI.lobbyPanel:IsShown()
-        and not Arcade.UI.cardScroll:IsShown(),
-    "Multiplayer CTA did not expose real lobby actions"
+        and Arcade.UI.cardScroll:IsShown(),
+    "Multiplayer lost browsing or lobby controls"
 )
-check(not Arcade.UI.create.enabled, "Solo player was offered a fake enabled host action")
+check(
+    not Arcade.UI.create.enabled and not Arcade:GetRecentGames()[3],
+    "Browsing a multiplayer lobby counted as an actual launch"
+)
 launcherClient.grouped, launcherClient.roster = true, { a.name, b.name }
 launcherClient:event("GROUP_ROSTER_UPDATE")
 check(
     Arcade.UI.groupStatus.text == "Party connected" and Arcade.UI.groupDetail.text:find("3 members", 1, true),
-    "Group status did not update from the real roster event"
+    "Group status is not roster-backed"
 )
-check(Arcade.UI.create.enabled, "Eligible group could not host the selected multiplayer module")
+check(Arcade.UI.create.enabled, "Eligible party could not host a module")
 Arcade.UI.create.scripts.OnClick()
-check(
-    Arcade.Lobby and Arcade.Lobby.gameID == "external_arcade",
-    "Host action was disconnected from the registry selection"
-)
+check(Arcade.Lobby and Arcade.Lobby.gameID == "external_arcade", "Host action lost registry selection")
 Arcade:LeaveLobby()
 Arcade.UI:OpenLauncher("home")
 Arcade.UI:FeatureGame("tetris")
 launcherClient.env.rejectTexture = Arcade.Artwork["tetris-hero"].file
 Arcade.UI:Refresh()
-check(Arcade.UI.heroArt.color and Arcade.UI.soloPlay.enabled, "A rejected texture broke the native Play control")
+check(Arcade.UI.heroArt.color and Arcade.UI.soloPlay.enabled, "A rejected texture broke native Play")
 launcherClient.env.rejectTexture = nil
-Arcade.UI:Refresh()
 for _, scale in ipairs({ 1, 1.2 }) do
     Arcade.UI:SetWindowScale(scale)
     check(
-        Arcade.UI.frame:GetScale() == scale
-            and Arcade.UI.hero:GetEffectiveScale() == scale
-            and Arcade.UI.launcherCards[1].icon:GetEffectiveScale() == scale,
-        "Launcher artwork or controls do not scale together"
+        Arcade.UI.hero:GetEffectiveScale() == scale and Arcade.UI.launcherCards[1].icon:GetEffectiveScale() == scale,
+        "Artwork scale diverged"
     )
+end
+Arcade.UI:SetWindowScale(1)
+do
+    -- Temporary isolated registry: not shipped in runtime code.
+    local many = client("LibraryStress", "ArcadeRealm")
+    local M = many.games
+    local function install(id, mode)
+        M:RegisterGame({
+            id = id,
+            title = id,
+            version = "1",
+            mode = mode,
+            minPlayers = 1,
+            maxPlayers = mode == "singleplayer" and 1 or 5,
+            CreateUI = function(_, parent)
+                return many.env.CreateFrame("Frame", nil, parent)
+            end,
+            OnStart = function() end,
+        })
+    end
+    for i = 1, 24 do
+        install(string.format("Solo %02d", i):gsub(" ", "_"), "singleplayer")
+        install(string.format("Party %02d", i):gsub(" ", "_"), "multiplayer")
+    end
+    M.UI:OpenLauncher("singleplayer")
+    check(
+        #M:GetGames("singleplayer") == 26 and M.UI.launcherCards[26]:IsShown(),
+        "Library capped the installed game count"
+    )
+    check(
+        M.UI.cardScroll.kind == "ScrollFrame"
+            and M.UI.cardScroll.clipsChildren
+            and M.UI.cardScroll.scrollChild == M.UI.cardList,
+        "Library is not a clipped native scroll frame"
+    )
+    local function wheel(frame)
+        frame.scripts.OnMouseWheel(frame, -3)
+        check(frame:GetVerticalScroll() > 0 and frame.scrollBar:IsShown(), "Mouse-wheel did not scroll a large library")
+    end
+    wheel(M.UI.cardScroll)
+    local oldColumns = M.UI.cardColumns
+    M.UI:SetWindowSize(1000, 740)
+    check(M.UI.cardColumns < oldColumns, "Narrow resize did not reflow columns")
+    M.UI:SetWindowSize(1500, 900)
+    check(
+        M.UI.cardColumns > oldColumns and M.UI.cardList.width == M.UI.cardScroll.width - 18,
+        "Wide resize did not reflow or reserve scrollbar space"
+    )
+    for _, card in ipairs(M.UI.launcherCards) do
+        if card:IsShown() then
+            local point = card.points[1]
+            check(
+                point[2] >= 0 and point[2] + card.width <= M.UI.cardList.width + 0.01 and card.width >= 250,
+                "Card exceeds its layout bounds"
+            )
+        end
+    end
+    M.UI:OpenLauncher("multiplayer")
+    check(
+        M.UI.launcherCards[24]:IsShown() and M.UI.browserPanel:IsShown() and M.UI.lobbyPanel:IsShown(),
+        "Large multiplayer library hid lobby controls"
+    )
+    wheel(M.UI.cardScroll)
+    check(
+        M.UI.cardScroll.points[1][2] + M.UI.cardScroll.width < M.UI.lobbyPanel.points[1][2],
+        "Library overlaps lobby actions"
+    )
+    M.UI:LaunchGame("Party_01")
+    check(#M:GetRecentGames() == 0, "Selecting a party module recorded a launch")
+    M:CreateLobby("Party_01")
+    M:Ready(true)
+    pump(40)
+    check(M.ActiveGame and M.DB.recentGames[1] == "Party_01", "Actual multiplayer start did not enter recent games")
+    M.UI:ShowOptions()
+    check(M.ActiveGame and M.Lobby.status == "running", "Page navigation ended a multiplayer match")
+    M.UI.pageBack.scripts.OnClick()
+    check(M.ActiveGame and M.UI.gameContainer:IsShown(), "Multiplayer return lost the session")
+    M:AbortGame()
+    M:LeaveLobby()
+    for i = 1, 8 do
+        M:StartSingleplayer(string.format("Solo_%02d", i))
+        M:AbortGame()
+    end
+    M.UI:OpenLauncher("home")
+    check(
+        M.UI.cardColumns == 3 and M.UI.recentIndicator:IsShown() and M.UI.launcherCards[1].title.text == "Solo_08",
+        "Recent carousel is not newest-first or capped at three"
+    )
+    M.UI.recentNext.scripts.OnClick()
+    check(M.UI.recentPage == 2 and M.UI.launcherCards[1].title.text == "Solo_05", "Carousel did not advance")
+    M.UI.recentPrevious.scripts.OnClick()
+    check(M.UI.recentPage == 1 and not M.UI.recentPrevious.enabled, "Carousel previous boundary is wrong")
+    M.UI:SetWindowSize(1000, 700)
+    check(
+        M.UI.cardColumns == 2 and M.UI.launcherCards[3] and not M.UI.launcherCards[3]:IsShown(),
+        "Recent visible count did not adapt to narrow width"
+    )
+    M.UI.recentPage = 999
+    M.UI:RefreshLauncher()
+    check(not M.UI.recentNext.enabled, "Out-of-range carousel page was not clamped")
+    M.UI:ShowResults()
+    check(#M.UI.resultGameButtons == 50, "Results selector capped registered games")
+    wheel(M.UI.resultGamesScroll)
+    M.UI.resultGameID = "tetris"
+    M.DB.tetris = { best = { score = 12345, lines = 12, level = 3 } }
+    local best = M.Copy(M.DB.tetris.best)
+    M.UI:RefreshResults()
+    check(
+        M.UI.bestScore.text == "12345 points" and M.UI.bestMetadata.text:find("Lines: 12", 1, true),
+        "Results did not read existing best metadata"
+    )
+    check(
+        M.DB.tetris.best.score == best.score and M.UI.resultText.text:find("No saved matches", 1, true),
+        "Results fabricated matches or mutated scores"
+    )
+    M.UI.resultGameID = "Party_01"
+    M.UI:RefreshResults()
+    check(M.UI.resultText.text:find("Interrupted", 1, true), "Results API history disappeared")
+    M.UI:ShowOptions()
+    M.UI.classButtons.SHAMAN.scripts.OnClick()
+    M.UI:SetWindowSize(1300, 820)
+    M.UI:SetWindowScale(1.1)
+    local persisted = M.Copy(M.DB)
+    local restored = client("LibraryReload", "ArcadeRealm", persisted)
+    check(
+        restored.games.UI.frame.width == 1300
+            and restored.games.UI.frame.height == 820
+            and restored.games.UI.frame:GetScale() == 1.1
+            and restored.games:GetClassPreset() == "SHAMAN",
+        "Reload lost layout or class settings"
+    )
+    M.UI.resetSize.scripts.OnClick()
+    check(
+        M.UI.frame.width == M.UI.BASE_WIDTH and M.UI.frame.height == M.UI.BASE_HEIGHT and M.UI.frame:GetScale() == 1,
+        "Reset Size lost base geometry or scale"
+    )
+    M.UI:OpenLauncher("singleplayer")
+    local count = #many.frames
+    for _ = 1, 5 do
+        for _, page in ipairs({ "home", "singleplayer", "multiplayer", "options", "results" }) do
+            M.UI:OpenLauncher(page)
+        end
+    end
+    check(#many.frames == count, "Repeated navigation leaked UI frames")
+    local previous = table.concat(M:GetRecentIDs(), ",")
+    M:RegisterGame({
+        id = "failed_start",
+        title = "Failed start test",
+        version = "1",
+        mode = "singleplayer",
+        CreateUI = function(_, parent)
+            return many.env.CreateFrame("Frame", nil, parent)
+        end,
+        OnStart = function()
+            error("Expected test startup failure")
+        end,
+    })
+    M:StartSingleplayer("failed_start")
+    check(
+        not M.ActiveGame and table.concat(M:GetRecentIDs(), ",") == previous,
+        "Failed OnStart recorded a recent launch"
+    )
+    M:AbortGame()
+    M:LeaveLobby()
 end
 local cardFrames = #launcherClient.frames
 for _ = 1, 5 do
@@ -1668,6 +1948,9 @@ if arg[1] == "--preview" then
                 "justify",
                 "texCoord",
                 "scale",
+                "vertexColor",
+                "verticalScroll",
+                "clipsChildren",
             }) do
                 if frame[key] ~= nil then
                     fields[#fields + 1] = json(key) .. ":" .. json(frame[key])
@@ -1676,6 +1959,7 @@ if arg[1] == "--preview" then
             fields[#fields + 1] = '"visible":' .. json(frame:IsVisible())
             fields[#fields + 1] = '"parent":' .. json(ids[frame.parent])
             fields[#fields + 1] = '"allPoints":' .. json(ids[frame.allPoints])
+            fields[#fields + 1] = '"scrollChild":' .. json(ids[frame.scrollChild])
             local points = {}
             for p, point in ipairs(frame.points or {}) do
                 local copy = {}
@@ -1702,7 +1986,7 @@ if arg[1] == "--preview" then
     G.UI:ShowResults()
     T:Advance(0)
     snapshot("history")
-    G.UI.resultsFrame:Hide()
+    G.UI:ShowGame()
     T.model.gameover = true
     T:Advance(0)
     snapshot("game-over")
@@ -1735,4 +2019,35 @@ if arg[1] == "--preview" then
     snapshot("launcher", launcherClient)
     Arcade.UI:SetWindowScale(1.2)
     snapshot("launcher-120", launcherClient)
+    Arcade.UI:SetWindowScale(1)
+    for _, page in ipairs({ "singleplayer", "multiplayer", "options", "results" }) do
+        Arcade.UI:OpenLauncher(page)
+        snapshot("page-" .. page, launcherClient)
+    end
+    Arcade.UI:OpenLauncher("options")
+    Arcade.UI.optionsScroll:SetVerticalScroll(300)
+    snapshot("page-options-scrolled", launcherClient)
+    Arcade.UI:SetWindowScale(1.2)
+    snapshot("page-options-120", launcherClient)
+    Arcade.UI:SetWindowScale(1)
+    for i = 1, 24 do
+        Arcade:RegisterGame({
+            id = "preview_" .. i,
+            title = string.format("Arcade %02d", i),
+            mode = "singleplayer",
+            version = "1",
+            CreateUI = function(_, parent)
+                return launcherClient.env.CreateFrame("Frame", nil, parent)
+            end,
+            OnStart = function() end,
+        })
+    end
+    Arcade.UI:OpenLauncher("singleplayer")
+    snapshot("page-library-26", launcherClient)
+    Arcade.UI.cardScroll:SetVerticalScroll(360)
+    snapshot("page-library-scrolled", launcherClient)
+    Arcade.UI:SetWindowSize(1000, 700)
+    snapshot("page-library-narrow", launcherClient)
+    Arcade.UI:SetWindowSize(1500, 850)
+    snapshot("page-library-wide", launcherClient)
 end

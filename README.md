@@ -1,23 +1,30 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.9.0. Intended for waiting for the group to fill and the time between dungeons.
+0.10.0. Intended for waiting for the group to fill and the time between dungeons.
 Includes **[Tetris](TETRIS.md)** with 13 class icon presets and
 **[Bejeweled](BEJEWELED.md)** with animated gem swaps and cascades.
 Both singleplayer modules have saved high scores, editable chat sharing and
 shared WoW class icon presets from **Options**.
 
-The Neon Arcade Launcher checkpoint adds supplied artwork, sidebar navigation,
-registry-backed game cards, a featured-game Play/Resume action and real group
-status. See [checkpoint verification](design/CHECKPOINT_1.md) and
-[replaceable artwork slots](design/MISSING_ASSETS.md). The Bejeweled, Tetris and
-Options layout redesigns are intentionally deferred to later checkpoints.
+The Neon Arcade Launcher has a shared Home / Singleplayer / Multiplayer / Results /
+Options content area. Home shows the featured game and up to three recent games,
+ordered by successful launch and saved across reloads. Removed modules are hidden
+without deleting their history. The libraries scroll and reflow as the window
+width changes; multiplayer keeps its lobby browser and host/join/ready controls.
+Results displays each registered game's real saved best and framework history.
+See [launcher checkpoint 2](design/CHECKPOINT_2.md) for validation and live tests,
+and [replaceable artwork slots](design/MISSING_ASSETS.md) for remaining art.
+Bejeweled and Tetris gameplay UI redesigns remain deferred.
 
 Choose your class once in **Options**; it updates both games immediately without
 resetting the board or score. Your previous Tetris class selection migrates on
-first load. Drag **Resize** at the bottom-right of the main window to enlarge the
-whole UI and game board proportionally. The size is saved and constrained to the
-screen; **Options → Reset size** returns to 100% when it fits.
+first load. Drag **Resize** at the bottom-right to adjust the window dimensions
+and library columns. Use **Options -> Smaller UI / Larger UI** to scale the whole
+UI and game board proportionally. Both dimensions and scale persist and clamp to
+the screen; **Reset Size** restores the base 1120x700 window and 100% scale when it
+fits. Options/Results opened during a game provide **Back to game**, preserving
+the active session; solo games stay paused until resumed.
 
 ## Install and open
 
@@ -153,7 +160,8 @@ stopping, managed timers, sender checks and transport.
 - `Artwork.lua`, `Media/KICUI/`: centralized decorative runtime textures and native fallbacks.
 - `Launcher.lua`: artwork feature panel, sidebar, registry-driven cards and group status.
 - `IconPresets.lua`: shared audited textures and class colors for both games.
-- `Settings.lua`, `Options.lua`: persistent class selection, options window and proportional window resizing.
+- `Settings.lua`, `Options.lua`: recent history, class selection, full-page settings, saved scale and responsive window dimensions.
+- `ResultsUI.lua`: embedded game selector, saved bests and scrollable framework match history.
 - `Games/Tetris/`: independent rules engine, game UI and module lifecycle.
 - `Games/Bejeweled/`: independent match-three rules, animations, gem UI and module lifecycle.
 - `Libs/`: bundled Ace3 libraries; no separate Ace3 addon installation required.
@@ -171,7 +179,9 @@ The checks load the real bundled libraries and addon files with mocked WoW APIs,
 including the UI creation paths. They exercise cross-realm sessions, version
 checks, game lifecycle, multipart payloads, throttle retries, stale snapshots,
 rejoining, departures, scoped messages, result validation/deduplication,
-managed timer cleanup, urgent interruption during a large transfer, independent
+managed timer cleanup, recent history/reload validation, 24 temporary games per mode,
+responsive columns, embedded navigation and saved settings, urgent interruption
+during a large transfer, independent
 hosts, tabs, singleplayer without networking, the displayed 3-2-1 sequence,
 countdown cancellation and join acknowledgment. They also check Tetris launching,
 presets, saved records, chat drafts, focus, pauses and quick stopping. Pure engine

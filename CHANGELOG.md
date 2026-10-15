@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10.0 - 2026-10-15 - Launcher organization checkpoint
+
+- Replaced Home's installed list with saved, unique recent launches and a responsive carousel (up to three cards), plus an empty-state library shortcut.
+- Added unbounded registry-driven, clipped scroll grids for both game modes, keeping multiplayer discovery and host/join/ready controls accessible.
+- Moved Options and Results into the shared launcher content region, with safe return to an active game, scrollable settings and per-game real saved records.
+- Added responsive window dimensions alongside the existing saved UI scale, and Reset Size for both.
+- Replaced all five letter navigation badges with original transparent TGA icons and shared hover/selected/disabled styling.
+- Added malformed-history, reload, 24-games-per-mode, carousel, resize, page navigation, records, session and frame-reuse regressions.
+- Kept protocol v3 and game rules/UI unchanged. No new ZIP; game-specific redesigns remain deferred.
+
 ## 0.9.0 - 2026-10-15 — Launcher redesign checkpoint
 
 - Added the supplied Neon Arcade artwork to a centralized runtime texture catalog with documented native replacement slots.

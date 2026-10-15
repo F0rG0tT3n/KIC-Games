@@ -34,27 +34,54 @@ local function invoke(fn)
         end
     end
 end
+local pages = { home = true, singleplayer = true, multiplayer = true, results = true, options = true }
 function UI:OpenLauncher(page)
+    page = pages[page] and page or "home"
+    local changed = self.launcherPage ~= page
+    self.launcherPage, Games.DB.launcherPage = page, page
     if page == "singleplayer" or page == "multiplayer" then
-        self:SelectTab(page)
-    else
-        self.launcherPage = "home"
-        Games.DB.launcherPage = "home"
+        self.tab, Games.DB.launcherTab = page, page
+    end
+    if changed and self.cardScroll then
+        self.cardScroll:SetVerticalScroll(0)
     end
     self:ShowHome()
     self.frame:Show()
+    if changed and page == "multiplayer" then
+        Games:Discover()
+    end
+end
+function UI:SelectMultiplayer(id)
+    if not Games.Registry[id] or Games.Registry[id].mode ~= "multiplayer" then
+        return false
+    end
+    if Games.Lobby then
+        if not Games:IsHost() or Games.Lobby.mode ~= "multiplayer" or Games.Lobby.status == "running" then
+            return false, "Leave the current game or lobby before changing games."
+        end
+        local ok, err = Games:SelectGame(id)
+        if ok == false then
+            return ok, err
+        end
+    end
+    self.selectedMulti = id
+    self:Refresh()
+    return true
 end
 function UI:FeatureGame(id)
     local game = Games.Registry[id]
     if not game then
         return false
     end
-    self.featuredID = id
-    if game.mode == "singleplayer" then
-        self.selectedSolo = id
+    if game.mode == "multiplayer" then
+        local ok, err = self:SelectMultiplayer(id)
+        if ok == false then
+            return ok, err
+        end
     else
-        self.selectedMulti = id
+        self.selectedSolo = id
     end
+    self.featuredID = id
     self:Refresh()
     return true
 end
@@ -68,7 +95,10 @@ function UI:LaunchGame(id)
         return true
     end
     if game.mode == "multiplayer" then
-        self.selectedMulti = id
+        local ok, err = self:SelectMultiplayer(id)
+        if ok == false then
+            return ok, err
+        end
         self:OpenLauncher("multiplayer")
         return true
     end
@@ -83,94 +113,48 @@ function UI:CanLaunch(game)
         return true
     end
     if game.mode == "multiplayer" then
-        return true
-    end -- opens the real host/join page
+        return not Games.Pending
+            and (
+                not Games.Lobby
+                or Games:IsHost() and Games.Lobby.mode == "multiplayer" and Games.Lobby.status ~= "running"
+            )
+    end
     return not Games.Pending
         and (not Games.Lobby or Games.Lobby.mode == "singleplayer" and Games.Lobby.status == "waiting")
 end
 function UI:InitializeLauncher()
-    self.launcherPage = Games.DB.launcherPage or Games.DB.launcherTab or "home"
-    if self.launcherPage ~= "singleplayer" and self.launcherPage ~= "multiplayer" then
-        self.launcherPage = "home"
-    end
-    self.launcherCards = {}
-    self.multiplayerPage = CreateFrame("Frame", nil, self.home)
-    self.multiplayerPage:SetAllPoints(self.home)
-    Theme:Art(self.home, "hall", 1088, 562, 16, -82, 0.13)
+    local saved = Games.DB.launcherPage or Games.DB.launcherTab
+    self.launcherPage = pages[saved] and saved or "home"
+    self.launcherCards, self.recentPage = {}, 1
+    self.content = CreateFrame("Frame", nil, self.home)
+    self.content:SetPoint("TOPLEFT", 222, -96)
+    self.content:SetSize(882, 548)
+    self.multiplayerPage = CreateFrame("Frame", nil, self.content)
+    self.multiplayerPage:SetAllPoints(self.content)
+    self.hallArt = Theme:Art(self.home, "hall", 1088, 562, 16, -82, 0.13)
     self.sidebar = Theme:Panel(self.home, 188, 548, 18, -96)
-    Theme:Art(self.sidebar, "crest", 142, 142, 23, -325, 0.09, "ARTWORK")
-    Theme:Art(self.sidebar, "sidebar", 186, 265, 1, -282, 0.48)
+    self.sidebarCrest = Theme:Art(self.sidebar, "crest", 142, 142, 23, -325, 0.09, "ARTWORK")
+    self.sidebarArt = Theme:Art(self.sidebar, "sidebar", 186, 265, 1, -282, 0.48)
     self.nav = {}
-    local entries = {
-        {
-            id = "home",
-            text = "Home",
-            fn = function()
-                self:OpenLauncher("home")
-            end,
-        },
-        {
-            id = "singleplayer",
-            text = "Singleplayer",
-            button = self.singleTab,
-            fn = function()
-                self:OpenLauncher("singleplayer")
-            end,
-        },
-        {
-            id = "multiplayer",
-            text = "Multiplayer",
-            button = self.multiTab,
-            fn = function()
-                self:OpenLauncher("multiplayer")
-            end,
-        },
-        {
-            id = "results",
-            text = "Results",
-            fn = function()
-                self:ShowResults()
-            end,
-        },
-        {
-            id = "options",
-            text = "Options",
-            fn = function()
-                self:ShowOptions()
-            end,
-        },
-    }
-    for i, entry in ipairs(entries) do
-        local b = entry.button or Theme:Button(self.sidebar, entry.text, 172, 8, -18 - (i - 1) * 54, entry.fn, 46)
-        place(b, self.sidebar, 8, -18 - (i - 1) * 54, 172, 46)
-        b:SetScript("OnClick", entry.fn)
-        b.caption:ClearAllPoints()
-        b.caption:SetPoint("LEFT", 46, 0)
-        b.caption:SetWidth(120)
-        b.caption:SetJustifyH("LEFT")
-        self.nav[entry.id] = b
-        local key = "nav-" .. entry.id
-        local asset = Games.Artwork[key]
-        Theme:Art(b, key, 24, 24, 12, -11, 1, "ARTWORK")
-        if not asset.file then
-            Theme:Label(b, asset.glyph, 17, -14, 22):SetTextColor(unpack(Theme.Colors.accent))
-        end
+    for i, entry in ipairs({
+        { "home", "Home" },
+        { "singleplayer", "Singleplayer", self.singleTab },
+        { "multiplayer", "Multiplayer", self.multiTab },
+        { "results", "Results" },
+        { "options", "Options" },
+    }) do
+        local id = entry[1]
+        self.nav[id] = Theme:NavigationButton(self.sidebar, "nav-" .. id, entry[2], 8, -18 - (i - 1) * 54, function()
+            self:OpenLauncher(id)
+        end, entry[3])
     end
-    -- Keep multiplayer state/actions intact; only move their native panels.
-    place(self.libraryPanel, self.multiplayerPage, 222, -96, 340, 252)
-    place(self.browserPanel, self.multiplayerPage, 222, -360, 340, 280)
-    place(self.lobbyPanel, self.multiplayerPage, 578, -96, 526, 544)
-    place(self.browser:GetParent(), nil, 14, -44, 303, 216)
-    place(self.create, nil, 16, -492)
-    place(self.leave, nil, 16, -492)
-    place(self.ready, nil, 151, -492)
-    place(self.showGame, nil, 151, -492)
-    place(self.start, nil, 281, -492)
-    place(self.endGame, nil, 281, -492)
-    -- Reuse the real solo actions and text as the featured panel; no duplicate CTA.
+    -- The old text library is replaced by the shared card grid. Lobby actions stay native.
+    place(self.browserPanel, self.multiplayerPage, 0, -284, 340, 264)
+    place(self.browser:GetParent(), nil, 14, -44, 312, 204)
+    place(self.lobbyPanel, self.multiplayerPage, 356, 0, 526, 548)
     self.hero = self.singlePanel
     self.soloSection:Hide()
-    place(self.hero, self.home, 222, -96, 882, 256)
+    place(self.hero, self.content, 0, 0, 882, 256)
     self.heroArt = Theme:Art(self.hero, "bejeweled-hero", 880, 254, 1, -1, 1)
     self.heroShade = self.hero:CreateTexture(nil, "BACKGROUND", nil, 1)
     self.heroShade:SetColorTexture(0.008, 0.02, 0.05, 0.72)
@@ -203,21 +187,75 @@ function UI:InitializeLauncher()
     )
     self.soloHint:Hide()
     self.soloLeave:SetText("Leave lobby")
-    self.installedTitle = Theme:Label(self.home, "INSTALLED GAMES", 222, -370, 870, "GameFontNormalLarge")
-    self.installedTitle:SetFont("Fonts\\ARIALN.TTF", 18, "")
+    self.installedTitle = Theme:Label(self.content, "RECENT GAMES", 0, -274, 550, "GameFontNormalLarge")
+    self.installedTitle:SetFont(Theme.Fonts.display, 18, "")
     self.installedTitle:SetTextColor(unpack(Theme.Colors.accent))
-    self.cardList, self.cardScroll = Theme:Scroll(self.home, 866, 238, 222, -402)
-    self.noGames = Theme:Label(self.cardList, "No games installed for this mode.", 16, -32, 810)
+    self.pageTitle = Theme:Label(self.content, "", 0, -6, 600, "GameFontNormalLarge")
+    self.pageSubtitle = Theme:Label(self.content, "", 0, -36, 700, "GameFontHighlightSmall")
+    self.cardList, self.cardScroll = Theme:Scroll(self.content, 882, 238, 0, -310)
+    self.noGames = Theme:Label(self.cardList, "", 24, -24, 650, "GameFontNormalLarge")
+    self.noGames:SetHeight(56)
+    self.emptyDetail = Theme:Label(self.cardList, "", 24, -92, 650)
+    self.emptyDetail:SetHeight(56)
+    self.browseGames = Theme:Button(self.cardList, "Browse installed games", 224, 24, -166, function()
+        self:OpenLauncher("singleplayer")
+    end, 36)
+    Theme:Primary(self.browseGames)
+    self.recentPrevious = Theme:Button(self.content, "Prev", 60, 0, 0, function()
+        self.recentPage = self.recentPage - 1
+        self:RefreshLauncher()
+    end)
+    self.recentNext = Theme:Button(self.content, "Next", 60, 0, 0, function()
+        self.recentPage = self.recentPage + 1
+        self:RefreshLauncher()
+    end)
+    self.recentIndicator = Theme:Label(self.content, "", 0, 0, 70, "GameFontHighlightSmall")
+    self.recentIndicator:SetJustifyH("CENTER")
+    self.pageBack = Theme:Button(self.content, "Back to game", 140, 0, 0, function()
+        self:ShowGame()
+    end)
+    self.pageBack:SetFrameLevel(self.content:GetFrameLevel() + 5)
     self.groupPanel = Theme:Panel(self.frame, 264, 54, 796, -18)
     self.groupStatus = Theme:Label(self.groupPanel, "", 14, -8, 236)
     self.groupDetail = Theme:Label(self.groupPanel, "", 14, -31, 236, "GameFontHighlightSmall")
     self.launcherMotto =
         Theme:Label(self.frame, "Games today. Raids tomorrow.", 810, -669, 220, "GameFontHighlightSmall")
     self.launcherMotto:SetTextColor(unpack(Theme.Colors.accent))
-    place(self.optionsButton, nil, 594, -30, 80, 28)
-    place(self.resultsButton, nil, 682, -30, 80, 28)
-    place(self.abortButton, nil, 770, -30, 110, 28)
-    place(self.homeButton, nil, 888, -30, 94, 28)
+    self.frame:SetScript("OnSizeChanged", function()
+        self:LayoutLauncher()
+    end)
+end
+function UI:LayoutLauncher()
+    if not self.content or self.layingOut then
+        return
+    end
+    self.layingOut = true
+    local width, height = self.frame:GetWidth(), self.frame:GetHeight()
+    self.content:SetSize(width - 238, height - 152)
+    self.sidebar:SetHeight(height - 152)
+    self.hallArt:SetSize(width - 32, height - 138)
+    Theme:SetArt(self.hallArt, "hall", width - 32, height - 138, 0.13)
+    place(self.sidebarArt, nil, 1, -(height - 152 - 265), 186, 265)
+    place(self.sidebarCrest, nil, 23, -(height - 152 - 223), 142, 142)
+    place(self.groupPanel, nil, width - 324, -18)
+    self.footer:ClearAllPoints()
+    self.footer:SetPoint("BOTTOMLEFT", 22, 17)
+    self.footer:SetWidth(width - 310)
+    self.launcherMotto:ClearAllPoints()
+    self.launcherMotto:SetPoint("BOTTOMRIGHT", -90, 17)
+    self.launcherMotto:SetWidth(220)
+    place(self.gameContainer, nil, (width - 860) / 2, -116)
+    place(self.optionsButton, nil, width - 526, -30, 80, 28)
+    place(self.resultsButton, nil, width - 438, -30, 80, 28)
+    place(self.homeButton, nil, width - 232, -30, 94, 28)
+    if self.optionsFrame then
+        self:LayoutOptions()
+    end
+    if self.resultsFrame then
+        self:LayoutResults()
+    end
+    self.layingOut = false
+    self:RefreshLauncher()
 end
 function UI:RefreshLauncherStatus()
     if not self.groupStatus then
@@ -251,82 +289,188 @@ function UI:RefreshLauncherStatus()
     )
 end
 function UI:RefreshLauncher()
-    if not self.launcherCards then
+    if not self.content then
         return
     end
     local inGame = self.gameContainer:IsShown()
-    local multi = self.launcherPage == "multiplayer"
+    local home, multi = self.launcherPage == "home", self.launcherPage == "multiplayer"
+    local libraryPage = self.launcherPage == "singleplayer" or multi
+    local settingsPage = self.launcherPage == "options"
+    local resultsPage = self.launcherPage == "results"
+    local width, height = self.content:GetWidth(), self.content:GetHeight()
     self.optionsButton:SetShown(inGame)
     self.resultsButton:SetShown(inGame)
-    place(self.abortButton, nil, inGame and 770 or 668, -30, 110, 28)
+    place(self.abortButton, nil, self.frame:GetWidth() - (inGame and 350 or 452), -30, 110, 28)
     self.groupPanel:SetShown(not inGame)
     self.launcherMotto:SetShown(not inGame)
-    self.hero:SetShown(not multi)
+    self.hero:SetShown(home)
     self.multiplayerPage:SetShown(multi)
-    self.libraryPanel:SetShown(multi)
     self.browserPanel:SetShown(multi)
     self.lobbyPanel:SetShown(multi)
-    self.libraryPanel:SetHeight(252)
-    self.libraryScroll:SetHeight(199)
-    self.libraryTitle:SetText("MULTIPLAYER GAMES")
-    self.installedTitle:SetShown(not multi)
-    self.cardScroll:SetShown(not multi)
+    self.installedTitle:SetShown(home)
+    self.cardScroll:SetShown(home or libraryPage)
+    self.pageTitle:SetShown(libraryPage)
+    self.pageSubtitle:SetShown(libraryPage)
+    if self.optionsFrame then
+        self.optionsFrame:SetShown(settingsPage and not inGame)
+    end
+    if self.resultsFrame then
+        self.resultsFrame:SetShown(resultsPage and not inGame)
+    end
+    self.pageBack:SetShown(not inGame and (settingsPage or resultsPage) and Games.ActiveGame ~= nil)
+    place(self.pageBack, nil, width - 158, -4, 140, 28)
     self.singleTab:SetText("Singleplayer")
     self.multiTab:SetText("Multiplayer")
-    self.singleTab:Enable()
-    self.multiTab:Enable()
     for name, b in pairs(self.nav) do
+        b:Enable()
         Theme:Select(b, name == self.launcherPage)
     end
     self:RefreshLauncherStatus()
-    if multi then
+    if settingsPage and self.optionsFrame then
+        self:RefreshOptions()
+    end
+    if resultsPage and self.resultsFrame then
+        self:RefreshResults()
+    end
+    self.recentPrevious:Hide()
+    self.recentNext:Hide()
+    self.recentIndicator:Hide()
+    if not home and not libraryPage then
         return
     end
-    local games = Games:GetGames(self.launcherPage == "singleplayer" and "singleplayer" or nil)
-    local selected = Games.Registry[self.featuredID]
-    if self.launcherPage == "singleplayer" then
-        selected = Games.Registry[self.selectedSolo]
-    end
-    if not selected or self.launcherPage == "singleplayer" and selected.mode ~= "singleplayer" then
-        selected = Games.Registry[self.selectedSolo]
-        if not selected or self.launcherPage == "singleplayer" and selected.mode ~= "singleplayer" then
-            selected = games[1]
+    local gridWidth, gridHeight, gridY = width, height - 66, -66
+    if home then
+        gridHeight, gridY = height - 310, -310
+    elseif multi then
+        gridWidth, gridHeight = math.max(290, math.floor(width * 0.39)), 226
+        local lobbyX = gridWidth + 16
+        place(self.lobbyPanel, nil, lobbyX, 0, width - lobbyX, height)
+        place(self.browserPanel, nil, 0, -308, gridWidth, height - 308)
+        place(self.browser:GetParent(), nil, 14, -44, gridWidth - 28, height - 368)
+        place(self.browserRefresh, nil, gridWidth - 104, -9, 90, 28)
+        self.browser:SetWidth(gridWidth - 44)
+        for _, row in ipairs(self.listingRows) do
+            row:SetWidth(gridWidth - 44)
+            row.title:SetWidth(gridWidth - 56)
+            row.detail:SetWidth(gridWidth - 56)
+        end
+        self.emptyLobbies:SetWidth(gridWidth - 44)
+        for _, field in ipairs({
+            self.lobbyTitle,
+            self.lobbyInfo,
+            self.selectedGame,
+            self.gameInfo,
+            self.players,
+            self.countdownText,
+            self.hint,
+        }) do
+            field:SetWidth(width - lobbyX - 32)
+        end
+        local actionWidth = (width - lobbyX - 48) / 3
+        for i, pair in ipairs({
+            { self.create, self.leave },
+            { self.ready, self.showGame },
+            { self.start, self.endGame },
+        }) do
+            for _, b in ipairs(pair) do
+                place(b, nil, 16 + (i - 1) * (actionWidth + 8), -(height - 52), actionWidth, 32)
+            end
         end
     end
-    self.featuredID = selected and selected.id
-    self.installedTitle:SetText(string.format("INSTALLED GAMES  /  %d", #games))
-    self.noGames:SetShown(#games == 0)
+    place(self.cardScroll, nil, 0, gridY, gridWidth, gridHeight)
+    local available = gridWidth - 18
+    self.cardList:SetWidth(available)
+    local games = home and Games:GetRecentGames() or Games:GetGames(multi and "multiplayer" or "singleplayer")
+    local columns = math.max(1, math.floor((available + 14) / 270))
+    if home then
+        columns = math.min(3, columns)
+    end
+    self.cardColumns = columns
+    local pagesCount = math.max(1, math.ceil(#games / columns))
+    self.recentPage = math.max(1, math.min(self.recentPage, pagesCount))
+    local first = home and (self.recentPage - 1) * columns + 1 or 1
+    local last = home and math.min(#games, first + columns - 1) or #games
+    local cardWidth = (available - (columns - 1) * 14) / columns
+    self.installedTitle:SetText("RECENT GAMES")
+    self.pageTitle:SetText(multi and "MULTIPLAYER" or "SINGLEPLAYER")
+    self.pageTitle:SetWidth(multi and gridWidth or width)
+    self.pageSubtitle:SetWidth(multi and gridWidth or width)
+    self.pageSubtitle:SetText(
+        string.format(
+            "%d installed game(s) / %s",
+            #games,
+            multi and "Host or join with your party" or "Play at your own pace"
+        )
+    )
+    if home then
+        self.cardScroll:SetVerticalScroll(0)
+        place(self.recentPrevious, nil, width - 212, -270, 60, 28)
+        place(self.recentIndicator, nil, width - 146, -278, 70)
+        place(self.recentNext, nil, width - 70, -270, 60, 28)
+        local carousel = #games > columns
+        self.recentPrevious:SetShown(carousel)
+        self.recentNext:SetShown(carousel)
+        self.recentIndicator:SetShown(carousel)
+        self.recentIndicator:SetText(string.format("%d / %d", self.recentPage, pagesCount))
+        if self.recentPage > 1 then
+            self.recentPrevious:Enable()
+        else
+            self.recentPrevious:Disable()
+        end
+        if self.recentPage < pagesCount then
+            self.recentNext:Enable()
+        else
+            self.recentNext:Disable()
+        end
+    end
     for _, card in ipairs(self.launcherCards) do
         card:Hide()
     end
-    local columns = math.max(1, math.min(3, #games))
-    local width = (866 - (columns - 1) * 14) / columns
-    for i, game in ipairs(games) do
-        local card = self.launcherCards[i]
+    self.noGames:SetShown(#games == 0)
+    self.emptyDetail:SetShown(#games == 0)
+    self.browseGames:SetShown(home and #games == 0 and #Games:GetGames() > 0)
+    self.noGames:SetWidth(available - 48)
+    self.emptyDetail:SetWidth(available - 48)
+    self.noGames:SetText(home and "Your next favorite starts here" or "Your library is ready for more")
+    self.emptyDetail:SetText(
+        home and "Launch an installed game to keep it close. Your recent games will appear here."
+            or "Installed game modules for this mode will appear here automatically."
+    )
+    self.browseGames:SetScript("OnClick", function()
+        self:OpenLauncher(#Games:GetGames("singleplayer") > 0 and "singleplayer" or "multiplayer")
+    end)
+    for i = first, last do
+        local index, game = i - first + 1, games[i]
+        local card = self.launcherCards[index]
         if not card then
-            card = Theme:GameCard(self.cardList, width, 226)
-            self.launcherCards[i] = card
+            card = Theme:GameCard(self.cardList, cardWidth, 226)
+            self.launcherCards[index] = card
         end
-        local id = game.id
-        local art = library[id]
-        card:SetSize(width, 226)
-        card:ClearAllPoints()
-        card:SetPoint("TOPLEFT", ((i - 1) % columns) * (width + 14), -math.floor((i - 1) / columns) * 240)
-        card.art:SetSize(width, 226)
-        Theme:SetArt(card.art, art and art.card or "generic-card", width, 226, 0.19)
+        local id, art = game.id, library[game.id]
+        place(
+            card,
+            nil,
+            ((index - 1) % columns) * (cardWidth + 14),
+            -math.floor((index - 1) / columns) * 240,
+            cardWidth,
+            226
+        )
+        card.art:SetSize(cardWidth, 226)
+        Theme:SetArt(card.art, art and art.card or "generic-card", cardWidth, 226, 0.19)
         Theme:SetArt(card.icon, art and art.card or "generic-card", 80, 80, 1)
         if not art then
             card.icon:SetTexture(game.icon or "Interface\\Icons\\INV_Misc_Dice_01")
         end
-        card.title:SetWidth(width - 126)
+        card.title:SetWidth(cardWidth - 126)
+        card.title:SetHeight(48)
         card.title:SetText(game.title)
-        card.mode:SetWidth(width - 126)
+        place(card.mode, nil, 110, -77, cardWidth - 126)
         card.mode:SetText(
             game.mode == "singleplayer" and "SOLO" or string.format("PARTY / %d-%d", game.minPlayers, game.maxPlayers)
         )
-        card.detail:SetWidth(width - 32)
+        card.detail:SetWidth(cardWidth - 32)
         card.detail:SetText(art and art.summary or game.description or "")
-        card.play:SetWidth(width - 104)
+        card.play:SetWidth(cardWidth - 104)
         card.play:SetText(
             Games.ActiveGame and Games.ActiveGame.game.id == id and "Resume"
                 or game.mode == "singleplayer" and "Play"
@@ -343,25 +487,47 @@ function UI:RefreshLauncher()
         else
             card.play:Disable()
         end
-        place(card.details, nil, width - 72, -178, 56, 34)
-        card.details:SetScript("OnClick", function()
-            self:FeatureGame(id)
-        end)
-        card:SetScript("OnClick", function()
-            self:FeatureGame(id)
-        end)
-        Theme:Select(card, self.featuredID == id)
+        place(card.details, nil, cardWidth - 72, -178, 56, 34)
+        card.details:SetScript(
+            "OnClick",
+            invoke(function()
+                local ok, err = self:FeatureGame(id)
+                if ok then
+                    self:OpenLauncher(multi and "multiplayer" or "home")
+                end
+                return ok, err
+            end)
+        )
+        card:SetScript(
+            "OnClick",
+            invoke(function()
+                return self:FeatureGame(id)
+            end)
+        )
+        Theme:Select(card, (multi and self.selectedMulti or self.featuredID) == id)
         card:Show()
     end
-    self.cardList:SetHeight(math.max(226, math.ceil(#games / columns) * 240 - 14))
+    self.cardList:SetHeight(
+        math.max(gridHeight, #games == 0 and 206 or math.ceil((last - first + 1) / columns) * 240 - 14)
+    )
+    if not home then
+        return
+    end
+    place(self.hero, nil, 0, 0, width, 256)
+    self.heroArt:SetSize(width - 2, 254)
+    self:RefreshFeature(width)
+end
+function UI:RefreshFeature(width)
+    local selected = Games.Registry[self.featuredID] or Games.Registry[self.selectedSolo] or Games:GetGames()[1]
+    self.featuredID = selected and selected.id
     if not selected then
-        Theme:SetArt(self.heroArt, "generic-hero", 880, 254, 1)
+        Theme:SetArt(self.heroArt, "generic-hero", width - 2, 254, 1)
         self.heroShade:Hide()
         self.heroFallback:Hide()
         self.soloLeave:Hide()
         place(self.heroBadge, nil, 28, -24, 400)
-        place(self.soloTitle, nil, 28, -64, 800, 42)
-        place(self.soloDescription, nil, 28, -132, 800, 58)
+        place(self.soloTitle, nil, 28, -64, width - 56, 42)
+        place(self.soloDescription, nil, 28, -132, width - 56, 58)
         self.soloTitle:SetText("Your next adventure")
         self.soloDescription:SetText("Install a KIC Games module to begin.")
         self.soloPlay:Hide()
@@ -374,9 +540,9 @@ function UI:RefreshLauncher()
     local art = library[selected.id]
     self.heroShade:Show()
     local asset = art and Games.Artwork[art.hero]
-    local x = asset and asset.textSide == "left" and 28 or 422
-    local textWidth = 432
-    Theme:SetArt(self.heroArt, art and art.hero or "generic-hero", 880, 254, 1)
+    local x = asset and asset.textSide == "left" and 28 or math.max(28, width - 460)
+    local textWidth = math.min(432, width - x - 24)
+    Theme:SetArt(self.heroArt, art and art.hero or "generic-hero", width - 2, 254, 1)
     self.heroShade:ClearAllPoints()
     self.heroShade:SetPoint("TOPLEFT", x - 12, -1)
     self.heroShade:SetSize(456, 254)

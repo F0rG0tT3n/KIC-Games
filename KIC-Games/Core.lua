@@ -1,7 +1,7 @@
 local addonName, Games = ...
 _G.KICGames = Games
 
-Games.VERSION = "0.9.0"
+Games.VERSION = "0.10.0"
 Games.API_VERSION = 3
 Games.PREFIX = "KICGames3"
 Games.CONTROL_PREFIX = "KICGames3Ctl"
@@ -290,6 +290,7 @@ function Games:StartModule(restored)
     if not self.ActiveGame or not self.Lobby or self.Lobby.status ~= "running" then
         return
     end
+    self:RecordGameLaunch(game.id)
     self.UI:ShowGame()
     if not self:IsHost() and lobby.mode == "multiplayer" then
         self:Send("GAME_SYNC", {

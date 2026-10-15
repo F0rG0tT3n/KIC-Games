@@ -1,5 +1,5 @@
 local _, Games = ...
-local UI = { gameRows = {}, listingRows = {} }
+local UI = { listingRows = {} }
 UI.BASE_WIDTH, UI.BASE_HEIGHT = 1120, 700
 Games.UI = UI
 local Theme = Games.Theme
@@ -64,7 +64,7 @@ function UI:Initialize()
         UI:ShowOptions()
     end)
     self.homeButton = button(frame, "Launcher", 100, 742, -34, function()
-        UI:ShowHome()
+        UI:OpenLauncher("home")
     end)
     self.homeButton:Hide()
     self.resultsButton = button(frame, "Results", 90, 536, -34, function()
@@ -84,22 +84,10 @@ function UI:Initialize()
         UI:SelectTab("multiplayer")
     end)
 
-    local library = panel(self.home, 355, 252, 20, -120)
-    self.libraryPanel = library
-    self.libraryTitle = label(library, "MULTIPLAYER GAMES", 14, -14, 290, "GameFontNormal")
-    self.library, self.libraryScroll = scroll(library, 303, 199, 14, -40)
-    self.emptyGames = label(
-        self.library,
-        "Your game library is empty.\n\nKIC-Games is the launcher and multiplayer framework. Games will appear here when their modules are installed.\n\nYou can already create a lobby and invite party members to join it.",
-        0,
-        0,
-        292
-    )
-
     local browser = panel(self.home, 355, 186, 20, -384)
     self.browserPanel = browser
     label(browser, "PARTY LOBBIES", 14, -14, 205, "GameFontNormal")
-    button(browser, "Refresh", 90, 248, -9, function()
+    self.browserRefresh = button(browser, "Refresh", 90, 248, -9, function()
         Games:Discover()
     end)
     self.browser = scroll(browser, 303, 126, 14, -44)
@@ -185,9 +173,10 @@ function UI:Initialize()
     self.footer = label(frame, "", 22, -669, 980, "GameFontHighlightSmall")
     self.gameContainer = panel(frame, 860, 450, 130, -116)
     self.gameContainer:Hide()
+    self:InitializeLauncher()
     self:CreateResultsWindow()
     self:CreateOptions()
-    self:InitializeLauncher()
+    self:LayoutLauncher()
     self:InitializeResize()
     self:CreateMinimapButton()
     frame:SetScript("OnUpdate", function()
@@ -197,19 +186,8 @@ function UI:Initialize()
 end
 
 function UI:SelectTab(mode)
-    if mode ~= "singleplayer" and mode ~= "multiplayer" then
-        return
-    end
-    local changed = self.tab ~= mode or self.launcherPage ~= mode
-    self.launcherPage = mode
-    Games.DB.launcherPage = mode
-    if changed then
-        self:HideAuxiliaryWindows()
-    end
-    self.tab, Games.DB.launcherTab = mode, mode
-    self:Refresh()
-    if changed and mode == "multiplayer" then
-        Games:Discover()
+    if mode == "singleplayer" or mode == "multiplayer" then
+        self:OpenLauncher(mode)
     end
 end
 
@@ -272,74 +250,6 @@ function UI:HideAll()
     end
 end
 
-function UI:CreateResultsWindow()
-    local frame = panel(UIParent, 640, 470, 0, 0)
-    frame:ClearAllPoints()
-    frame:SetPoint("CENTER", self.frame, "CENTER", 0, 0)
-    Theme:Window(frame, true)
-    _G.KICGamesResultsWindow = frame
-    UISpecialFrames[#UISpecialFrames + 1] = "KICGamesResultsWindow"
-    label(frame, "Match history", 24, -22, 540, "GameFontNormalLarge")
-    label(frame, "Last 20 matches. Interrupted matches never count as a loss.", 20, -48, 580, "GameFontHighlightSmall")
-    Theme:CloseButton(frame)
-    self.resultSummary = label(frame, "", 20, -76, 580)
-    self.resultList = scroll(frame, 571, 323, 20, -116)
-    self.resultText = label(self.resultList, "", 0, 0, 560)
-    self.resultText:SetSpacing(4)
-    frame:Hide()
-    self.resultsFrame = frame
-end
-
-function UI:ShowResults()
-    self:HideAuxiliaryWindows()
-    self:RefreshResults()
-    self.resultsFrame:Show()
-    self.resultsFrame:Raise()
-end
-
-function UI:RefreshResults()
-    if not self.resultsFrame then
-        return
-    end
-    local stats, lines = Games:GetResultStats(), {}
-    self.resultSummary:SetText(
-        string.format(
-            "Completed: %d | Interrupted: %d | Wins: %d | Losses: %d | Draws: %d",
-            stats.completed,
-            stats.aborted,
-            stats.wins,
-            stats.losses,
-            stats.draws
-        )
-    )
-    for _, result in ipairs(Games:GetResults()) do
-        local game = Games.Registry[result.gameID]
-        lines[#lines + 1] = (game and game.title or result.gameID)
-            .. " - "
-            .. (result.status == "aborted" and "Interrupted" or "Completed")
-            .. " (round "
-            .. result.run
-            .. ")"
-        lines[#lines + 1] = result.summary
-        if result.status == "aborted" then
-            lines[#lines + 1] = "Reason: " .. result.reason .. (result.abortedBy and (" / " .. result.abortedBy) or "")
-        end
-        for _, entry in ipairs(result.entries) do
-            local detail = (entry.rank and ("#" .. entry.rank .. "  ") or "") .. entry.player
-            if entry.score ~= nil then
-                detail = detail .. "  |  " .. tostring(entry.score)
-            end
-            if entry.outcome then
-                detail = detail .. "  |  " .. entry.outcome
-            end
-            lines[#lines + 1] = detail
-        end
-        lines[#lines + 1] = " "
-    end
-    self.resultText:SetText(#lines > 0 and table.concat(lines, "\n") or "No matches yet.")
-    self.resultList:SetHeight(math.max(310, self.resultText:GetStringHeight() + 8))
-end
-
 function UI:GetGameContainer()
     return self.gameContainer
 end
@@ -358,6 +268,8 @@ function UI:ShowGame()
     end
     self:HideAuxiliaryWindows()
     self.home:Hide()
+    self.resultsFrame:Hide()
+    self.optionsFrame:Hide()
     self.gameContainer:Show()
     self.homeButton:Show()
     self.frame:Show()
@@ -382,108 +294,13 @@ function UI:Refresh()
         self:ShowHome()
         return
     end
-    local games = Games:GetGames(self.tab)
     local soloGames, multiGames = Games:GetGames("singleplayer"), Games:GetGames("multiplayer")
-    self.singleTab:SetText("Singleplayer (" .. #soloGames .. ")")
-    self.multiTab:SetText("Multiplayer (" .. #multiGames .. ")")
-    enable(self.singleTab, self.tab ~= "singleplayer")
-    enable(self.multiTab, self.tab ~= "multiplayer")
-    Theme:Select(self.singleTab, self.tab == "singleplayer")
-    Theme:Select(self.multiTab, self.tab == "multiplayer")
-    self.browserPanel:SetShown(self.tab == "multiplayer")
-    self.lobbyPanel:SetShown(self.tab == "multiplayer")
-    self.singlePanel:SetShown(self.tab == "singleplayer")
-    self.libraryPanel:SetHeight(self.tab == "singleplayer" and 450 or 252)
-    self.libraryScroll:SetHeight(self.tab == "singleplayer" and 397 or 199)
-    self.libraryTitle:SetText(self.tab == "singleplayer" and "SINGLEPLAYER GAMES" or "MULTIPLAYER GAMES")
-    self.emptyGames:SetText(
-        self.tab == "singleplayer" and "No singleplayer games installed yet.\n\nInstalled solo games will appear here."
-            or "No multiplayer games installed yet.\n\nInstalled party games will appear here."
-    )
     if not Games.Registry[self.selectedSolo] then
         self.selectedSolo = soloGames[1] and soloGames[1].id
     end
     if not Games.Registry[self.selectedMulti] then
         self.selectedMulti = multiGames[1] and multiGames[1].id
     end
-    self.emptyGames:SetShown(#games == 0)
-    for _, row in ipairs(self.gameRows) do
-        row:Hide()
-    end
-    for i, game in ipairs(games) do
-        local row = self.gameRows[i]
-        if not row then
-            row = CreateFrame("Button", nil, self.library, "BackdropTemplate")
-            row:SetSize(301, 62)
-            Theme:StyleButton(row)
-            row.icon = row:CreateTexture(nil, "ARTWORK")
-            row.icon:SetSize(32, 32)
-            row.icon:SetPoint("TOPLEFT", 10, -14)
-            row.icon:SetTexCoord(0.06, 0.94, 0.06, 0.94)
-            row.iconTiles = {}
-            for tile = 1, 4 do
-                local texture = row:CreateTexture(nil, "ARTWORK")
-                texture:SetSize(9, 9)
-                row.iconTiles[tile] = texture
-            end
-            row.title = label(row, "", 52, -10, 238, "GameFontNormal")
-            row.detail = label(row, "", 52, -32, 238, "GameFontHighlightSmall")
-            row.title:SetHeight(18)
-            row.detail:SetHeight(32)
-            self.gameRows[i] = row
-        end
-        local registeredID = game.id
-        row:ClearAllPoints()
-        row:SetPoint("TOPLEFT", 0, -(i - 1) * 68)
-        row.title:SetText(game.title)
-        row.icon:SetTexture(game.icon or "Interface\\Icons\\INV_Misc_Dice_01")
-        row.icon:SetShown(game.iconPattern == nil)
-        for i, tile in ipairs(row.iconTiles) do
-            local point = game.iconPattern and game.iconPattern[i]
-            tile:SetShown(point ~= nil)
-            if point then
-                tile:ClearAllPoints()
-                tile:SetPoint("TOPLEFT", 10 + point[1] * 10, -19 - point[2] * 10)
-                tile:SetColorTexture(unpack(game.iconColor or GOLD))
-            end
-        end
-        local selectedID = self.tab == "singleplayer" and self.selectedSolo or self.selectedMulti
-        Theme:Select(row, game.id == selectedID)
-        if game.id == selectedID then
-            row.title:SetTextColor(unpack(GOLD))
-        else
-            row.title:SetTextColor(0.8, 0.8, 0.8)
-        end
-        row.detail:SetText(
-            game.mode == "singleplayer" and "Solo game / Play at your pace"
-                or string.format("Party game / %d-%d players", game.minPlayers, game.maxPlayers)
-        )
-        row:SetScript(
-            "OnClick",
-            action(function()
-                if UI.tab == "singleplayer" then
-                    UI.selectedSolo = registeredID
-                    UI:Refresh()
-                    return true
-                end
-                UI.selectedMulti = registeredID
-                if Games:IsHost() and Games.Lobby.mode == "multiplayer" then
-                    return Games:SelectGame(registeredID)
-                end
-                UI:Refresh()
-                return true
-            end)
-        )
-        enable(
-            row,
-            self.tab == "singleplayer"
-                or not Games.Lobby
-                or (Games:IsHost() and Games.Lobby.mode == "multiplayer" and Games.Lobby.status ~= "running")
-        )
-        row:Show()
-    end
-    self.library:SetHeight(math.max(185, #games * 68))
-
     local listings = {}
     for host, listing in pairs(Games.Listings) do
         listings[#listings + 1] = listing
@@ -652,7 +469,7 @@ function UI:Refresh()
         string.format(
             "KIC-Games %s  |  %d installed game(s)  |  %s",
             Games.VERSION,
-            #games,
+            #Games:GetGames(),
             Games:GroupChannel() and "Group connected" or "No group"
         )
     )

@@ -110,6 +110,15 @@ function Theme:StyleButton(button)
         for _, edge in ipairs(button.neonEdges or {}) do
             edge:SetAlpha(enabled and 1 or 0.2)
         end
+        if button.navIcon then
+            local color = not enabled and self.Colors.muted
+                or (selected or button.hovered) and self.Colors.accent
+                or self.Colors.muted
+            button.navIcon:SetVertexColor(unpack(color))
+            button.navIcon:SetAlpha(enabled and 1 or 0.35)
+            button.navGlow:SetVertexColor(unpack(self.Colors.accent))
+            button.navGlow:SetAlpha(enabled and (selected and 0.3 or button.hovered and 0.18 or 0) or 0)
+        end
     end
     button.RefreshStyle = paint
     button:SetScript("OnEnter", function()
@@ -133,6 +142,23 @@ function Theme:StyleButton(button)
     end)
     paint()
 end
+function Theme:NavigationButton(parent, key, text, x, y, callback, existing)
+    local button = existing or self:Button(parent, text, 172, x, y, callback, 46)
+    button:SetParent(parent)
+    button:ClearAllPoints()
+    button:SetPoint("TOPLEFT", x, y)
+    button:SetSize(172, 46)
+    button:SetScript("OnClick", callback)
+    button.caption:ClearAllPoints()
+    button.caption:SetPoint("LEFT", 46, 0)
+    button.caption:SetWidth(120)
+    button.caption:SetJustifyH("LEFT")
+    button.navGlow = self:Art(button, key, 30, 30, 9, -8, 0, "ARTWORK")
+    button.navGlow:SetBlendMode("ADD")
+    button.navIcon = self:Art(button, key, 24, 24, 12, -11, 1, "ARTWORK")
+    button:RefreshStyle()
+    return button
+end
 function Theme:Primary(button)
     button.variant = "primary"
     button.neonEdges = self:NeonBorder(button, "button-frame")
@@ -147,10 +173,12 @@ function Theme:GameCard(parent, width, height)
     card.title = self:Label(card, "", 110, -22, width - 126, "GameFontNormalLarge")
     card.title:SetFont("Fonts\\ARIALN.TTF", 20, "")
     card.title:SetHeight(26)
+    card.title:SetMaxLines(2)
     card.mode = self:Label(card, "", 110, -57, width - 126, "GameFontHighlightSmall")
     card.mode:SetTextColor(unpack(self.Colors.accent))
     card.detail = self:Label(card, "", 16, -112, width - 32)
     card.detail:SetHeight(44)
+    card.detail:SetMaxLines(2)
     card.play = self:Button(card, "Play", width - 104, 16, -178, function() end, 34)
     card.play.caption:SetFont("Fonts\\ARIALN.TTF", 16, "")
     self:Primary(card.play)
@@ -188,11 +216,12 @@ function Theme:Scroll(parent, width, height, x, y)
     local frame = CreateFrame("ScrollFrame", nil, parent)
     frame:SetSize(width, height)
     frame:SetPoint("TOPLEFT", x, y)
+    frame:SetClipsChildren(true)
     local child = CreateFrame("Frame", nil, frame)
     child:SetSize(width, 1)
     frame:SetScrollChild(child)
     local bar = CreateFrame("Slider", nil, frame)
-    bar:SetPoint("TOPLEFT", frame, "TOPRIGHT", 8, 0)
+    bar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
     bar:SetSize(6, height)
     bar:SetOrientation("VERTICAL")
     bar:SetValueStep(1)
@@ -210,6 +239,7 @@ function Theme:Scroll(parent, width, height, x, y)
         bar:SetMinMaxValues(0, math.max(1, range()))
         bar:SetShown(range() > 0)
         bar:SetValue(math.min(frame:GetVerticalScroll(), range()))
+        frame:SetVerticalScroll(math.max(0, math.min(frame:GetVerticalScroll(), range())))
     end
     bar:SetScript("OnValueChanged", function(_, value)
         if not syncing then

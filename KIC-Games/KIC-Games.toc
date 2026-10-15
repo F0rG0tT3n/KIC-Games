@@ -2,7 +2,7 @@
 ## Title: KIC-Games
 ## Notes: Party game launcher and multiplayer lobby framework.
 ## Author: KIC
-## Version: 0.9.0
+## Version: 0.10.0
 ## Category: KIC
 ## IconTexture: Interface\Icons\INV_Misc_Dice_01
 ## SavedVariables: KICGamesDB
@@ -24,6 +24,7 @@ Settings.lua
 UI.lua
 Launcher.lua
 Options.lua
+ResultsUI.lua
 Games\Tetris\Engine.lua
 Games\Tetris\Presets.lua
 Games\Tetris\UI.lua
