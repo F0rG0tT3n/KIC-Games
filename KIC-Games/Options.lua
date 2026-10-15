@@ -29,6 +29,155 @@ local function toggle(parent, title, detail, callback)
     p.switch = Theme:NeonButton(p, "OFF", 82, 0, 0, callback, 30)
     return p
 end
+-- Popups live outside the clipped settings scroll child and inherit the window scale.
+function Theme:SettingsDropdown(parent, popupParent, root, title, callback)
+    local b = self:NeonButton(parent, "", 320, 0, 0, function() end, 44)
+    b.label = label(parent, title, 12, self.Colors.muted)
+    b.icon = b:CreateTexture(nil, "ARTWORK")
+    b.icon:SetPoint("LEFT", 12, 0)
+    b.icon:SetSize(26, 26)
+    b.caption:ClearAllPoints()
+    b.caption:SetPoint("LEFT", 48, 0)
+    b.caption:SetJustifyH("LEFT")
+    b.caption:SetMaxLines(1)
+    b.arrow = label(b, "v", 14, self.Colors.accent)
+    b.arrow:ClearAllPoints()
+    b.arrow:SetPoint("RIGHT", -12, 0)
+    b.arrow:SetSize(16, 24)
+    b.rows, b.buttons = {}, {}
+    b.popup = CreateFrame("Frame", nil, popupParent)
+    b.popup:SetAllPoints(root)
+    b.popup:SetFrameStrata("DIALOG")
+    b.popup:SetFrameLevel(root:GetFrameLevel() + 100)
+    b.popup:EnableMouse(true)
+    b.popup:EnableKeyboard(true)
+    b.popup:SetScript("OnMouseDown", function()
+        b.popup:Hide()
+    end)
+    b.popup:SetScript("OnKeyDown", function(_, key)
+        b.popup:SetPropagateKeyboardInput(key ~= "ESCAPE")
+        if key == "ESCAPE" then
+            b.popup:Hide()
+        end
+    end)
+    b.popup:SetScript("OnHide", function()
+        self:Select(b, false)
+        b.arrow:SetText("v")
+    end)
+    b.menu = self:PremiumFrame(b.popup, 320, 220, 0, 0, { compact = true })
+    b.menu:EnableMouse(true)
+    b.menu:SetClampedToScreen(true)
+    b.menu:SetBackdropColor(unpack(self.Colors.background))
+    b.items, b.scroll = self:Scroll(b.menu, 304, 204, 8, -8)
+    b.Close = function()
+        b.popup:Hide()
+    end
+    b.Layout = function(_, x, y, width)
+        place(b.label, x, y, width, 20)
+        place(b, x, y + 26, width, 44)
+        b.caption:SetWidth(width - 82)
+        b.menu:SetWidth(width)
+        b.scroll:SetWidth(width - 16)
+        b.items:SetWidth(width - 24)
+        for _, row in ipairs(b.rows) do
+            row:SetWidth(width - 24)
+            row.caption:SetWidth(width - 78)
+        end
+    end
+    b.SetOptions = function(_, entries, selected, enabled)
+        b:Close()
+        b.buttons = {}
+        local chosen
+        for i, entry in ipairs(entries) do
+            local row = b.rows[i]
+            if not row then
+                row = self:NeonButton(b.items, "", 296, 0, 0, function() end, 36)
+                row.icon = row:CreateTexture(nil, "ARTWORK")
+                row.icon:SetPoint("LEFT", 8, 0)
+                row.icon:SetSize(24, 24)
+                row.caption:ClearAllPoints()
+                row.caption:SetPoint("LEFT", 42, 0)
+                row.caption:SetJustifyH("LEFT")
+                row.caption:SetMaxLines(1)
+                b.rows[i] = row
+            end
+            row:SetText(entry.name)
+            local fallback = Games.IconPresets.FallbackIcons.MAGE
+            if row.icon:SetTexture(entry.icon or fallback) == false then
+                row.icon:SetTexture(fallback)
+            end
+            place(row, 0, (i - 1) * 38)
+            self:Select(row, entry.key == selected)
+            row:SetScript("OnClick", function()
+                b:Close()
+                if b:IsEnabled() then
+                    callback(entry.key)
+                end
+            end)
+            row:SetShown(true)
+            if enabled then
+                row:Enable()
+            else
+                row:Disable()
+            end
+            b.buttons[entry.key] = row
+            if entry.key == selected then
+                chosen, b.selectedIndex = entry, i
+            end
+        end
+        for i = #entries + 1, #b.rows do
+            b.rows[i]:Hide()
+        end
+        b:SetText(chosen and chosen.name or "No specialization available")
+        local fallback = Games.IconPresets.FallbackIcons.MAGE
+        if b.icon:SetTexture(chosen and chosen.icon or fallback) == false then
+            b.icon:SetTexture(fallback)
+        end
+        b.icon:SetAlpha(enabled and 1 or 0.4)
+        b.items:SetHeight(math.max(1, #entries * 38 - 2))
+        b.scroll:SetHeight(math.min(226, b.items:GetHeight()))
+        b.menu:SetHeight(b.scroll:GetHeight() + 16)
+        if enabled and #entries > 0 then
+            b:Enable()
+        else
+            b:Disable()
+        end
+    end
+    b:SetScript("OnClick", function()
+        if not b:IsEnabled() then
+            return
+        end
+        if b.popup:IsShown() then
+            b:Close()
+            return
+        end
+        UI:CloseProfileDropdowns()
+        b.menu:ClearAllPoints()
+        local bottom = b:GetTop() - b:GetHeight()
+        local rootBottom = root:GetTop() - root:GetHeight()
+        if bottom - rootBottom >= b.menu:GetHeight() + 4 then
+            b.menu:SetPoint("TOPLEFT", b, "BOTTOMLEFT", 0, -4)
+        else
+            b.menu:SetPoint("BOTTOMLEFT", b, "TOPLEFT", 0, 4)
+        end
+        b.scroll.scrollBar:SetValue(math.max(0, ((b.selectedIndex or 1) - 1) * 38 - 76))
+        b.popup:SetPropagateKeyboardInput(true)
+        b.popup:Show()
+        self:Select(b, true)
+        b.arrow:SetText("^")
+    end)
+    b:SetScript("OnHide", b.Close)
+    b.popup:Hide()
+    return b
+end
+function UI:CloseProfileDropdowns()
+    if self.classDropdown then
+        self.classDropdown:Close()
+    end
+    if self.specDropdown then
+        self.specDropdown:Close()
+    end
+end
 function Theme:SettingsSlider(parent, minimum, maximum, step, callback)
     local f = CreateFrame("Slider", nil, parent, "BackdropTemplate")
     f:SetOrientation("HORIZONTAL")
@@ -119,31 +268,17 @@ function UI:CreateOptions()
             Games:SetOption("followCharacter", not Games:GetSettings().followCharacter)
         end
     )
-    self.appearancePanel = panel(g, "CLASS", "Choose any class for graphics and specialization sounds.")
-    self.classButtons = {}
-    for _, class in ipairs(Games.Profiles.classes) do
-        local token = class.token
-        local b = Theme:NeonButton(self.appearancePanel, class.name, 130, 0, 0, function()
-            Games:SetManualClass(token)
-        end, 54)
-        b.icon = b:CreateTexture(nil, "ARTWORK")
-        b.icon:SetSize(28, 28)
-        b.icon:SetPoint("LEFT", 10, 0)
-        b.icon:SetTexture(
-            Games.IconPresets.FallbackIcons[token]
-                or class.specs[1] and class.specs[1].icon
-                or Games.IconPresets.FallbackIcons.MAGE
-        )
-        b.caption:ClearAllPoints()
-        b.caption:SetPoint("LEFT", 46, 0)
-        b.caption:SetJustifyH("LEFT")
-        b.caption:SetFont(Theme.Fonts.body, 12, "")
-        b.caption:SetMaxLines(2)
-        b.caption:SetHeight(34)
-        self.classButtons[token] = b
-    end
-    self.specPanel = panel(g, "SPECIALIZATION", "")
-    self.specButtons = {}
+    self.appearancePanel =
+        panel(g, "CLASS & SPECIALIZATION", "Choose a profile for graphics and specialization sounds.")
+    self.classDropdown = Theme:SettingsDropdown(self.appearancePanel, f, self.frame, "CLASS", function(token)
+        Games:SetManualClass(token)
+    end)
+    self.specDropdown = Theme:SettingsDropdown(self.appearancePanel, f, self.frame, "SPECIALIZATION", function(id)
+        Games:SetManualSpec(id)
+    end)
+    f:SetScript("OnHide", function()
+        self:CloseProfileDropdowns()
+    end)
     self.graphicsPreview = panel(g, "LIVE PREVIEW", "Read-only pieces. Your active board and score stay intact.")
     self.previewGameButtons = {}
     for _, game in ipairs(Games:GetGames()) do
@@ -251,6 +386,7 @@ function UI:SelectOptionsTab(key)
     if not self.optionsPages[key] then
         return
     end
+    self:CloseProfileDropdowns()
     self.optionsTab = key
     self.optionsScroll:SetVerticalScroll(0)
     self:RefreshOptions()
@@ -284,25 +420,11 @@ function UI:LayoutOptions()
     section(self.followPanel, 108, 86)
     place(self.followPanel.switch, available - 104, 16, 86, 30)
     self.followPanel.heading:SetWidth(available - 140)
-    local columns = math.max(2, math.floor((available - 36) / 132))
-    local cw = (available - 36 - (columns - 1) * 8) / columns
-    local classH = 90 + math.ceil(#Games.Profiles.classes / columns) * 62
-    section(self.appearancePanel, 208, classH)
-    for i, class in ipairs(Games.Profiles.classes) do
-        local b = self.classButtons[class.token]
-        place(b, 18 + ((i - 1) % columns) * (cw + 8), 80 + math.floor((i - 1) / columns) * 62, cw, 54)
-        b.caption:SetWidth(cw - 54)
-    end
-    local specY = 208 + classH + 14
-    local specColumns = math.max(1, math.floor((available - 36) / 180))
-    local sw = (available - 36 - (specColumns - 1) * 8) / specColumns
-    local specH = 90 + math.ceil((self.specCount or 0) / specColumns) * 60
-    section(self.specPanel, specY, specH)
-    for i, b in ipairs(self.specButtons) do
-        place(b, 18 + ((i - 1) % specColumns) * (sw + 8), 80 + math.floor((i - 1) / specColumns) * 60, sw, 52)
-        b.caption:SetWidth(sw - 54)
-    end
-    local previewY = specY + specH + 14
+    section(self.appearancePanel, 208, 176)
+    local dropdownWidth = (available - 48) / 2
+    self.classDropdown:Layout(18, 86, dropdownWidth)
+    self.specDropdown:Layout(30 + dropdownWidth, 86, dropdownWidth)
+    local previewY = 398
     section(self.graphicsPreview, previewY, 220)
     for i, b in ipairs(self.previewGameButtons) do
         place(b, 18 + (i - 1) * 130, 86, 120, 28)
@@ -388,55 +510,22 @@ function UI:RefreshOptions()
         s.followCharacter and ("Following " .. profileName .. ". Manual selection is disabled.")
             or "Choose any class/spec. Your manual selection is saved when following your character."
     )
-    for key, b in pairs(self.classButtons) do
-        Theme:Select(b, key == token)
-        b.icon:SetAlpha(s.followCharacter and 0.4 or 1)
-        if s.followCharacter then
-            b:Disable()
-        else
-            b:Enable()
-        end
+    local classes = {}
+    for _, entry in ipairs(Games.Profiles.classes) do
+        classes[#classes + 1] = {
+            key = entry.token,
+            name = entry.name,
+            icon = Games.IconPresets.FallbackIcons[entry.token] or entry.specs[1] and entry.specs[1].icon,
+        }
     end
+    self.classDropdown:SetOptions(classes, token, not s.followCharacter)
     local specs = class and class.specs or {}
     self.specCount = #specs
-    self.specPanel.detail:SetText(profileName)
+    local choices = {}
     for i, entry in ipairs(specs) do
-        local b = self.specButtons[i]
-        if not b then
-            b = Theme:NeonButton(self.specPanel, "", 180, 0, 0, function() end, 52)
-            b.icon = b:CreateTexture(nil, "ARTWORK")
-            b.icon:SetPoint("LEFT", 10, 0)
-            b.icon:SetSize(28, 28)
-            b.caption:ClearAllPoints()
-            b.caption:SetPoint("LEFT", 46, 0)
-            b.caption:SetJustifyH("LEFT")
-            b.caption:SetFont(Theme.Fonts.body, 12, "")
-            b.caption:SetMaxLines(2)
-            b.caption:SetHeight(34)
-            self.specButtons[i] = b
-        end
-        local sid = entry.id
-        b.specID = sid
-        b:SetText(entry.name)
-        local fallbackIcon = Games.IconPresets.FallbackIcons[token] or Games.IconPresets.FallbackIcons.MAGE
-        if b.icon:SetTexture(entry.icon or fallbackIcon) == false then
-            b.icon:SetTexture(fallbackIcon)
-        end
-        b:SetScript("OnClick", function()
-            Games:SetManualSpec(sid)
-        end)
-        b:Show()
-        b.icon:SetAlpha(s.followCharacter and 0.4 or 1)
-        Theme:Select(b, sid == id)
-        if s.followCharacter then
-            b:Disable()
-        else
-            b:Enable()
-        end
+        choices[i] = { key = entry.id, name = entry.name, icon = entry.icon or Games.IconPresets.FallbackIcons[token] }
     end
-    for i = #specs + 1, #self.specButtons do
-        self.specButtons[i]:Hide()
-    end
+    self.specDropdown:SetOptions(choices, id, not s.followCharacter)
     for _, b in ipairs(self.previewGameButtons) do
         Theme:Select(b, b.gameID == self.previewGame)
     end

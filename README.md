@@ -32,7 +32,7 @@ the current Launcher page open.
 
 Options is a full Launcher page with **Graphics**, **Audio** and **Window** tabs.
 Graphics offers original colored gems/blocks or distinct class/spec spell sets,
-manual class/spec selection, **Follow My Character**, and a read-only live
+side-by-side class/spec dropdowns, **Follow My Character**, and a read-only live
 preview. The class/spec catalog comes from the Retail client APIs; curated artwork
 covers 40 specs, including Devourer. Changes preserve the active board and score.
 

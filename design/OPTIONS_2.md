@@ -9,7 +9,8 @@ controls. No release ZIP was made.
 ## Implemented systems and changed files
 
 - `Options.lua`: full-page tabs; premium graphics/audio choices; class and spec
-  icon buttons; Follow/Enable toggles; read-only six-piece game-specific preview;
+  side-by-side icon dropdowns (class, then filtered specialization); Follow/Enable
+  toggles; read-only six-piece game-specific preview;
   real audio preview buttons; shared native slider component; clipped scrolling.
   Window has one 75%-150% Interface Scale slider, 5% increments, and optional
   Reset to 100%. No presets, dimension fields, aspect controls or resize grip.
@@ -123,7 +124,7 @@ restore, live original/class previews, unchanged active game models, audio
 enabled/volume/preview/failure/legacy/throttle/game-event paths, persisted settings
 and bests, screen fitting, and layout/scroll accessibility at 75/100/120/150%.
 Standalone engine suites and multiplayer integration regressions remain included.
-Final results: **2,518** framework assertions, **44,303** Tetris assertions and
+Final results: **2,529** framework assertions, **44,303** Tetris assertions and
 **68,272** Bejeweled assertions; all texture/profile/TOC, Lua51 and whitespace
 checks pass. Tetris best records also retain optional graphics/spec metadata so
 an Original-block record is shared accurately after later theme changes; old

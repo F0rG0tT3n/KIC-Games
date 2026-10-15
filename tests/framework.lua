@@ -1464,7 +1464,7 @@ local originalModel = S.Tetris.model
 S.UI.optionsButton.scripts.OnClick()
 S.Tetris:Advance(0.1)
 check(S.Tetris.paused and S.UI.optionsFrame:IsShown(), "Options did not pause Tetris")
-S.UI.classButtons.SHAMAN.scripts.OnClick()
+S.UI.classDropdown.buttons.SHAMAN.scripts.OnClick()
 check(
     S:GetClassPreset() == "SHAMAN" and S.Tetris.icons.I == S:GetPieceIcons("tetris")[1],
     "Class menu did not update Tetris"
@@ -1486,7 +1486,7 @@ S.UI:ShowOptions()
 S.Bejeweled:Advance(0.1)
 check(S.Bejeweled.paused, "Options did not pause Bejeweled")
 for _, preset in ipairs(S.IconPresets.Presets) do
-    S.UI.classButtons[preset.token].scripts.OnClick()
+    S.UI.classDropdown.buttons[preset.token].scripts.OnClick()
     for i, kind in ipairs(S.IconPresets.Kinds) do
         check(
             S.Bejeweled.icons[i] == S.Tetris.icons[kind] and S.Bejeweled.icons[i] == S:GetPieceIcons("bejeweled")[i],
@@ -1993,7 +1993,7 @@ check(
 )
 Arcade.UI.nav.options.scripts.OnClick()
 check(Arcade.UI.launcherPage == "options" and not Arcade.UI.resultsFrame:IsShown(), "Options did not replace Results")
-Arcade.UI.classButtons.HUNTER.scripts.OnClick()
+Arcade.UI.classDropdown.buttons.HUNTER.scripts.OnClick()
 check(Arcade:GetClassPreset() == "HUNTER", "Embedded class controls did not save settings")
 Arcade.UI.optionsScroll.scripts.OnMouseWheel(Arcade.UI.optionsScroll, -1)
 check(Arcade.UI.optionsScroll:GetVerticalScroll() > 0, "Long Options page did not scroll")
@@ -2196,7 +2196,7 @@ do
     M.UI:RefreshResults()
     check(M.UI.resultText.text:find("Interrupted", 1, true), "Results API history disappeared")
     M.UI:ShowOptions()
-    M.UI.classButtons.SHAMAN.scripts.OnClick()
+    M.UI.classDropdown.buttons.SHAMAN.scripts.OnClick()
     M.UI:SetWindowSize(1300, 820)
     M.UI:SetWindowScale(1.1)
     local persisted = M.Copy(M.DB)
@@ -2629,22 +2629,74 @@ do
         "Retail catalog omitted available classes or Devourer"
     )
     ui:ShowOptions()
+    check(
+        ui.classDropdown.parent == ui.appearancePanel
+            and ui.specDropdown.parent == ui.appearancePanel
+            and ui.classDropdown.points[1][3] == ui.specDropdown.points[1][3]
+            and ui.classDropdown.points[1][2] + ui.classDropdown:GetWidth() < ui.specDropdown.points[1][2],
+        "Class/spec dropdowns are not side by side in one panel"
+    )
+    ui.classDropdown.scripts.OnClick()
+    check(
+        ui.classDropdown.popup:IsVisible() and ui.classDropdown.popup.parent == ui.optionsFrame,
+        "Dropdown did not open outside the clipped settings scroll child"
+    )
+    ui.classDropdown.scroll.scripts.OnMouseWheel(ui.classDropdown.scroll, -3)
+    check(ui.classDropdown.scroll:GetVerticalScroll() > 0, "Long class menu cannot scroll")
+    ui.specDropdown.scripts.OnClick()
+    check(
+        ui.specDropdown.popup:IsShown() and not ui.classDropdown.popup:IsShown(),
+        "Opening a second profile dropdown left the first open"
+    )
+    ui.specDropdown.popup.scripts.OnKeyDown(ui.specDropdown.popup, "ESCAPE")
+    check(
+        not ui.specDropdown.popup:IsShown() and not ui.specDropdown.popup.propagate and ui.frame:IsShown(),
+        "Escape failed to dismiss only the open dropdown"
+    )
+    ui.classDropdown.scripts.OnClick()
+    ui.classDropdown.popup.scripts.OnMouseDown()
+    check(not ui.classDropdown.popup:IsShown(), "Outside click did not dismiss the dropdown")
+    local frameCount = #owner.frames
+    for _ = 1, 5 do
+        ui.classDropdown.scripts.OnClick()
+        ui.classDropdown.scripts.OnClick()
+    end
+    check(
+        #owner.frames == frameCount and not ui.classDropdown.popup:IsShown(),
+        "Repeated dropdown toggling leaked frames or did not close"
+    )
+    ui.classDropdown.scripts.OnClick()
+    ui:SelectOptionsTab("audio")
+    check(not ui.classDropdown.popup:IsShown(), "Changing Options tabs left a dropdown open")
+    ui:SelectOptionsTab("graphics")
+    ui.specDropdown.scripts.OnClick()
+    ui:OpenLauncher("home")
+    check(not ui.specDropdown.popup:IsShown(), "Leaving Options left a dropdown open")
+    ui:ShowOptions()
     local sets = {}
     for _, class in ipairs(games.Profiles.classes) do
         check(
-            ui.classButtons[class.token] and #class.specs == #owner.apiClasses[class.id].specs,
+            ui.classDropdown.buttons[class.token] and #class.specs == #owner.apiClasses[class.id].specs,
             "Class selector/spec count differs from the client API"
         )
-        ui.classButtons[class.token].scripts.OnClick()
+        ui.classDropdown.scripts.OnClick()
+        ui.classDropdown.buttons[class.token].scripts.OnClick()
         check(
-            games:GetClassPreset() == class.token and ui.specCount == #class.specs,
+            games:GetClassPreset() == class.token
+                and ui.specCount == #class.specs
+                and ui.classDropdown.text == class.name
+                and not ui.classDropdown.popup:IsShown(),
             "Manual class selector did not filter specializations"
         )
         local ownSets = {}
-        for index, spec in ipairs(class.specs) do
-            ui.specButtons[index].scripts.OnClick()
+        for _, spec in ipairs(class.specs) do
+            ui.specDropdown.scripts.OnClick()
+            ui.specDropdown.buttons[spec.id].scripts.OnClick()
             check(
-                select(2, games:GetSelectedProfile()) == spec.id and ui.specButtons[index].selected,
+                select(2, games:GetSelectedProfile()) == spec.id
+                    and ui.specDropdown.buttons[spec.id].selected
+                    and ui.specDropdown.text == spec.name
+                    and not ui.specDropdown.popup:IsShown(),
                 "Manual specialization control lost its stable ID or selected state"
             )
             local icons = games:GetPieceIcons("bejeweled")
@@ -2678,15 +2730,26 @@ do
     )
     games:SetClassPreset("MAGE")
     games:SetManualSpec(63)
+    check(not ui.specDropdown.buttons[90001], "Spec dropdown retained another class's options")
+    ui.classDropdown.scripts.OnClick()
     games:SetOption("followCharacter", true)
+    ui.classDropdown.scripts.OnClick()
+    ui.specDropdown.scripts.OnClick()
+    check(
+        not ui.classDropdown.popup:IsShown()
+            and not ui.specDropdown.popup:IsShown()
+            and not ui.classDropdown:IsEnabled()
+            and not ui.specDropdown:IsEnabled(),
+        "Follow mode failed to close and disable the profile dropdowns"
+    )
     owner.env.playerSpec = 64
     owner:event("PLAYER_SPECIALIZATION_CHANGED", "player")
     check(
         games:GetClassPreset() == "MAGE"
             and select(2, games:GetSelectedProfile()) == 64
             and settings.manualSpecID == 63
-            and not ui.classButtons.MAGE:IsEnabled()
-            and not ui.specButtons[1]:IsEnabled(),
+            and not ui.classDropdown.buttons.MAGE:IsEnabled()
+            and not ui.specDropdown.rows[1]:IsEnabled(),
         "Follow character overwrote manual choice or failed to lock selectors"
     )
     check(
@@ -2705,7 +2768,7 @@ do
     check(
         games:GetClassPreset() == "MAGE"
             and select(2, games:GetSelectedProfile()) == 63
-            and ui.classButtons.MAGE:IsEnabled(),
+            and ui.classDropdown.buttons.MAGE:IsEnabled(),
         "Disabling follow did not restore manual profile"
     )
     -- Both engines retain their actual model, board, score and queue when themes change.
@@ -3168,6 +3231,11 @@ if arg[1] == "--preview" then
     op.UI:SelectOptionsTab("graphics")
     op.UI.optionsScroll:SetVerticalScroll(208)
     snapshot("options2-selectors", optionPreview)
+    op.UI.classDropdown.scripts.OnClick()
+    snapshot("options2-class-dropdown", optionPreview)
+    op.UI.specDropdown.scripts.OnClick()
+    snapshot("options2-spec-dropdown", optionPreview)
+    op.UI:CloseProfileDropdowns()
     op.UI.optionsScroll.scrollBar:SetValue(10000)
     snapshot("options2-class-preview", optionPreview)
     op:SetOption("graphicsTheme", "original")

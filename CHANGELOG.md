@@ -3,6 +3,7 @@
 ## 0.13.0 - 2026-10-15 - Options 2.0
 
 - Replaced Options with embedded Graphics, Audio and Window tabs using shared premium frames, neon choices, class/spec selectors, toggles, sliders and live previews.
+- Class and specialization now use side-by-side icon dropdowns in one panel. The spec menu follows the selected class; long lists scroll, menus dismiss on selection/Escape/outside click/navigation, and Follow My Character locks both controls while preserving manual choices.
 - Added API-enumerated class/spec metadata, 40 distinct seven-icon profiles, stable spec IDs, remembered manual choices and Follow My Character specialization updates.
 - Added original faceted gem and beveled block textures, with live cosmetic switching for both games, NEXT and HOLD.
 - Added a shared extensible audio registry, actual gameplay event hooks, separate arcade/spec sound themes, enable/volume controls, playable previews, throttling, bounded overlap and safe fallback kits. Current SoundKits receive per-sound volume; spell files explicitly follow WoW SFX volume, while Off/0% mute everything.
