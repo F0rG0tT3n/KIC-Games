@@ -4,6 +4,94 @@ local STEP = 46
 local function key(x, y)
     return (y - 1) * 8 + x
 end
+function B:CancelDrag()
+    self.drag, self.dragTarget = nil, nil
+    if self.dragFrame then
+        self.dragFrame:Hide()
+    end
+end
+function B:CursorCell()
+    local px, py = GetCursorPosition()
+    local scale = self.board:GetEffectiveScale()
+    local rx, ry = px / scale - self.board:GetLeft() - 9, self.board:GetTop() - py / scale - 9
+    if rx < 0 or ry < 0 then
+        return
+    end
+    local x, y = math.floor(rx / STEP) + 1, math.floor(ry / STEP) + 1
+    if x > 8 or y > 8 or rx % STEP >= 44 or ry % STEP >= 44 then
+        return
+    end
+    return x, y
+end
+function B:UpdateDrag()
+    if not self.drag then
+        return
+    end
+    local px, py = GetCursorPosition()
+    local scale = self.board:GetEffectiveScale()
+    self.dragFrame:ClearAllPoints()
+    self.dragFrame:SetPoint(
+        "TOPLEFT",
+        self.board,
+        "TOPLEFT",
+        px / scale - self.board:GetLeft() - 22,
+        py / scale - self.board:GetTop() + 22
+    )
+    local x, y = self:CursorCell()
+    self.dragTarget = x and math.abs(x - self.drag.x) + math.abs(y - self.drag.y) == 1 and { x = x, y = y } or nil
+end
+function B:StartDrag(x, y)
+    if self:Blocked() or self.paused or self.drag or self.swap or self.fall or self.model.phase ~= "idle" then
+        return false
+    end
+    self.drag, self.selected, self.hint = { x = x, y = y }, { x = x, y = y }, nil
+    local cell = self.cells[key(x, y)]
+    cell.suppressClick = true
+    if self.dragFrame.icon:SetTexture(self.icons[self.model.board[y][x]]) == false then
+        self.dragFrame.icon:SetTexture(self.fallbackIcon)
+    end
+    self.dragFrame:Show()
+    self:UpdateDrag()
+    self:Render()
+    return true
+end
+function B:TrySwap(x, y, tx, ty, dragged)
+    if
+        self:Blocked()
+        or self.paused
+        or self.drag
+        or self.swap
+        or self.fall
+        or self.model.phase ~= "idle"
+        or math.abs(tx - x) + math.abs(ty - y) ~= 1
+    then
+        return false
+    end
+    local valid = self.model:Swap(x, y, tx, ty)
+    self.swap = { x = x, y = y, tx = tx, ty = ty, valid = valid, dragged = dragged, time = 0 }
+    self.selected, self.hint, self.phaseTime = nil, nil, 0
+    self.message = valid and "Nice match!" or "A swap must make a match."
+    self:Render()
+    return valid
+end
+function B:StopDrag()
+    local drag = self.drag
+    if not drag then
+        return
+    end
+    local x, y = self:CursorCell()
+    self:CancelDrag()
+    self.selected = nil
+    if x then
+        self.cells[key(x, y)].suppressClick = true
+    end
+    if x and math.abs(x - drag.x) + math.abs(y - drag.y) == 1 then
+        self:TrySwap(drag.x, drag.y, x, y, true)
+    else
+        self.message = "Drag to a neighboring icon, or click two icons."
+    end
+    self:Render()
+end
 function B:Blocked()
     return not self.running
         or not self.root:IsVisible()
@@ -12,6 +100,7 @@ function B:Blocked()
         or (Games.UI.optionsFrame and Games.UI.optionsFrame:IsShown())
 end
 function B:Pause(value)
+    self:CancelDrag()
     self.paused = value
     self.selected, self.hint = nil, nil
     if self.model and self.model.phase == "idle" and not self.swap and not self.fall then
@@ -20,7 +109,7 @@ function B:Pause(value)
     self:Render()
 end
 function B:Hint()
-    if self:Blocked() or self.paused or self.swap or self.fall or self.model.phase ~= "idle" then
+    if self:Blocked() or self.paused or self.drag or self.swap or self.fall or self.model.phase ~= "idle" then
         return
     end
     self.hint = self.model:FindMove()
@@ -35,7 +124,7 @@ function B:Click(x, y, mouse)
         end
         return
     end
-    if self.paused or self.swap or self.fall or self.model.phase ~= "idle" then
+    if self.paused or self.drag or self.swap or self.fall or self.model.phase ~= "idle" then
         return
     end
     if mouse == "RightButton" then
@@ -50,10 +139,7 @@ function B:Click(x, y, mouse)
         self.selected = nil
         self.message = "Select a gem, then a neighbor."
     elseif old and math.abs(old.x - x) + math.abs(old.y - y) == 1 then
-        local valid = self.model:Swap(old.x, old.y, x, y)
-        self.swap = { x = old.x, y = old.y, tx = x, ty = y, valid = valid, time = 0 }
-        self.selected, self.phaseTime = nil, 0
-        self.message = valid and "Nice match!" or "A swap must make a match."
+        self:TrySwap(old.x, old.y, x, y)
     else
         self.selected = { x = x, y = y }
         self.message = "Now select a neighboring gem."
@@ -83,9 +169,13 @@ function B:Render()
             cell:SetBackdropColor(c[1] * 0.11 + 0.025, c[2] * 0.11 + 0.025, c[3] * 0.11 + 0.025, 1)
             cell.selection:SetShown(selected == true)
             cell.marker:SetShown(selected == true)
+            local target = self.dragTarget and self.dragTarget.x == x and self.dragTarget.y == y
             if selected then
                 cell:SetBackdropColor(0.28, 0.22, 0.045, 1)
                 cell:SetBackdropBorderColor(1, 0.88, 0.25, 1)
+            elseif target then
+                cell:SetBackdropColor(0.08, 0.22, 0.32, 1)
+                cell:SetBackdropBorderColor(unpack(Theme.Colors.accent))
             elseif hint then
                 cell:SetBackdropBorderColor(1, 0.85, 0.25, 1)
             elseif matches[index] then
@@ -100,10 +190,11 @@ function B:Render()
             if self.swap then
                 local a = self.swap
                 local progress = math.min(1, a.time / (a.valid and 0.2 or 0.3))
-                local travel = a.valid and (1 - progress) or (progress < 0.5 and progress * 2 or (1 - progress) * 2)
+                local travel = (a.valid or a.dragged) and (1 - progress)
+                    or (progress < 0.5 and progress * 2 or (1 - progress) * 2)
                 if x == a.x and y == a.y then
                     dx, dy = (a.tx - a.x) * STEP * travel, -(a.ty - a.y) * STEP * travel
-                elseif x == a.tx and y == a.ty then
+                elseif x == a.tx and y == a.ty and not a.dragged then
                     dx, dy = -(a.tx - a.x) * STEP * travel, (a.ty - a.y) * STEP * travel
                 end
             elseif self.fall and self.fall.drops[index] then
@@ -114,7 +205,11 @@ function B:Render()
                 if cell.icon:SetTexture(self.icons[kind]) == false then
                     cell.icon:SetTexture(self.fallbackIcon)
                 end
-                cell.icon:SetAlpha(matches[index] and (0.35 + 0.65 * math.abs(math.cos(self.phaseTime * 12))) or 1)
+                cell.icon:SetAlpha(
+                    self.drag and self.drag.x == x and self.drag.y == y and 0.2
+                        or matches[index] and (0.35 + 0.65 * math.abs(math.cos(self.phaseTime * 12)))
+                        or 1
+                )
                 cell.icon:Show()
             else
                 cell.icon:Hide()
@@ -147,6 +242,15 @@ function B:Advance(dt)
         return
     end
     if self.paused then
+        return
+    end
+    if self.drag then
+        if not IsMouseButtonDown("LeftButton") then
+            self:StopDrag()
+        else
+            self:UpdateDrag()
+            self:Render()
+        end
         return
     end
     dt = math.min(math.max(dt, 0), 0.1)
@@ -207,7 +311,7 @@ function B:CreateUI(parent)
     self.presetLabel = Theme:Label(left, "", 14, -76, 164)
     local help = Theme:Label(
         left,
-        "Click two neighboring icons.\n\nMatch 3+ in a row or column.\n\nCascades multiply points.\n\nNo timer. Take your time.\n\nNo swaps left? Run complete.",
+        "Drag an icon to a neighbor, or click two icons.\n\nMatch 3+ in a row or column.\n\nCascades multiply points.\n\nNo timer. No swaps? Run complete.",
         14,
         -110,
         164
@@ -226,6 +330,7 @@ function B:CreateUI(parent)
         self:ShareBest()
     end)
     local board = Theme:Panel(root, 386, 386, 224, -28)
+    self.board = board
     board:SetClipsChildren(true)
     self.cells = {}
     for y = 1, 8 do
@@ -240,7 +345,21 @@ function B:CreateUI(parent)
                 edgeSize = 1,
             })
             cell:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+            cell:RegisterForDrag("LeftButton")
+            cell:SetScript("OnMouseDown", function(_, mouse)
+                cell.suppressClick = false
+            end)
+            cell:SetScript("OnDragStart", function()
+                self:StartDrag(cx, cy)
+            end)
+            cell:SetScript("OnDragStop", function()
+                self:StopDrag()
+            end)
             cell:SetScript("OnClick", function(_, mouse)
+                if cell.suppressClick then
+                    cell.suppressClick = false
+                    return
+                end
                 self:Click(cx, cy, mouse)
             end)
             cell:SetScript("OnEnter", function()
@@ -274,6 +393,14 @@ function B:CreateUI(parent)
             self.cells[key(x, y)] = cell
         end
     end
+    self.dragFrame = Theme:Panel(board, 44, 44, 0, 0)
+    self.dragFrame:SetFrameLevel(board:GetFrameLevel() + 25)
+    self.dragFrame:SetBackdropBorderColor(1, 0.9, 0.25, 1)
+    self.dragFrame.icon = self.dragFrame:CreateTexture(nil, "ARTWORK")
+    self.dragFrame.icon:SetSize(34, 34)
+    self.dragFrame.icon:SetPoint("TOPLEFT", 5, -5)
+    self.dragFrame.icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
+    self.dragFrame:Hide()
     self.pauseOverlay = Theme:Panel(board, 368, 112, 9, -137)
     self.pauseOverlay:SetFrameLevel(board:GetFrameLevel() + 10)
     Theme:Label(self.pauseOverlay, "PAUSED", 22, -22, 324, "GameFontNormalLarge"):SetJustifyH("CENTER")

@@ -8,6 +8,11 @@ the setting applies to both games immediately and is saved between sessions.
 ## Playing
 
 Click an icon, then click an icon immediately above, below, left or right to swap.
+Alternatively, drag an icon onto one of those neighbors and release. The icon
+follows the cursor and a neighboring drop target is highlighted. Invalid matches
+animate back; dropping on the original cell, a non-neighbor or outside the board
+cancels the drag without spending a move. Dragging works at resized UI scales.
+Opening a menu, hiding the game or stopping the match cancels any active drag.
 The selected cell has a thick gold outline, a bright background and a selection
 label so it stays distinct from the board and yellow hint outlines.
 A swap must create a horizontal or vertical line of at least three matching gems.

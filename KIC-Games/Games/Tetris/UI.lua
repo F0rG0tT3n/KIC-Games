@@ -205,23 +205,8 @@ function T:CreateUI(parent)
     local root = CreateFrame("Frame", nil, parent)
     root:SetAllPoints(parent)
     self.root, self.keys = root, {}
-    text(root, "TETRIS", 20, -12, 260, true):SetTextColor(unpack(Theme.Colors.accent))
-    self.presetLabel = text(root, "", 20, -48, 260)
-    button(root, "Options", 20, -82, 264, function()
-        Games.UI:ShowOptions()
-    end)
-    text(root, "Stack, clear lines, beat your best.", 20, -132, 265)
-    button(root, "Share best to chat", 20, -188, 264, function()
-        self:ShareBest()
-    end)
-    text(
-        root,
-        "Left / Right: move\nUp / X: rotate   Z: reverse\nDown: soft drop\nSpace: hard drop\nC: hold   P: pause\nHidden window / chat: auto-pause",
-        20,
-        -246,
-        275
-    )
-    local board = panel(root, 202, 402, 312, -20)
+    local board = panel(root, 202, 402, 28, -24)
+    self.board = board
     board:SetBackdropColor(0.025, 0.03, 0.05, 1)
     board:SetBackdropBorderColor(unpack(Theme.Colors.accent))
     self.cells = {}
@@ -236,16 +221,35 @@ function T:CreateUI(parent)
     self.pauseText = text(self.pauseOverlay, "PAUSED", 18, -24, 164, true)
     self.pauseText:SetJustifyH("CENTER")
     text(self.pauseOverlay, "Press P to resume", 18, -60, 164):SetJustifyH("CENTER")
-    self.scoreText = text(root, "", 548, -22, 290, true)
+    local sidebar = panel(root, 580, 418, 264, -16)
+    self.sidebar = sidebar
+    text(sidebar, "TETRIS", 20, -18, 260, true):SetTextColor(unpack(Theme.Colors.accent))
+    self.presetLabel = text(sidebar, "", 20, -52, 260)
+    self.scoreText = text(sidebar, "", 20, -90, 270, true)
     self.scoreText:SetFont("Fonts\\ARIALN.TTF", 18, "")
-    text(root, "UP NEXT", 548, -115, 290):SetTextColor(unpack(Theme.Colors.muted))
+    text(sidebar, "UP NEXT", 334, -18, 220):SetTextColor(unpack(Theme.Colors.muted))
     self.nextCells = {}
     for i = 1, 5 do
-        self.nextCells[i] = preview(root, 548 + (i % 2 == 0 and 104 or 0), -140 - math.floor((i - 1) / 2) * 48, 20)
+        self.nextCells[i] = preview(sidebar, 334 + (i % 2 == 0 and 104 or 0), -48 - math.floor((i - 1) / 2) * 48, 20)
     end
-    text(root, "HOLD / C", 548, -290, 290):SetTextColor(unpack(Theme.Colors.muted))
-    self.holdCells = preview(root, 548, -315, 20)
-    self.pauseButton = button(root, "Pause (P)", 548, -376, 230, function()
+    text(sidebar, "HOLD / C", 334, -216, 220):SetTextColor(unpack(Theme.Colors.muted))
+    self.holdCells = preview(sidebar, 334, -246, 20)
+    text(sidebar, "CONTROLS", 20, -192, 270):SetTextColor(unpack(Theme.Colors.muted))
+    self.controlsText = text(
+        sidebar,
+        "Left / Right: move\nUp / X: rotate   Z: reverse\nDown: soft drop\nSpace: hard drop\nC: hold   P: pause",
+        20,
+        -220,
+        270
+    )
+    text(sidebar, "Clear lines to score.\n10 lines = next level.\n\nHidden window / chat: auto-pause.", 334, -316, 220)
+    self.optionsButton = button(sidebar, "Options", 20, -350, 118, function()
+        Games.UI:ShowOptions()
+    end)
+    self.shareButton = button(sidebar, "Share best", 148, -350, 150, function()
+        self:ShareBest()
+    end)
+    self.pauseButton = button(sidebar, "Pause (P)", 20, -386, 278, function()
         self:Pause(not self.paused)
     end)
     root:SetScript("OnKeyDown", function(_, key)

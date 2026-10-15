@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0 - 2026-10-15
+
+- Added Bejeweled drag-and-drop swaps with a floating class icon, neighbor highlighting and scale-aware drop targets.
+- Kept click-to-swap and cancelled off-board/non-neighbor drops, paused drags and stale release/click events safely.
+- Moved the Tetris board left and consolidated score, controls, sharing, previews, hold and options into one right sidebar.
+- Added regression checks for scaled drags, invalid drops, menu/stop cleanup and the Tetris sidebar layout.
+
 ## 0.7.0 - 2026-10-15
 
 - Moved class icon presets out of Tetris into a shared Options menu; one saved selection now updates both games live.

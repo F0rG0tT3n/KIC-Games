@@ -1089,6 +1089,15 @@ G.UI.resultsFrame:Hide()
 T:Pause(false)
 check(T.running and T.root:IsVisible() and T.root.keyboardEnabled, "Tetris UI or keyboard did not start")
 check(#T.cells == 200 and #T.Presets == 13, "Missing board cells or class presets")
+check(T.board.points[1][2] < T.sidebar.points[1][2], "Tetris board is not to the left of its sidebar")
+check(
+    T.shareButton.parent == T.sidebar
+        and T.optionsButton.parent == T.sidebar
+        and T.controlsText.parent == T.sidebar
+        and T.nextCells[1][1].bg.parent == T.sidebar
+        and T.holdCells[1].bg.parent == T.sidebar,
+    "Tetris controls or previews remained outside the right sidebar"
+)
 -- Spell lookup must be completely unnecessary, even when it returns question marks.
 t.env.C_Spell.GetSpellTexture = function()
     error("Tetris must not resolve spell textures")
@@ -1384,6 +1393,96 @@ legacy.env.KICGamesDB = { tetris = { preset = "WARLOCK" } }
 legacy:event("ADDON_LOADED", "KIC-Games")
 check(legacy.games:GetClassPreset() == "WARLOCK", "Legacy Tetris class selection was not migrated")
 S:AbortGame()
+-- Native drag handlers: scaled hit-testing, animation, cancellation and late clicks.
+local dragClient = client("DragPlayer", "DragRealm")
+dragClient.grouped = false
+local DragGames, Drag = dragClient.games, dragClient.games.Bejeweled
+local function dragRound()
+    if DragGames.ActiveGame then
+        DragGames:AbortGame()
+    end
+    DragGames:StartSingleplayer("bejeweled")
+    for y = 1, 8 do
+        for x = 1, 8 do
+            Drag.model.board[y][x] = (x + 2 * y) % 7 + 1
+        end
+    end
+    Drag.model.board[1][1], Drag.model.board[1][2], Drag.model.board[1][3], Drag.model.board[2][2] = 1, 2, 1, 1
+    Drag:Render()
+end
+local function cursorOn(x, y)
+    local scale = Drag.board:GetEffectiveScale()
+    dragClient.env.cursorX = (Drag.board:GetLeft() + 9 + (x - 1) * 46 + 22) * scale
+    dragClient.env.cursorY = (Drag.board:GetTop() - 9 - (y - 1) * 46 - 22) * scale
+end
+local function dragFrom(x, y)
+    cursorOn(x, y)
+    dragClient.env.mouseDown = true
+    local cell = Drag.cells[(y - 1) * 8 + x]
+    cell.scripts.OnMouseDown(cell, "LeftButton")
+    cell.scripts.OnDragStart(cell)
+    return cell
+end
+dragRound()
+DragGames.UI:SetWindowScale(1.35)
+local source = dragFrom(2, 1)
+check(Drag.drag and Drag.dragFrame:IsShown(), "Drag start did not show a floating class icon")
+cursorOn(2, 2)
+Drag:Advance(0.1)
+check(Drag.dragTarget and Drag.dragTarget.y == 2, "Scaled cursor hit-testing did not find the neighboring cell")
+dragClient.env.mouseDown = false
+source.scripts.OnDragStop(source)
+check(
+    Drag.swap and Drag.swap.valid and Drag.model.moves == 1 and not Drag.dragFrame:IsShown(),
+    "Dropping on a neighbor did not start exactly one valid swap"
+)
+source.scripts.OnClick(source, "LeftButton")
+Drag.cells[10].scripts.OnClick(Drag.cells[10], "LeftButton")
+check(Drag.model.moves == 1 and not Drag.selected, "Post-drag click performed another action")
+dragRound()
+source = dragFrom(8, 8)
+cursorOn(7, 8)
+source.scripts.OnDragStop(source)
+check(Drag.swap and not Drag.swap.valid and Drag.model.moves == 0, "Invalid dragged match did not animate back")
+dragRound()
+source = dragFrom(2, 1)
+cursorOn(5, 5)
+source.scripts.OnDragStop(source)
+check(
+    not Drag.drag and not Drag.swap and Drag.model.moves == 0 and Drag.model.phase == "idle",
+    "Non-neighbor drop changed the board"
+)
+dragRound()
+source = dragFrom(2, 1)
+dragClient.env.cursorX, dragClient.env.cursorY = -1000, -1000
+source.scripts.OnDragStop(source)
+check(not Drag.drag and not Drag.dragFrame:IsShown() and Drag.model.moves == 0, "Off-board drop was not cancelled")
+source = dragFrom(2, 1)
+cursorOn(2, 1)
+source.scripts.OnDragStop(source)
+check(not Drag.swap and Drag.model.moves == 0, "Dropping back on the source counted as a move")
+source = dragFrom(2, 1)
+DragGames.UI:ShowHome()
+Drag:Advance(0.1)
+check(Drag.paused and not Drag.drag and not Drag.dragFrame:IsShown(), "Hiding the game left a drag active")
+DragGames.UI:ShowGame()
+Drag:Pause(false)
+source = dragFrom(2, 1)
+DragGames.UI:ShowOptions()
+Drag:Advance(0.1)
+check(Drag.paused and not Drag.drag and Drag.model.moves == 0, "Options did not cancel dragging safely")
+DragGames.UI.optionsFrame:Hide()
+Drag:Pause(false)
+source = dragFrom(2, 1)
+cursorOn(2, 2)
+dragClient.env.mouseDown = false
+Drag:Advance(0.1)
+source.scripts.OnDragStop(source)
+check(Drag.model.moves == 1 and Drag.swap and not Drag.drag, "Lost mouse-up handling duplicated or lost the drop")
+dragRound()
+source = dragFrom(2, 1)
+DragGames:AbortGame()
+check(not Drag.running and not Drag.drag and not Drag.dragFrame:IsShown(), "Quick stop left a floating icon behind")
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))
 
 -- Optional layout snapshots from the actual UI constructors, for offline visual review.
@@ -1476,4 +1575,10 @@ if arg[1] == "--preview" then
     S.UI.frame:Show()
     S.UI:ShowOptions()
     snapshot("options", sharedClient)
+    dragRound()
+    DragGames.UI:SetWindowScale(1)
+    dragFrom(2, 1)
+    cursorOn(2, 2)
+    Drag:Advance(0.1)
+    snapshot("bejeweled-drag", dragClient)
 end
