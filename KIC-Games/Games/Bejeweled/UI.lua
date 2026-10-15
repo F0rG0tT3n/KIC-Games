@@ -4,30 +4,72 @@ local function key(x, y)
     return (y - 1) * 8 + x
 end
 function B:CancelDrag()
+    if self.drag then
+        self.suppressDragClick = true
+    end
+    if self.dragTracker then
+        self.dragTracker:SetScript("OnUpdate", nil)
+    end
     self.drag, self.dragTarget = nil, nil
     if self.dragFrame then
         self.dragFrame:Hide()
     end
 end
-function B:CursorCell()
-    local px, py = GetCursorPosition()
-    local scale = self.board:GetEffectiveScale()
-    local rx, ry =
-        px / scale - self.board:GetLeft() - self.boardInset, self.board:GetTop() - py / scale - self.boardInset
-    if rx < 0 or ry < 0 then
-        return
-    end
-    local x, y = math.floor(rx / self.step) + 1, math.floor(ry / self.step) + 1
-    if x > 8 or y > 8 or rx % self.step >= self.tileSize or ry % self.step >= self.tileSize then
-        return
-    end
-    return x, y
-end
 function B:UpdateDrag()
-    if not self.drag then
+    local drag = self.drag
+    if not drag then
+        return
+    end
+    if self:Blocked() or self.paused then
+        self:CancelDrag()
+        self:Render()
+        return
+    end
+    local cell = self.cells[key(drag.x, drag.y)]
+    if
+        cell:GetEffectiveScale() ~= drag.scale
+        or cell:GetWidth() * drag.scale ~= drag.width
+        or cell:GetHeight() * drag.scale ~= drag.height
+    then
+        self:CancelDrag()
+        self:Render()
+        return
+    end
+    if not IsMouseButtonDown("LeftButton") then
+        self:StopDrag()
         return
     end
     local px, py = GetCursorPosition()
+    local dx, dy = px - drag.startX, py - drag.startY
+    local horizontal = math.abs(dx) >= math.abs(dy)
+    local distance = horizontal and math.abs(dx) or math.abs(dy)
+    if distance == 0 then
+        return
+    end
+    self.suppressDragClick = true
+    self.selected, self.hint = { x = drag.x, y = drag.y }, nil
+    local tx = drag.x + (horizontal and (dx > 0 and 1 or -1) or 0)
+    -- Cursor Y grows upwards; board rows grow downwards.
+    local ty = drag.y + (not horizontal and (dy > 0 and -1 or 1) or 0)
+    local inside = tx >= 1 and tx <= 8 and ty >= 1 and ty <= 8
+    self.dragTarget = inside and { x = tx, y = ty } or nil
+    local threshold = horizontal and drag.width or drag.height
+    local position = horizontal and px or py
+    local origin = horizontal and drag.startX or drag.startY
+    -- Compare absolute cursor bounds to avoid subtractive rounding at exact
+    -- thresholds under fractional UI scales. No slop or center spacing is added.
+    if position >= origin + threshold or position <= origin - threshold then
+        -- Disable tracking before invoking the existing swap/rollback path.
+        self:CancelDrag()
+        self.selected = nil
+        if inside then
+            self:TrySwap(drag.x, drag.y, tx, ty, true)
+        else
+            self.message = "That direction is outside the board."
+            self:Render()
+        end
+        return
+    end
     local scale = self.board:GetEffectiveScale()
     self.dragFrame:ClearAllPoints()
     self.dragFrame:SetPoint(
@@ -37,22 +79,31 @@ function B:UpdateDrag()
         px / scale - self.board:GetLeft() - self.tileSize / 2,
         py / scale - self.board:GetTop() + self.tileSize / 2
     )
-    local x, y = self:CursorCell()
-    self.dragTarget = x and math.abs(x - self.drag.x) + math.abs(y - self.drag.y) == 1 and { x = x, y = y } or nil
+    self.dragFrame:Show()
+    self:Render()
 end
 function B:StartDrag(x, y)
     if self:Blocked() or self.paused or self.drag or self.swap or self.fall or self.model.phase ~= "idle" then
         return false
     end
-    self.drag, self.selected, self.hint = { x = x, y = y }, { x = x, y = y }, nil
+    local px, py = GetCursorPosition()
     local cell = self.cells[key(x, y)]
-    cell.suppressClick = true
+    local scale = cell:GetEffectiveScale()
+    self.drag = {
+        x = x,
+        y = y,
+        startX = px,
+        startY = py,
+        scale = scale,
+        width = cell:GetWidth() * scale,
+        height = cell:GetHeight() * scale,
+    }
     if self.dragFrame.icon:SetTexture(self.icons[self.model.board[y][x]]) == false then
         self.dragFrame.icon:SetTexture(self.fallbackIcon)
     end
-    self.dragFrame:Show()
-    self:UpdateDrag()
-    self:Render()
+    self.dragTracker:SetScript("OnUpdate", function()
+        self:UpdateDrag()
+    end)
     return true
 end
 function B:TrySwap(x, y, tx, ty, dragged)
@@ -79,17 +130,14 @@ function B:StopDrag()
     if not drag then
         return
     end
-    local x, y = self:CursorCell()
+    local px, py = GetCursorPosition()
+    local moved = self.suppressDragClick or px ~= drag.startX or py ~= drag.startY
     self:CancelDrag()
-    self.selected = nil
-    if x then
-        self.cells[key(x, y)].suppressClick = true
+    self.suppressDragClick = moved
+    if moved then
+        self.selected = nil
     end
-    if x and math.abs(x - drag.x) + math.abs(y - drag.y) == 1 then
-        self:TrySwap(drag.x, drag.y, x, y, true)
-    else
-        self.message = "Drag to a neighboring icon, or click two icons."
-    end
+    -- Releasing never evaluates a swap; a stationary press remains a normal click.
     self:Render()
 end
 function B:Blocked()
@@ -259,12 +307,6 @@ function B:Advance(dt)
         return
     end
     if self.drag then
-        if not IsMouseButtonDown("LeftButton") then
-            self:StopDrag()
-        else
-            self:UpdateDrag()
-            self:Render()
-        end
         return
     end
     dt = math.min(math.max(dt, 0), 0.1)
@@ -369,20 +411,24 @@ function B:CreateUI(parent)
                 edgeSize = 1,
             })
             cell:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-            cell:RegisterForDrag("LeftButton")
             cell:SetScript("OnMouseDown", function(_, mouse)
-                cell.suppressClick = false
+                if mouse == "LeftButton" then
+                    self:CancelDrag()
+                    self.suppressDragClick = false
+                    self:StartDrag(cx, cy)
+                end
             end)
-            cell:SetScript("OnDragStart", function()
-                self:StartDrag(cx, cy)
-            end)
-            cell:SetScript("OnDragStop", function()
-                self:StopDrag()
+            cell:SetScript("OnMouseUp", function(_, mouse)
+                if mouse == "LeftButton" then
+                    self:StopDrag()
+                end
             end)
             cell:SetScript("OnClick", function(_, mouse)
-                if cell.suppressClick then
-                    cell.suppressClick = false
-                    return
+                if mouse == "LeftButton" then
+                    self:StopDrag()
+                    if self.suppressDragClick then
+                        return
+                    end
                 end
                 self:Click(cx, cy, mouse)
             end)
@@ -425,6 +471,10 @@ function B:CreateUI(parent)
     self.dragFrame.icon:SetPoint("TOPLEFT", 5, -5)
     self.dragFrame.icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
     self.dragFrame:Hide()
+    self.dragTracker = CreateFrame("Frame", nil, board)
+    self.dragTracker:SetScript("OnHide", function()
+        self:CancelDrag()
+    end)
     self.pauseOverlay = Theme:PauseMenu(board, "bejeweled", self)
     self.right = Theme:PremiumFrame(self.root, 250, 550, 0, 0, { skin = "game-stats-frame" })
     self.crest = Theme:Art(self.right, "crest", 160, 160, 80, -18, 0.07, "ARTWORK")

@@ -2,6 +2,7 @@
 
 ## 0.12.0 - 2026-10-15 - Both gameplay screens
 
+- Bejeweled now swaps during a held directional drag at exactly one rendered tile width/height along the dominant axis. It measures from mouse-down with effective UI scale, swaps only one neighbor once per gesture, suppresses release clicks, and cancels outside-board destinations. Temporary tracking ends immediately on trigger/release/cancellation; matching, scoring and rollback timing are unchanged.
 - Increased pause-menu contrast in both games with a board dimmer, opaque navy surface, brighter cyan frame, larger heading and centered compact card.
 - Replaced the Tetris gameplay title's flat block placeholder with the supplied Tetris artwork used by the Launcher.
 - Renamed the Launcher header action to Stop game; it ends the active instance and keeps the current Launcher page open.

@@ -1466,74 +1466,242 @@ local function cursorOn(x, y)
     dragClient.env.cursorX = (Drag.board:GetLeft() + Drag.boardInset + (x - 1) * Drag.step + Drag.tileSize / 2) * scale
     dragClient.env.cursorY = (Drag.board:GetTop() - Drag.boardInset - (y - 1) * Drag.step - Drag.tileSize / 2) * scale
 end
-local function dragFrom(x, y)
+local dragStartX, dragStartY
+local function dragFrom(x, y, offsetX, offsetY)
     cursorOn(x, y)
+    local scale = Drag.board:GetEffectiveScale()
+    dragClient.env.cursorX = dragClient.env.cursorX + (offsetX or 0) * scale
+    dragClient.env.cursorY = dragClient.env.cursorY + (offsetY or 0) * scale
+    dragStartX, dragStartY = dragClient.env.cursorX, dragClient.env.cursorY
     dragClient.env.mouseDown = true
     local cell = Drag.cells[(y - 1) * 8 + x]
     cell.scripts.OnMouseDown(cell, "LeftButton")
-    cell.scripts.OnDragStart(cell)
     return cell
 end
+local function dragBy(dx, dy)
+    local scale = Drag.board:GetEffectiveScale()
+    dragClient.env.cursorX = dragStartX + dx * scale
+    dragClient.env.cursorY = dragStartY + dy * scale
+    local update = Drag.dragTracker.scripts.OnUpdate
+    if update then
+        update(Drag.dragTracker, 0.01)
+    end
+end
+local function releaseDrag(source)
+    dragClient.env.mouseDown = false
+    source.scripts.OnMouseUp(source, "LeftButton")
+    source.scripts.OnClick(source, "LeftButton")
+end
+-- Each direction, threshold edge, resized cells and effective scale. No native
+-- OnDragStart/OnDragStop is involved; mouse-down alone starts temporary tracking.
+for _, scale in ipairs({ 0.75, 1, 1.2, 1.35, 1.5 }) do
+    for _, direction in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
+        dragRound()
+        DragGames.UI:SetWindowScale(scale)
+        local source = dragFrom(4, 4)
+        local width, height = source:GetWidth(), source:GetHeight()
+        check(
+            Drag.drag
+                and Drag.drag.startX == dragStartX
+                and Drag.drag.startY == dragStartY
+                and Drag.dragTracker.scripts.OnUpdate
+                and not source.scripts.OnDragStart,
+            "Mouse-down did not record the gesture/start temporary tracking"
+        )
+        dragBy(direction[1] * (width - 1), direction[2] * (height - 1))
+        check(not Drag.swap and Drag.drag and Drag.dragFrame:IsShown(), "Sub-tile drag triggered a swap")
+        dragBy(direction[1] * width, direction[2] * height)
+        check(
+            Drag.swap
+                and Drag.swap.x == 4
+                and Drag.swap.y == 4
+                and Drag.swap.tx == 4 + direction[1]
+                and Drag.swap.ty == 4 - direction[2]
+                and Drag.swap.time == 0
+                and not Drag.drag
+                and not Drag.dragFrame:IsShown()
+                and not Drag.dragTracker.scripts.OnUpdate
+                and dragClient.env.mouseDown,
+            "One exact rendered tile did not immediately swap along the intended axis"
+        )
+        local swap = Drag.swap
+        dragBy(direction[1] * width * 8, direction[2] * height * 8)
+        check(Drag.swap == swap, "Held gesture triggered another swap")
+        releaseDrag(source)
+        check(Drag.swap == swap and not Drag.selected, "Release/late click duplicated the drag action")
+    end
+end
+-- Independent width/height thresholds, not center spacing or Euclidean distance.
+for _, direction in ipairs({ { 1, 0 }, { 0, -1 } }) do
+    dragRound()
+    DragGames.UI:SetWindowScale(1)
+    local tile = Drag.cells[28]
+    tile:SetSize(48, 52)
+    local source = dragFrom(4, 4)
+    dragBy(direction[1] * 47, direction[2] * 51)
+    check(not Drag.swap, "A 48x52 tile used a smaller threshold")
+    dragBy(direction[1] * 48, direction[2] * 52)
+    check(Drag.swap and not Drag.dragTracker.scripts.OnUpdate, "Actual tile width/height was ignored")
+    releaseDrag(source)
+end
+for _, delta in ipairs({ { 1, 0.99 }, { -1, 0.6 }, { 0.6, 1 }, { -0.99, -1 }, { 1, 1 } }) do
+    dragRound()
+    local source = dragFrom(4, 4)
+    local size = source:GetWidth()
+    dragBy(delta[1] * (size - 1), delta[2] * (size - 1))
+    check(not Drag.swap, "Diagonal Euclidean distance bypassed axis threshold")
+    dragBy(delta[1] * size, delta[2] * size)
+    local horizontal = math.abs(delta[1]) >= math.abs(delta[2])
+    check(
+        Drag.swap
+            and Drag.swap.tx == 4 + (horizontal and (delta[1] > 0 and 1 or -1) or 0)
+            and Drag.swap.ty == 4 + (not horizontal and (delta[2] > 0 and -1 or 1) or 0),
+        "Diagonal dominant axis (horizontal on ties) selected the wrong neighbor"
+    )
+    releaseDrag(source)
+end
+-- Threshold begins at the pressed point, even at the edge of a tile.
+for _, sign in ipairs({ -1, 1 }) do
+    dragRound()
+    local size = Drag.cells[28]:GetWidth()
+    local source = dragFrom(4, 4, sign * (size / 2 - 1), 0)
+    dragBy(sign * (size - 0.25), 0)
+    check(not Drag.swap, "Pressing near an edge shortened the drag threshold")
+    dragBy(sign * size, 0)
+    check(Drag.swap and Drag.swap.tx == 4 + sign, "Threshold was measured from the tile center instead of mouse-down")
+    releaseDrag(source)
+end
+-- Whichever dominant axis reaches threshold first consumes the entire gesture.
 dragRound()
-DragGames.UI:SetWindowScale(1.35)
-local source = dragFrom(2, 1)
-check(Drag.drag and Drag.dragFrame:IsShown(), "Drag start did not show a floating class icon")
-cursorOn(2, 2)
-Drag:Advance(0.1)
-check(Drag.dragTarget and Drag.dragTarget.y == 2, "Scaled cursor hit-testing did not find the neighboring cell")
-dragClient.env.mouseDown = false
-source.scripts.OnDragStop(source)
+local source = dragFrom(4, 4)
+local size = source:GetWidth()
+dragBy(size - 1, size * 0.3)
+check(not Drag.swap, "Direction preview swapped before threshold")
+dragBy(size - 1, size)
+check(Drag.swap and Drag.swap.ty == 3 and Drag.swap.tx == 4, "First threshold axis was not used")
+releaseDrag(source)
+-- The cursor may be many cells away or outside the board. Only one neighbor moves.
+dragRound()
+source = dragFrom(2, 1)
+dragBy(0, -source:GetHeight() * 50)
 check(
-    Drag.swap and Drag.swap.valid and Drag.model.moves == 1 and not Drag.dragFrame:IsShown(),
-    "Dropping on a neighbor did not start exactly one valid swap"
+    Drag.swap and Drag.swap.valid and Drag.swap.ty == 2 and Drag.model.moves == 1,
+    "Off-board cursor did not immediately swap only the adjacent tile"
 )
-source.scripts.OnClick(source, "LeftButton")
-Drag.cells[10].scripts.OnClick(Drag.cells[10], "LeftButton")
-check(Drag.model.moves == 1 and not Drag.selected, "Post-drag click performed another action")
-dragRound()
-source = dragFrom(8, 8)
-cursorOn(7, 8)
-source.scripts.OnDragStop(source)
-check(Drag.swap and not Drag.swap.valid and Drag.model.moves == 0, "Invalid dragged match did not animate back")
+releaseDrag(source)
+for _, edge in ipairs({ { 1, 4, -1, 0 }, { 8, 4, 1, 0 }, { 4, 1, 0, 1 }, { 4, 8, 0, -1 } }) do
+    dragRound()
+    source = dragFrom(edge[1], edge[2])
+    dragBy(edge[3] * source:GetWidth(), edge[4] * source:GetHeight())
+    check(
+        not Drag.swap
+            and not Drag.drag
+            and not Drag.dragTracker.scripts.OnUpdate
+            and Drag.model.moves == 0
+            and Drag.model.score == 0,
+        "Out-of-board destination did not cancel/disable the gesture"
+    )
+    dragBy(-edge[3] * source:GetWidth(), -edge[4] * source:GetHeight())
+    releaseDrag(source)
+    check(not Drag.swap and not Drag.selected, "Cancelled edge gesture restarted or leaked a click")
+end
+-- Normal stationary clicks preserve selection and the existing click-to-swap path.
 dragRound()
 source = dragFrom(2, 1)
-cursorOn(5, 5)
-source.scripts.OnDragStop(source)
+releaseDrag(source)
 check(
-    not Drag.drag and not Drag.swap and Drag.model.moves == 0 and Drag.model.phase == "idle",
-    "Non-neighbor drop changed the board"
+    Drag.selected and Drag.selected.x == 2 and Drag.selected.y == 1 and not Drag.swap,
+    "Stationary click stopped selecting tiles"
 )
+source = dragFrom(2, 2)
+releaseDrag(source)
+check(Drag.swap and Drag.swap.valid and Drag.model.moves == 1, "Click-to-swap stopped working")
+-- Early release and missed mouse-up events never evaluate a drag swap.
+for _, missed in ipairs({ false, true }) do
+    dragRound()
+    source = dragFrom(2, 1)
+    dragBy(0, -source:GetHeight() * 0.99)
+    dragClient.env.mouseDown = false
+    if missed then
+        Drag:UpdateDrag()
+    else
+        source.scripts.OnMouseUp(source, "LeftButton")
+    end
+    source.scripts.OnClick(source, "LeftButton")
+    check(
+        not Drag.drag
+            and not Drag.swap
+            and not Drag.selected
+            and Drag.model.moves == 0
+            and not Drag.dragTracker.scripts.OnUpdate,
+        "Early release swapped or leaked a click"
+    )
+end
 dragRound()
-source = dragFrom(2, 1)
-dragClient.env.cursorX, dragClient.env.cursorY = -1000, -1000
-source.scripts.OnDragStop(source)
-check(not Drag.drag and not Drag.dragFrame:IsShown() and Drag.model.moves == 0, "Off-board drop was not cancelled")
-source = dragFrom(2, 1)
-cursorOn(2, 1)
-source.scripts.OnDragStop(source)
-check(not Drag.swap and Drag.model.moves == 0, "Dropping back on the source counted as a move")
-source = dragFrom(2, 1)
-DragGames.UI:ShowHome()
-Drag:Advance(0.1)
-check(Drag.paused and not Drag.drag and not Drag.dragFrame:IsShown(), "Hiding the game left a drag active")
-DragGames.UI:ShowGame()
-Drag:Pause(false)
-source = dragFrom(2, 1)
-DragGames.UI:ShowOptions()
-Drag:Advance(0.1)
-check(Drag.paused and not Drag.drag and Drag.model.moves == 0, "Options did not cancel dragging safely")
-DragGames.UI:ShowGame()
-Drag:Pause(false)
 source = dragFrom(2, 1)
 cursorOn(2, 2)
-dragClient.env.mouseDown = false
-Drag:Advance(0.1)
-source.scripts.OnDragStop(source)
-check(Drag.model.moves == 1 and Drag.swap and not Drag.drag, "Lost mouse-up handling duplicated or lost the drop")
+releaseDrag(source)
+check(not Drag.swap and Drag.model.moves == 0, "Mouse-up evaluated an untracked threshold crossing")
+-- Invalid matches retain rollback timing, even while the button stays held.
 dragRound()
-source = dragFrom(2, 1)
-DragGames:AbortGame()
-check(not Drag.running and not Drag.drag and not Drag.dragFrame:IsShown(), "Quick stop left a floating icon behind")
+local attempts = 0
+local swapRule = Drag.model.Swap
+Drag.model.Swap = function(model, ...)
+    attempts = attempts + 1
+    return swapRule(model, ...)
+end
+for i = 1, 12 do
+    source = dragFrom(8, 8)
+    dragBy(-source:GetWidth(), 0)
+    check(
+        Drag.swap and not Drag.swap.valid and attempts == i and Drag.model.moves == 0,
+        "Rapid gesture bypassed invalid-match validation or duplicated a swap"
+    )
+    for _ = 1, 4 do
+        Drag:Advance(0.1)
+    end
+    dragBy(-source:GetWidth() * 6, source:GetHeight() * 6)
+    check(
+        not Drag.swap and attempts == i and not Drag.dragTracker.scripts.OnUpdate,
+        "Held input restarted after rollback completed"
+    )
+    releaseDrag(source)
+    Drag.cells[63].scripts.OnClick(Drag.cells[63], "LeftButton")
+    check(not Drag.selected and attempts == i, "Late destination click escaped gesture suppression")
+end
+-- Pause, navigation, close, resize/rebuild and stop must remove active tracking.
+for _, cancel in ipairs({ "pause", "home", "options", "close", "resize", "rebuild", "scale", "stop" }) do
+    dragRound()
+    source = dragFrom(2, 1)
+    dragBy(0, -source:GetHeight() * 0.5)
+    if cancel == "pause" then
+        Drag:Pause(true)
+    elseif cancel == "home" then
+        DragGames.UI:ShowHome()
+    elseif cancel == "options" then
+        DragGames.UI:ShowOptions()
+    elseif cancel == "close" then
+        DragGames.UI.frame:Hide()
+    elseif cancel == "resize" then
+        DragGames.UI:SetWindowSize(1500, 900)
+    elseif cancel == "rebuild" then
+        Drag:CreateUI(Drag.root:GetParent())
+    elseif cancel == "scale" then
+        DragGames.UI:SetWindowScale(0.75)
+        Drag:UpdateDrag()
+    else
+        DragGames:AbortGame()
+    end
+    check(
+        not Drag.drag
+            and not Drag.dragFrame:IsShown()
+            and not Drag.dragTracker.scripts.OnUpdate
+            and Drag.model.moves == 0,
+        "Lifecycle cancellation left gesture tracking active: " .. cancel
+    )
+    releaseDrag(source)
+    check(not Drag.swap and Drag.model.moves == 0, "Cancelled gesture leaked a release swap: " .. cancel)
+end
 local launcherClient = client("ArcadePlayer", "ArcadeRealm")
 launcherClient.grouped = false
 local Arcade = launcherClient.games
@@ -2316,9 +2484,7 @@ do
     DragGames.UI:SetWindowSize(1500, 900)
     DragGames.UI:SetWindowScale(1.2)
     local source = dragFrom(2, 1)
-    cursorOn(2, 2)
-    Drag:UpdateDrag()
-    source.scripts.OnDragStop(source)
+    dragBy(0, -source:GetHeight())
     check(
         Drag.swap and Drag.swap.valid and Drag.model.moves == 1 and Drag.swap.time == 0,
         "Resized drag changed swap validation/timing"
@@ -2474,8 +2640,7 @@ if arg[1] == "--preview" then
     dragRound()
     DragGames.UI:SetWindowScale(1)
     dragFrom(2, 1)
-    cursorOn(2, 2)
-    Drag:Advance(0.1)
+    dragBy(0, -Drag.tileSize * 0.5)
     snapshot("bejeweled-drag", dragClient)
     Arcade.UI:SetWindowScale(1)
     Arcade.UI:OpenLauncher("home")
