@@ -72,8 +72,10 @@ function UI:Initialize()
     self.resultsButton = button(frame, "Results", 90, 536, -34, function()
         UI:ShowResults()
     end)
-    self.abortButton = button(frame, "|cffff6060Stop match|r", 110, 628, -34, function()
+    self.abortButton = button(frame, "|cffff6060Stop game|r", 110, 628, -34, function()
+        local page = UI.launcherPage
         Games:AbortGame()
+        UI:OpenLauncher(page)
     end)
     self.abortButton:Hide()
     self.home = CreateFrame("Frame", nil, frame)
@@ -492,7 +494,7 @@ function UI:Refresh()
         self.hint:SetText(
             current
                     and current.mode == "singleplayer"
-                    and "A solo game is active. Use Singleplayer to reopen it, or Stop match to finish it."
+                    and "A solo game is active. Use Singleplayer to reopen it, or Stop game to finish it."
                 or (
                     Games:GroupChannel() and "Ready to create or join a lobby."
                     or "Join a WoW party to use multiplayer lobbies."

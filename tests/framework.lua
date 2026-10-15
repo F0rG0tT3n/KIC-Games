@@ -1625,6 +1625,7 @@ Arcade.UI:OpenLauncher("home")
 check(Arcade.UI.launcherCards[1].play.text == "Resume", "Recent game has no Resume action")
 check(
     Arcade.UI.abortButton:IsShown()
+        and Arcade.UI.abortButton.text == "|cffff6060Stop game|r"
         and Arcade.UI.abortButton.points[1][2] + Arcade.UI.abortButton.width <= Arcade.UI.groupPanel.points[1][2],
     "Party status covers quick stop"
 )
@@ -1641,9 +1642,29 @@ check(
     Arcade.Tetris.model == arcadeModel and Arcade.UI.gameContainer:IsShown() and not Arcade.UI.optionsFrame:IsShown(),
     "Options Back did not preserve the board or clear input blocker"
 )
-Arcade:AbortGame()
+Arcade.UI:OpenLauncher("singleplayer")
+Arcade.UI.abortButton.scripts.OnClick()
+check(
+    not Arcade.ActiveGame
+        and not Arcade.Tetris.running
+        and Arcade.UI.frame:IsShown()
+        and Arcade.UI.home:IsShown()
+        and Arcade.UI.launcherPage == "singleplayer"
+        and not Arcade.UI.abortButton:IsShown(),
+    "Launcher Stop game must stop Tetris and preserve the visible Launcher page"
+)
 Arcade:StartSingleplayer("bejeweled")
-Arcade:AbortGame()
+Arcade.UI:OpenLauncher("home")
+Arcade.UI.abortButton.scripts.OnClick()
+check(
+    not Arcade.ActiveGame
+        and not Arcade.Bejeweled.running
+        and Arcade.UI.frame:IsShown()
+        and Arcade.UI.home:IsShown()
+        and Arcade.UI.launcherPage == "home"
+        and not Arcade.UI.abortButton:IsShown(),
+    "Launcher Stop game must stop Bejeweled and preserve the visible Launcher page"
+)
 check(
     Arcade.DB.recentGames[1] == "bejeweled" and Arcade.DB.recentGames[2] == "tetris",
     "Recent games are not newest-first"

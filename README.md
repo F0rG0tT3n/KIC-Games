@@ -27,6 +27,8 @@ Back/Close pause and preserve the run; Resume opens it again. Each game's pause
 menu supplies **Resume**, **Restart run** and **Stop match**.
 The pause menu's **Stop match** ends the run and returns to the Launcher with
 the addon window still open.
+The Launcher's top **Stop game** button also ends the active game while keeping
+the current Launcher page open.
 
 Choose your class once in **Options**; it updates both games immediately without
 resetting the board or score. Your previous Tetris class selection migrates on
@@ -99,10 +101,12 @@ packets. Join-request IDs ensure an earlier roster cannot acknowledge a new join
 
 ## Dungeon group ready: stop immediately
 
-Use **Stop match** from the Launcher/lobby, the bundled games' pause menu, or
-`/kicgames stop`. The gameplay header uses **Back to Launcher** to preserve the
-session. Any participant can stop a match. There is no confirmation and the local game stops and closes without
-waiting for the host. The interrupt travels on a separate, prioritized addon
+Use **Stop game** in the Launcher header, **Stop match** in the lobby or bundled
+games' pause menu, or `/kicgames stop`. The Launcher header and pause-menu actions
+keep the Launcher open after stopping; the urgent-stop command closes the window.
+The gameplay header uses **Back to Launcher** to preserve the session. Any
+participant can stop a match immediately, without confirmation or waiting for
+the host. The interrupt travels on a separate, prioritized addon
 queue, so it cannot be trapped behind a large module-state transfer or break
 its multipart framing. Remote delivery still depends on WoW's communication
 limits. A delayed running snapshot cannot reopen an interrupted match.
