@@ -34,6 +34,9 @@ local function client(name, realm, saved)
     env.GetTime = function()
         return now
     end
+    env.GetBuildInfo = function()
+        return "12.1.5", "test-build", "test-date", env.apiInterface or 120105
+    end
     env.GetServerTime = function()
         return 1800000000 + math.floor(now)
     end
@@ -118,8 +121,31 @@ local function client(name, realm, saved)
     local apiClassFixture, apiSpecFixture = apiClasses, apiSpecs
 
     env.C_Sound = {
+        PlaySound = function(kit, channel, noDuplicates, callback, priority, volume)
+            if env.rejectKit == kit then
+                return false
+            end
+            c.sounds[#c.sounds + 1] = {
+                kit = kit,
+                channel = channel,
+                volume = volume,
+                method = "PlaySound",
+                noDuplicates = noDuplicates,
+                callback = callback,
+                priority = priority,
+            }
+            return true, #c.sounds
+        end,
         PlaySoundWithOptions = function(params)
-            c.sounds[#c.sounds + 1] = { kit = params.soundKitID, volume = params.volumeOverride }
+            if env.rejectKit == params.soundKitID then
+                return false
+            end
+            c.sounds[#c.sounds + 1] = {
+                kit = params.soundKitID,
+                channel = params.uiSoundSubType,
+                volume = params.volumeOverride,
+                method = "PlaySoundWithOptions",
+            }
             return true, #c.sounds
         end,
     }
@@ -3319,6 +3345,166 @@ do
             and #owner.sounds == count
             and #games.Audio.handles == 0,
         "Disabled class audio still played an internal event"
+    )
+end
+-- Master backend contract: verify API arguments, never simulate the native mix equation.
+do
+    local owner = client("MasterAudio", "AudioRealm")
+    owner.grouped = false
+    local games, env = owner.games, owner.env
+    local audio = games.Audio
+    local mix = { master = 1, sfxEnabled = true }
+    local reads = 0
+    env.GetCVar = function()
+        reads = reads + 1
+        return "1"
+    end
+    env.SetCVar = function()
+        error("Audio backend must not write WoW CVars")
+    end
+    env.C_CVar = { SetCVar = env.SetCVar, GetCVar = env.GetCVar }
+    games:SetOption("soundTheme", "arcade")
+    for _, sfx in ipairs({ false, true }) do
+        mix.sfxEnabled = sfx
+        for _, master in ipairs({ 0, 0.25, 0.5, 1 }) do
+            mix.master = master
+            for _, volume in ipairs({ 0, 0.25, 0.5, 1 }) do
+                games.UI.volumeSlider:SetValue(volume * 100)
+                local before = #owner.sounds
+                local played = audio:Play("tetris", "clear", true)
+                if volume == 0 then
+                    check(
+                        not played and #owner.sounds == before and #audio.handles == 0,
+                        "Zero slider volume did not stop/gate Master previews"
+                    )
+                else
+                    local sound = owner.sounds[#owner.sounds]
+                    check(
+                        played
+                            and #owner.sounds == before + 1
+                            and sound.channel == "Master"
+                            and sound.kit == 865
+                            and sound.volume == volume
+                            and sound.method == "PlaySound",
+                        "Master kit playback lost slider gain, explicit channel or preferred API"
+                    )
+                end
+                check(
+                    mix.master == master and mix.sfxEnabled == sfx and reads == 0,
+                    "Backend used global audio settings to calculate/change addon gain"
+                )
+            end
+        end
+    end
+    -- The structured alternative must also specify Master explicitly.
+    local modern, preferred = env.C_Sound, env.C_Sound.PlaySound
+    env.C_Sound.PlaySound = nil
+    games.UI.volumeSlider:SetValue(50)
+    check(
+        audio:Play("bejeweled", "clear", true)
+            and owner.sounds[#owner.sounds].method == "PlaySoundWithOptions"
+            and owner.sounds[#owner.sounds].channel == "Master"
+            and owner.sounds[#owner.sounds].volume == 0.5,
+        "Structured SoundKit fallback omitted Master or slider gain"
+    )
+    modern.PlaySound = preferred
+    for file, kit in pairs(audio.fileKits) do
+        audio.games.tetris.masterProbe = { file = file }
+        check(
+            audio:Play("tetris", "masterProbe", true)
+                and owner.sounds[#owner.sounds].kit == kit
+                and owner.sounds[#owner.sounds].channel == "Master"
+                and owner.sounds[#owner.sounds].volume == 0.5
+                and audio:VolumeSupported(audio:Resolve("tetris", "masterProbe")),
+            "Verified single-file SoundKit did not receive Master/independent gain"
+        )
+    end
+    audio.games.tetris.masterProbe = { file = 568008 }
+    env.rejectKit = 22468
+    check(
+        audio:Play("tetris", "masterProbe", true)
+            and owner.sounds[#owner.sounds].file == 568008
+            and owner.sounds[#owner.sounds].channel == "Master"
+            and not owner.sounds[#owner.sounds].kit,
+        "A failed mapped kit did not preserve the original Master spell file"
+    )
+    env.rejectKit = nil
+    local fileAPI = env.PlaySoundFile
+    env.PlaySoundFile = nil
+    check(
+        audio:Play("tetris", "masterProbe", true) and owner.sounds[#owner.sounds].kit == 22468,
+        "Verified mapped kit incorrectly required the file playback API"
+    )
+    env.PlaySoundFile = fileAPI
+    env.C_Sound = nil
+    env.PlaySound = function(kit, channel)
+        owner.sounds[#owner.sounds + 1] = { kit = kit, channel = channel }
+        return true, #owner.sounds
+    end
+    check(
+        audio:Play("tetris", "clear", true)
+            and owner.sounds[#owner.sounds].channel == "Master"
+            and not audio:VolumeSupported(audio:Resolve("tetris", "clear")),
+        "Legacy kit fallback incorrectly claimed volume control or used a different channel"
+    )
+    check(
+        audio:Play("tetris", "masterProbe", true)
+            and owner.sounds[#owner.sounds].file == 568008
+            and not audio:VolumeSupported(audio:Resolve("tetris", "masterProbe")),
+        "Mapped files without modern kit support lost their original-file fallback"
+    )
+    audio.games.tetris.masterProbe = nil
+    env.C_Sound = modern
+    env.apiInterface = 120000
+    check(
+        audio:Play("tetris", "clear", true)
+            and owner.sounds[#owner.sounds].channel == "Master"
+            and owner.sounds[#owner.sounds].volume == nil
+            and not audio:VolumeSupported(audio:Resolve("tetris", "clear")),
+        "Pre-volumeOverride client incorrectly advertised independent gain or lost Master fallback"
+    )
+    env.apiInterface = 120105
+    games:SetClassPreset("MAGE")
+    games:SetManualSpec(63)
+    games:SetOption("soundTheme", "class")
+    for _, volume in ipairs({ 0, 0.25, 0.5, 1 }) do
+        games.UI.volumeSlider:SetValue(volume * 100)
+        local before = #owner.sounds
+        local played = audio:Play("tetris", "tetris_4_lines", true)
+        if volume == 0 then
+            check(not played and #owner.sounds == before, "Zero volume played a Master spell file")
+        else
+            local sound = owner.sounds[#owner.sounds]
+            check(
+                played
+                    and sound.file == 1390656
+                    and not sound.kit
+                    and sound.channel == "Master"
+                    and sound.volume == nil
+                    and not audio:VolumeSupported(audio:Resolve("tetris", "tetris_4_lines")),
+                "FileDataID became a SoundKitID or unsupported independent file gain was claimed"
+            )
+        end
+    end
+    owner.env.rejectSound = 1390656
+    check(
+        audio:Play("tetris", "tetris_4_lines", true)
+            and owner.sounds[#owner.sounds].kit == 73279
+            and owner.sounds[#owner.sounds].channel == "Master"
+            and owner.sounds[#owner.sounds].volume == 1,
+        "Failed Master file did not retain the verified kit/volume fallback"
+    )
+    owner.env.rejectSound = nil
+    local count = #owner.sounds
+    games:SetOption("soundsEnabled", false)
+    check(
+        not audio:Play("tetris", "tetris_4_lines", true) and #owner.sounds == count and #audio.handles == 0,
+        "Mute failed to stop/gate Master spell previews"
+    )
+    games:SetOption("soundTheme", "arcade")
+    check(
+        not audio:Play("bejeweled", "clear", true) and #owner.sounds == count,
+        "Mute failed to gate Master kit previews"
     )
 end
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))

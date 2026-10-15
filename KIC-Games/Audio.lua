@@ -2,6 +2,27 @@ local _, Games = ...
 local Audio = { games = {}, specs = {}, handles = {}, last = {}, lastAny = -math.huge }
 Games.Audio = Audio
 Audio.events = { "select", "move", "swap", "land", "clear", "combo", "gameOver", "victory" }
+-- Verified simple, single-file kits; profiles retain their original FileDataIDs.
+-- SoundKit/SoundKitEntry 12.1.0.69933 evidence: tests/master-sound-kits.json.
+Audio.fileKits = {
+    [568008] = 22468,
+    [568075] = 47725,
+    [568080] = 10020,
+    [568516] = 1490,
+    [568678] = 11769,
+    [569021] = 47726,
+    [569157] = 13103,
+    [569315] = 20591,
+    [569378] = 86009,
+    [569384] = 24161,
+    [569403] = 12349,
+    [569471] = 10136,
+    [569555] = 20599,
+    [569658] = 10139,
+}
+local function soundKit(entry)
+    return entry and (entry.kit or Audio.fileKits[entry.file])
+end
 -- Verified Blizzard SharedXML SOUNDKIT constants. These are kits, never SpellIDs.
 function Audio:RegisterGame(id, events)
     self.games[id] = events
@@ -75,7 +96,7 @@ for id, profile in pairs(Games.ProfileData) do
     for event, file in pairs(profile.soundEvents or {}) do
         events[event] = { file = file }
     end
-    -- Keep existing previews meaningful (and their SFX-volume notice accurate)
+    -- Keep existing previews meaningful (and their file-volume limitation visible)
     -- for profiles which previously had no generic spell effects.
     events.clear = events.clear
         or events.bejeweled_match_3
@@ -122,13 +143,22 @@ function Audio:Resolve(gameID, event, cascade)
     then
         entry = spec.bejeweled_cascade or spec.combo or entry
     end
-    if entry and entry.file and not PlaySoundFile then
+    if entry and entry.file and not PlaySoundFile and not self:VolumeSupported(entry) then
         entry = nil
     end
     return entry or fallback(game, event, cascade), entry == nil
 end
 function Audio:VolumeSupported(entry)
-    return entry and entry.kit and C_Sound and (C_Sound.PlaySoundWithOptions or C_Sound.PlaySound) ~= nil
+    -- Older namespaces exist without volumeOverride; do not silently claim gain.
+    if not GetBuildInfo then
+        return false
+    end
+    local _, _, _, interface = GetBuildInfo()
+    return type(interface) == "number"
+        and interface >= 120100
+        and soundKit(entry)
+        and C_Sound
+        and (C_Sound.PlaySound or C_Sound.PlaySoundWithOptions) ~= nil
 end
 function Audio:Play(gameID, event, preview, cascade, arcadeFallback)
     local s = Games:GetSettings()
@@ -157,20 +187,29 @@ function Audio:Play(gameID, event, preview, cascade, arcadeFallback)
         self:StopAll()
     end
     local ok, success, handle
-    if self:VolumeSupported(entry) then
-        if C_Sound.PlaySoundWithOptions then
-            ok, success, handle = pcall(
-                C_Sound.PlaySoundWithOptions,
-                { soundKitID = entry.kit, volumeOverride = s.soundVolume, forceNoDuplicates = true }
-            )
+    local kit = soundKit(entry)
+    local controlled = self:VolumeSupported(entry)
+    if controlled then
+        if C_Sound.PlaySound then
+            ok, success, handle = pcall(C_Sound.PlaySound, kit, "Master", true, false, nil, s.soundVolume)
         else
-            ok, success, handle = pcall(C_Sound.PlaySound, entry.kit, nil, true, false, nil, s.soundVolume)
+            ok, success, handle = pcall(C_Sound.PlaySoundWithOptions, {
+                soundKitID = kit,
+                uiSoundSubType = "Master",
+                volumeOverride = s.soundVolume,
+                forceNoDuplicates = true,
+            })
         end
     elseif entry.file and PlaySoundFile then
-        ok, success, handle = pcall(PlaySoundFile, entry.file, "SFX")
+        -- No independent gain exists for this API; nonzero levels follow Master.
+        ok, success, handle = pcall(PlaySoundFile, entry.file, "Master")
     elseif PlaySound then
         -- Legacy kit playback has no supported independent volume argument.
-        ok, success, handle = pcall(PlaySound, entry.kit, "SFX", true)
+        ok, success, handle = pcall(PlaySound, entry.kit, "Master", true)
+    end
+    if controlled and entry.file and not (ok and success) and PlaySoundFile then
+        -- A missing/unsupported mapped kit must preserve the selected spell file.
+        ok, success, handle = pcall(PlaySoundFile, entry.file, "Master")
     end
     if ok and success then
         self.last[key], self.lastAny = time, time

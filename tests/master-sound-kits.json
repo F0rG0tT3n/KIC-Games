@@ -1,0 +1,464 @@
+{
+  "build": "12.1.0.69933",
+  "checked": "2026-10-15",
+  "sources": {
+    "SoundKit": {
+      "url": "https://wago.tools/db2/SoundKit/csv?build=12.1.0.69933",
+      "sha256": "025baa66917247b30dc5d36687b814952e9e8e343cdd824aa308d7b6845a239d"
+    },
+    "SoundKitEntry": {
+      "url": "https://wago.tools/db2/SoundKitEntry/csv?build=12.1.0.69933",
+      "sha256": "b5bd0ea46071c74799ed8c3af4afd2a012a7f212e990fcc1ef1280f4339b679c"
+    }
+  },
+  "mappings": [
+    {
+      "file": 568008,
+      "kit": 22468,
+      "soundKit": {
+        "ID": "22468",
+        "SoundType": "1",
+        "VolumeFloat": "0.80000001192",
+        "Flags": "0",
+        "MinDistance": "10",
+        "DistanceCutoff": "45",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "40522",
+        "SoundKitID": "22468",
+        "FileDataID": "568008",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 568075,
+      "kit": 47725,
+      "soundKit": {
+        "ID": "47725",
+        "SoundType": "1",
+        "VolumeFloat": "0.59999996424",
+        "Flags": "0",
+        "MinDistance": "8",
+        "DistanceCutoff": "45",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "105545",
+        "SoundKitID": "47725",
+        "FileDataID": "568075",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 568080,
+      "kit": 10020,
+      "soundKit": {
+        "ID": "10020",
+        "SoundType": "1",
+        "VolumeFloat": "0.80000001192",
+        "Flags": "0",
+        "MinDistance": "8",
+        "DistanceCutoff": "45",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "11565",
+        "SoundKitID": "10020",
+        "FileDataID": "568080",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 568516,
+      "kit": 1490,
+      "soundKit": {
+        "ID": "1490",
+        "SoundType": "1",
+        "VolumeFloat": "0.68999999762",
+        "Flags": "0",
+        "MinDistance": "8",
+        "DistanceCutoff": "45",
+        "EAXDef": "2",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "2192",
+        "SoundKitID": "1490",
+        "FileDataID": "568516",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 568678,
+      "kit": 11769,
+      "soundKit": {
+        "ID": "11769",
+        "SoundType": "1",
+        "VolumeFloat": "0.80000001192",
+        "Flags": "0",
+        "MinDistance": "30",
+        "DistanceCutoff": "100",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "14242",
+        "SoundKitID": "11769",
+        "FileDataID": "568678",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 569021,
+      "kit": 47726,
+      "soundKit": {
+        "ID": "47726",
+        "SoundType": "1",
+        "VolumeFloat": "1",
+        "Flags": "0",
+        "MinDistance": "8",
+        "DistanceCutoff": "45",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "105546",
+        "SoundKitID": "47726",
+        "FileDataID": "569021",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 569157,
+      "kit": 13103,
+      "soundKit": {
+        "ID": "13103",
+        "SoundType": "1",
+        "VolumeFloat": "0.80000001192",
+        "Flags": "0",
+        "MinDistance": "8",
+        "DistanceCutoff": "45",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "16784",
+        "SoundKitID": "13103",
+        "FileDataID": "569157",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 569315,
+      "kit": 20591,
+      "soundKit": {
+        "ID": "20591",
+        "SoundType": "1",
+        "VolumeFloat": "0.80000001192",
+        "Flags": "0",
+        "MinDistance": "8",
+        "DistanceCutoff": "45",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "35269",
+        "SoundKitID": "20591",
+        "FileDataID": "569315",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 569378,
+      "kit": 86009,
+      "soundKit": {
+        "ID": "86009",
+        "SoundType": "1",
+        "VolumeFloat": "0.80000001192",
+        "Flags": "0",
+        "MinDistance": "8",
+        "DistanceCutoff": "45",
+        "EAXDef": "2",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "221963",
+        "SoundKitID": "86009",
+        "FileDataID": "569378",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 569384,
+      "kit": 24161,
+      "soundKit": {
+        "ID": "24161",
+        "SoundType": "1",
+        "VolumeFloat": "0.80000001192",
+        "Flags": "0",
+        "MinDistance": "8",
+        "DistanceCutoff": "45",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "44833",
+        "SoundKitID": "24161",
+        "FileDataID": "569384",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 569403,
+      "kit": 12349,
+      "soundKit": {
+        "ID": "12349",
+        "SoundType": "1",
+        "VolumeFloat": "0.80000001192",
+        "Flags": "0",
+        "MinDistance": "100",
+        "DistanceCutoff": "200",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "15443",
+        "SoundKitID": "12349",
+        "FileDataID": "569403",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 569471,
+      "kit": 10136,
+      "soundKit": {
+        "ID": "10136",
+        "SoundType": "1",
+        "VolumeFloat": "0.80000001192",
+        "Flags": "0",
+        "MinDistance": "10",
+        "DistanceCutoff": "50",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "11815",
+        "SoundKitID": "10136",
+        "FileDataID": "569471",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 569555,
+      "kit": 20599,
+      "soundKit": {
+        "ID": "20599",
+        "SoundType": "1",
+        "VolumeFloat": "0.30000001192",
+        "Flags": "0",
+        "MinDistance": "8",
+        "DistanceCutoff": "45",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "35301",
+        "SoundKitID": "20599",
+        "FileDataID": "569555",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    },
+    {
+      "file": 569658,
+      "kit": 10139,
+      "soundKit": {
+        "ID": "10139",
+        "SoundType": "1",
+        "VolumeFloat": "0.80000001192",
+        "Flags": "0",
+        "MinDistance": "10",
+        "DistanceCutoff": "50",
+        "EAXDef": "0",
+        "SoundKitAdvancedID": "0",
+        "VolumeVariationPlus": "0",
+        "VolumeVariationMinus": "0",
+        "PitchVariationPlus": "0",
+        "PitchVariationMinus": "0",
+        "DialogType": "0",
+        "PitchAdjust": "0",
+        "BusOverwriteID": "0",
+        "MaxInstances": "0",
+        "SoundMixGroupID": "0"
+      },
+      "entry": {
+        "ID": "11818",
+        "SoundKitID": "10139",
+        "FileDataID": "569658",
+        "Frequency": "1",
+        "Volume": "1",
+        "PlayerConditionID": "0"
+      },
+      "entryCount": 1
+    }
+  ]
+}

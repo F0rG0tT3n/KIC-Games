@@ -49,9 +49,25 @@ kits = json.loads((ROOT / 'tests/sound-kits.json').read_text(encoding='utf-8'))[
 assert set(re.findall(r'kit\s*=\s*(\d+)', audio_source)) == set(kits)
 for file in ['Audio.lua', 'Settings.lua', 'Options.lua']:
     assert not re.search(r'\bSetCVar\s*\(|C_CVar\s*\.\s*SetCVar', (ROOT/'KIC-Games'/file).read_text(encoding='utf-8'))
-assert 'volumeOverride' in audio_source and 'PlaySoundFile, entry.file, "SFX"' in audio_source
+assert 'volumeOverride' in audio_source and 'PlaySoundFile, entry.file, "Master"' in audio_source
+assert 'C_Sound.PlaySound, kit, "Master", true, false, nil, s.soundVolume' in audio_source
+assert 'uiSoundSubType = "Master"' in audio_source and '"SFX"' not in audio_source
+master_kits = json.loads((ROOT / 'tests/master-sound-kits.json').read_text(encoding='utf-8'))
+mapping = re.search(r'Audio.fileKits = \{(.*?)\}', audio_source, re.S).group(1)
+actual = {int(file): int(kit) for file, kit in re.findall(r'\[(\d+)\]\s*=\s*(\d+)', mapping)}
+assert actual == {row['file']: row['kit'] for row in master_kits['mappings']}
+for row in master_kits['mappings']:
+    kit, entry = row['soundKit'], row['entry']
+    assert row['entryCount'] == 1
+    assert int(kit['ID']) == int(entry['SoundKitID']) == row['kit']
+    assert int(entry['FileDataID']) == row['file'] and str(row['file']) in research['soundFiles']
+    assert float(entry['Volume']) == 1 and int(entry['PlayerConditionID']) == 0
+    assert kit['SoundType'] == '1'
+    for field in ['Flags', 'SoundKitAdvancedID', 'PitchAdjust', 'BusOverwriteID', 'SoundMixGroupID',
+                  'VolumeVariationPlus', 'VolumeVariationMinus', 'PitchVariationPlus', 'PitchVariationMinus', 'DialogType']:
+        assert float(kit[field]) == 0
 assert not re.search(r'\b(SetSpecialization|LearnTalent|LoadConfig|ActivateConfig)\s*\(', (ROOT/'KIC-Games/Profiles.lua').read_text(encoding='utf-8'))
 print(f'PASS: 40 spec profiles, 280 unique-per-profile icon slots, 360 compared candidates, '
       f'{sum(len(p["iconChanges"]) for p in audited.values())} verified icon replacements, '
       f'{sum(bool(p["sounds"] or p["soundEvents"]) for p in expected.values())} partial spell-audio profiles, '
-      f'{len(kits)} verified SoundKit constants; no CVar/spec writes')
+      f'{len(kits)} verified SoundKit constants, {len(master_kits["mappings"])} verified single-file kit adapters; no CVar/spec writes')
