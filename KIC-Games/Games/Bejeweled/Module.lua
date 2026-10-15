@@ -50,8 +50,9 @@ function Games:RegisterBejeweledModule(B, id, title, slash)
             self:SaveBest()
         end
         local best = self:Storage().best
+        local shareTitle = title:match("^KIC ") and title or ("KIC " .. title)
         local message = string.format(
-            "KIC " .. title .. " best: %d points - %d gems - %d moves - Cascade x%d",
+            shareTitle .. " best: %d points - %d gems - %d moves - Cascade x%d",
             best.score,
             best.cleared,
             best.moves,

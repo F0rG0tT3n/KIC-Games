@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased - KIC Bejeweled name
+
+- Renamed Bejeweled Deluxe to KIC Bejeweled in the launcher, gameplay header, results and shared score message. Kept the internal ID, slash command, artwork paths and saved records intact.
+
 ## Unreleased - Deluxe special gem readability
 
 - Bombs now have octagonal ember armor, hazard teeth and a compact fused explosive core; Lightning has cyan directional brackets and a bold white bolt; Color Orbs have a circular rainbow halo, orbit and prismatic core.

@@ -41,4 +41,4 @@ function D:PlayResolution(resolution, cascade)
     -- spec mappings, the resolution throttle and stop-previous-sound behavior.
     Games.Audio:Play("bejeweled", event, nil, cascade)
 end
-Games:RegisterBejeweledModule(D, "bejeweled_deluxe", "Bejeweled Deluxe", "KICBEJEWELEDDELUXE")
+Games:RegisterBejeweledModule(D, "bejeweled_deluxe", "KIC Bejeweled", "KICBEJEWELEDDELUXE")

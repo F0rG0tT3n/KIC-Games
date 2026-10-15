@@ -1,12 +1,13 @@
-# Bejeweled Deluxe
+# KIC Bejeweled
 
-A separate, playable singleplayer game registered as `bejeweled_deluxe`.
+A separate, playable singleplayer game formerly named Bejeweled Deluxe. Its internal
+`bejeweled_deluxe` ID, saved records, command and artwork paths remain unchanged.
 Open it in Singleplayer or with `/kicbejeweleddeluxe`. The `share` argument immediately sends
 its best score to instance (`/i`) chat. Outside an instance group, it shows a local
 notice without sending. Score fields use plain hyphens instead of pipe characters.
 
 Standard Bejeweled remains `bejeweled`, with its original engine and rules.
-Deluxe does not rename, migrate or overwrite Bejeweled or Tetris records.
+KIC Bejeweled does not migrate or overwrite Bejeweled or Tetris records.
 
 ## Rules and placement
 

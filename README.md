@@ -4,7 +4,7 @@ World of Warcraft Retail party-game launcher and multiplayer framework, version
 0.13.0. Intended for waiting for the group to fill and the time between dungeons.
 Includes **[Tetris](TETRIS.md)** with Original and class/spec graphics and
 **[Bejeweled](BEJEWELED.md)** with animated gem swaps and cascades.
-Also includes **[Bejeweled Deluxe](BEJEWELED-DELUXE.md)**, an independent game with
+Also includes **[KIC Bejeweled](BEJEWELED-DELUXE.md)**, an independent game with
 Bomb, Lightning and Color Orb combinations and separate saved records.
 All singleplayer modules have saved high scores, direct instance-chat sharing and
 shared graphics, audio and interface scale settings from **Options**.
@@ -77,7 +77,7 @@ installable folder at its root.
 - `/kictetris share`: send your saved best score directly to instance (/i) chat.
 - `/kicbejeweled`: start Bejeweled, or reopen your active run.
 - `/kicbejeweled share`: send your best gem-matching score directly to /i chat.
-- `/kicbejeweleddeluxe`: start or reopen Bejeweled Deluxe; add `share` to send its best score directly to /i chat.
+- `/kicbejeweleddeluxe`: start or reopen KIC Bejeweled; add `share` to send its best score directly to /i chat. The command keeps its former name for compatibility.
 
 ## Singleplayer and Multiplayer tabs
 

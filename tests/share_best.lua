@@ -27,6 +27,9 @@ for _, game in ipairs({
         sent.message:find("12345", 1, true) and not sent.message:find("|", 1, true),
         "Invalid score or pipe in message"
     )
+    if game[1] == "bejeweled_deluxe" then
+        check(sent.message:find("^KIC Bejeweled best:") ~= nil, "Renamed share title missing or duplicated")
+    end
     check(not owner.env.chatDraft and module.paused, "Share opened a draft or failed to pause")
     for _, channel in ipairs({ "PARTY", "RAID", "SOLO" }) do
         owner.grouped, owner.channel = channel ~= "SOLO", channel

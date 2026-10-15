@@ -341,7 +341,7 @@ check(
     G.Registry.bejeweled and G.Registry.bejeweled_deluxe and #G:GetGames("singleplayer") == 3,
     "Independent registration missing"
 )
-check(G.Registry.bejeweled_deluxe.title == "Bejeweled Deluxe", "Wrong title")
+check(G.Registry.bejeweled_deluxe.title == "KIC Bejeweled", "Wrong title")
 G.UI:OpenLauncher("singleplayer")
 check(G.UI.launcherCards[2].icon.textureValue == G.Artwork["bejeweled-deluxe-card"].file, "Deluxe card missing")
 G.UI:OpenLauncher("home")
@@ -352,10 +352,7 @@ check(
     "Wrong hero"
 )
 check(G:StartSingleplayer("bejeweled_deluxe") and D.running and #D.cells == 64, "Deluxe not playable")
-check(
-    D.title.text == "BEJEWELED DELUXE" and G.DB.recentGames[1] == "bejeweled_deluxe",
-    "Title/recent integration missing"
-)
+check(D.title.text == "KIC BEJEWELED" and G.DB.recentGames[1] == "bejeweled_deluxe", "Title/recent integration missing")
 check(D.root ~= G.Bejeweled.root and D.Gems ~= G.Bejeweled.Gems, "UI state shared")
 local baseIcons = G:GetPieceIcons("bejeweled")
 for _, theme in ipairs({ "original", "class" }) do

@@ -5,7 +5,7 @@ for name, method in pairs(Games.BejeweledUI) do
     D[name] = method
 end
 D.heroArt, D.cardArt = "bejeweled-deluxe-hero", "bejeweled-deluxe-card"
-D.displayTitle, D.titleSize = "BEJEWELED DELUXE", 20
+D.displayTitle, D.titleSize = "KIC BEJEWELED", 24
 D.resultName = "KICGamesBejeweledDeluxeResult"
 D.description =
     "Create Bombs with four, Color Orbs with five, and Lightning with T/L matches. Combine specials for huge chains. No time limit."
