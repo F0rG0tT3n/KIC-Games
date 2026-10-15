@@ -17,17 +17,18 @@ score gains have lightweight visual feedback.
 ## Playing
 
 Click an icon, then click an icon immediately above, below, left or right to swap.
-Alternatively, hold the left mouse button and drag one full rendered tile width
-or height from the pressed cursor position. The dominant axis chooses left,
-right, up or down (horizontal wins exact ties). The immediately adjacent tile
-swaps as soon as the threshold is reached, while the button is still held.
-The cursor may be anywhere, including outside the board; only the destination
-neighbor must exist. There is exactly one swap attempt per press, regardless of
-how far or how long you drag. Invalid matches use the existing rollback animation.
-Releasing early cancels drag swapping; a moved gesture cannot also click-select
-or click-swap. Stationary clicks still select and swap as before.
-Thresholds use actual tile dimensions and effective UI scale, not center spacing
-or diagonal distance. Pause, menus, hiding, resizing/rebuilding and stopping
+Alternatively, hold the left mouse button and drag onto a tile immediately above,
+below, left or right. The swap starts as soon as the cursor enters that neighbor;
+you do not need to drag a full tile's width or height. Starting near an edge needs
+only the short remaining distance and the gap. Gaps and diagonal tiles do not
+trigger a swap. Fast movement also detects the first neighbor crossed between
+updates, even if the cursor ends farther away or outside the board.
+There is exactly one swap attempt per press. Invalid matches use the existing
+rollback animation. Releasing before entering/crossing a neighbor cancels drag
+swapping; a moved gesture cannot also click-select or click-swap. Stationary
+clicks still select and swap as before.
+Hit testing uses actual tile rectangles and effective UI scale. Pause, menus,
+hiding, resizing/rebuilding and stopping
 cancel active tracking. The temporary update handler is removed on trigger,
 cancellation or release; no additional drag polling runs while idle.
 The selected cell has a thick gold outline, a bright background and a selection

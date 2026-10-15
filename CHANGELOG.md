@@ -2,6 +2,7 @@
 
 ## 0.13.0 - 2026-10-15 - Options 2.0
 
+- Bejeweled drag swaps now trigger on entering/crossing an actual adjacent tile rather than a full-tile displacement. Gaps and diagonal cells do not trigger; fast drags detect the first crossed neighbor, with one attempt per press and existing rollback/click behavior preserved.
 - Returning from gameplay features the active game on Home, including its artwork, title and resume action, while preserving the paused session.
 - Mute Sounds now shows ON when muted and OFF when audible. Muting disables previews and dims/disables the volume slider without losing its saved level; unmuting restores controls. Audio help now describes Master routing.
 - Replaced Options with embedded Graphics, Audio and Window tabs using shared premium frames, neon choices, class/spec selectors, toggles, sliders and live previews.

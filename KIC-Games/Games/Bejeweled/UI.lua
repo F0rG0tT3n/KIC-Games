@@ -3,6 +3,31 @@ local B, Theme = Games.Bejeweled, Games.Theme
 local function key(x, y)
     return (y - 1) * 8 + x
 end
+local neighbors = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }
+-- Clip the last cursor segment against a tile so fast movement cannot skip it.
+local function entersTile(x0, y0, x1, y1, left, right, bottom, top)
+    local dx, dy = x1 - x0, y1 - y0
+    local enter, leave = 0, 1
+    if dx == 0 then
+        if x0 < left or x0 > right then
+            return
+        end
+    else
+        local a, b = (left - x0) / dx, (right - x0) / dx
+        enter, leave = math.max(enter, math.min(a, b)), math.min(leave, math.max(a, b))
+    end
+    if dy == 0 then
+        if y0 < bottom or y0 > top then
+            return
+        end
+    else
+        local a, b = (bottom - y0) / dy, (top - y0) / dy
+        enter, leave = math.max(enter, math.min(a, b)), math.min(leave, math.max(a, b))
+    end
+    if enter < leave or (enter == leave and x1 >= left and x1 <= right and y1 >= bottom and y1 <= top) then
+        return enter
+    end
+end
 -- Inspect intact rows/columns before Step removes pending cells. Separate
 -- simultaneous triples and crossing triples remain match-3, regardless of count.
 function B:MatchSoundEvent()
@@ -56,37 +81,56 @@ function B:UpdateDrag()
         return
     end
     local px, py = GetCursorPosition()
-    local dx, dy = px - drag.startX, py - drag.startY
-    local horizontal = math.abs(dx) >= math.abs(dy)
-    local distance = horizontal and math.abs(dx) or math.abs(dy)
-    if distance == 0 then
+    if px == drag.lastX and py == drag.lastY then
         return
     end
     self.suppressDragClick = true
     self.selected, self.hint = { x = drag.x, y = drag.y }, nil
-    local tx = drag.x + (horizontal and (dx > 0 and 1 or -1) or 0)
-    -- Cursor Y grows upwards; board rows grow downwards.
-    local ty = drag.y + (not horizontal and (dy > 0 and -1 or 1) or 0)
-    local inside = tx >= 1 and tx <= 8 and ty >= 1 and ty <= 8
-    self.dragTarget = inside and { x = tx, y = ty } or nil
-    local threshold = horizontal and drag.width or drag.height
-    local position = horizontal and px or py
-    local origin = horizontal and drag.startX or drag.startY
-    -- Compare absolute cursor bounds to avoid subtractive rounding at exact
-    -- thresholds under fractional UI scales. No slop or center spacing is added.
-    if position >= origin + threshold or position <= origin - threshold then
-        -- Disable tracking before invoking the existing swap/rollback path.
+    local scale = self.board:GetEffectiveScale()
+    local left = self.board:GetLeft() + self.boardInset
+    local top = self.board:GetTop() - self.boardInset
+    self.dragTarget = nil
+    local first, targetX, targetY
+    -- Hit actual neighboring tile rectangles, excluding the gaps between cells.
+    -- Compare in physical cursor coordinates to account for effective UI scale.
+    for _, offset in ipairs(neighbors) do
+        local tx, ty = drag.x + offset[1], drag.y + offset[2]
+        if tx >= 1 and tx <= 8 and ty >= 1 and ty <= 8 then
+            local target = self.cells[key(tx, ty)]
+            local x, y = left + (tx - 1) * self.step, top - (ty - 1) * self.step
+            local entry = entersTile(
+                drag.lastX,
+                drag.lastY,
+                px,
+                py,
+                x * scale,
+                (x + target:GetWidth()) * scale,
+                (y - target:GetHeight()) * scale,
+                y * scale
+            )
+            if entry and (not first or entry < first) then
+                first, targetX, targetY = entry, tx, ty
+            end
+        end
+    end
+    drag.lastX, drag.lastY = px, py
+    if first then
         self:CancelDrag()
         self.selected = nil
-        if inside then
-            self:TrySwap(drag.x, drag.y, tx, ty, true)
-        else
-            self.message = "That direction is outside the board."
-            self:Render()
-        end
+        self:TrySwap(drag.x, drag.y, targetX, targetY, true)
         return
     end
-    local scale = self.board:GetEffectiveScale()
+    if
+        px < left * scale
+        or px > (left + 7 * self.step + self.tileSize) * scale
+        or py > top * scale
+        or py < (top - 7 * self.step - self.tileSize) * scale
+    then
+        self:CancelDrag()
+        self.selected = nil
+        self:Render()
+        return
+    end
     self.dragFrame:ClearAllPoints()
     self.dragFrame:SetPoint(
         "TOPLEFT",
@@ -110,6 +154,8 @@ function B:StartDrag(x, y)
         y = y,
         startX = px,
         startY = py,
+        lastX = px,
+        lastY = py,
         scale = scale,
         width = cell:GetWidth() * scale,
         height = cell:GetHeight() * scale,

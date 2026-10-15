@@ -1611,27 +1611,29 @@ local function releaseDrag(source)
     source.scripts.OnMouseUp(source, "LeftButton")
     source.scripts.OnClick(source, "LeftButton")
 end
--- Each direction, threshold edge, resized cells and effective scale. No native
--- OnDragStart/OnDragStop is involved; mouse-down alone starts temporary tracking.
+-- Entering any cardinal neighbor triggers immediately, even after a shorter
+-- movement than one tile. Gaps and source-cell movement must not trigger.
 for _, scale in ipairs({ 0.75, 1, 1.2, 1.35, 1.5 }) do
     for _, direction in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
         dragRound()
         DragGames.UI:SetWindowScale(scale)
         local source = dragFrom(4, 4)
         local width, height = source:GetWidth(), source:GetHeight()
+        local entry = Drag.step - width / 2
         check(
             Drag.drag
                 and Drag.drag.startX == dragStartX
                 and Drag.drag.startY == dragStartY
                 and Drag.dragTracker.scripts.OnUpdate
                 and not source.scripts.OnDragStart,
-            "Mouse-down did not record the gesture/start temporary tracking"
+            "Mouse-down did not capture the drag gesture"
         )
-        dragBy(direction[1] * (width - 1), direction[2] * (height - 1))
-        check(not Drag.swap and Drag.drag and Drag.dragFrame:IsShown(), "Sub-tile drag triggered a swap")
-        dragBy(direction[1] * width, direction[2] * height)
+        dragBy(direction[1] * (entry - 0.25), direction[2] * (entry - 0.25))
+        check(not Drag.swap and Drag.drag and Drag.dragFrame:IsShown(), "The gap before a neighbor triggered a swap")
+        dragBy(direction[1] * (entry + 0.25), direction[2] * (entry + 0.25))
         check(
-            Drag.swap
+            entry + 0.25 < width
+                and Drag.swap
                 and Drag.swap.x == 4
                 and Drag.swap.y == 4
                 and Drag.swap.tx == 4 + direction[1]
@@ -1641,7 +1643,7 @@ for _, scale in ipairs({ 0.75, 1, 1.2, 1.35, 1.5 }) do
                 and not Drag.dragFrame:IsShown()
                 and not Drag.dragTracker.scripts.OnUpdate
                 and dragClient.env.mouseDown,
-            "One exact rendered tile did not immediately swap along the intended axis"
+            "Entering a neighboring tile did not immediately swap before a full-tile displacement"
         )
         local swap = Drag.swap
         dragBy(direction[1] * width * 8, direction[2] * height * 8)
@@ -1650,62 +1652,61 @@ for _, scale in ipairs({ 0.75, 1, 1.2, 1.35, 1.5 }) do
         check(Drag.swap == swap and not Drag.selected, "Release/late click duplicated the drag action")
     end
 end
--- Independent width/height thresholds, not center spacing or Euclidean distance.
-for _, direction in ipairs({ { 1, 0 }, { 0, -1 } }) do
-    dragRound()
-    DragGames.UI:SetWindowScale(1)
-    local tile = Drag.cells[28]
-    tile:SetSize(48, 52)
-    local source = dragFrom(4, 4)
-    dragBy(direction[1] * 47, direction[2] * 51)
-    check(not Drag.swap, "A 48x52 tile used a smaller threshold")
-    dragBy(direction[1] * 48, direction[2] * 52)
-    check(Drag.swap and not Drag.dragTracker.scripts.OnUpdate, "Actual tile width/height was ignored")
-    releaseDrag(source)
-end
-for _, delta in ipairs({ { 1, 0.99 }, { -1, 0.6 }, { 0.6, 1 }, { -0.99, -1 }, { 1, 1 } }) do
-    dragRound()
-    local source = dragFrom(4, 4)
-    local size = source:GetWidth()
-    dragBy(delta[1] * (size - 1), delta[2] * (size - 1))
-    check(not Drag.swap, "Diagonal Euclidean distance bypassed axis threshold")
-    dragBy(delta[1] * size, delta[2] * size)
-    local horizontal = math.abs(delta[1]) >= math.abs(delta[2])
-    check(
-        Drag.swap
-            and Drag.swap.tx == 4 + (horizontal and (delta[1] > 0 and 1 or -1) or 0)
-            and Drag.swap.ty == 4 + (not horizontal and (delta[2] > 0 and -1 or 1) or 0),
-        "Diagonal dominant axis (horizontal on ties) selected the wrong neighbor"
-    )
-    releaseDrag(source)
-end
--- Threshold begins at the pressed point, even at the edge of a tile.
+-- Starting near an edge must need only the remaining distance plus the gap.
 for _, sign in ipairs({ -1, 1 }) do
     dragRound()
     local size = Drag.cells[28]:GetWidth()
     local source = dragFrom(4, 4, sign * (size / 2 - 1), 0)
-    dragBy(sign * (size - 0.25), 0)
-    check(not Drag.swap, "Pressing near an edge shortened the drag threshold")
-    dragBy(sign * size, 0)
-    check(Drag.swap and Drag.swap.tx == 4 + sign, "Threshold was measured from the tile center instead of mouse-down")
+    local entry = Drag.step - size + 1
+    dragBy(sign * (entry - 0.25), 0)
+    check(not Drag.swap, "Near-edge drag swapped before reaching the next tile")
+    dragBy(sign * (entry + 0.25), 0)
+    check(Drag.swap and Drag.swap.tx == 4 + sign, "Near-edge drag still required a full tile of movement")
     releaseDrag(source)
 end
--- Whichever dominant axis reaches threshold first consumes the entire gesture.
+-- Diagonal tiles and gaps are not adjacent targets. Entering a cardinal tile
+-- afterward uses that tile, regardless of the earlier drag direction.
+for _, direction in ipairs({ { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } }) do
+    dragRound()
+    local source = dragFrom(4, 4)
+    cursorOn(4 + direction[1], 4 + direction[2])
+    Drag:UpdateDrag()
+    check(not Drag.swap and Drag.drag, "A diagonal destination triggered a cardinal swap")
+    cursorOn(4 + direction[1], 4)
+    Drag:UpdateDrag()
+    check(
+        Drag.swap and Drag.swap.tx == 4 + direction[1] and Drag.swap.ty == 4,
+        "Entering a cardinal neighbor after a diagonal drag did not swap"
+    )
+    releaseDrag(source)
+end
+-- Use the destination's actual rectangle, including non-square dimensions.
 dragRound()
+DragGames.UI:SetWindowScale(1)
+local target = Drag.cells[29]
+target:SetSize(20, 10)
 local source = dragFrom(4, 4)
-local size = source:GetWidth()
-dragBy(size - 1, size * 0.3)
-check(not Drag.swap, "Direction preview swapped before threshold")
-dragBy(size - 1, size)
-check(Drag.swap and Drag.swap.ty == 3 and Drag.swap.tx == 4, "First threshold axis was not used")
+cursorOn(5, 4)
+dragClient.env.cursorX = dragClient.env.cursorX + (10 - Drag.tileSize / 2)
+Drag:UpdateDrag()
+check(not Drag.swap and Drag.drag, "Cursor outside the actual target rectangle triggered a swap")
+dragClient.env.cursorY = dragClient.env.cursorY + (Drag.tileSize / 2 - 5)
+Drag:UpdateDrag()
+check(Drag.swap and Drag.swap.tx == 5, "Actual non-square destination bounds were ignored")
 releaseDrag(source)
--- The cursor may be many cells away or outside the board. Only one neighbor moves.
+-- Distant diagonal tiles do not stand in for a crossed cardinal neighbor.
+dragRound()
+source = dragFrom(4, 4)
+cursorOn(6, 6)
+Drag:UpdateDrag()
+check(not Drag.swap and Drag.drag, "A non-adjacent destination triggered a swap")
+releaseDrag(source)
 dragRound()
 source = dragFrom(2, 1)
 dragBy(0, -source:GetHeight() * 50)
 check(
     Drag.swap and Drag.swap.valid and Drag.swap.ty == 2 and Drag.model.moves == 1,
-    "Off-board cursor did not immediately swap only the adjacent tile"
+    "Fast off-board movement skipped the first crossed neighbor"
 )
 releaseDrag(source)
 for _, edge in ipairs({ { 1, 4, -1, 0 }, { 8, 4, 1, 0 }, { 4, 1, 0, 1 }, { 4, 8, 0, -1 } }) do
@@ -1718,7 +1719,7 @@ for _, edge in ipairs({ { 1, 4, -1, 0 }, { 8, 4, 1, 0 }, { 4, 1, 0, 1 }, { 4, 8,
             and not Drag.dragTracker.scripts.OnUpdate
             and Drag.model.moves == 0
             and Drag.model.score == 0,
-        "Out-of-board destination did not cancel/disable the gesture"
+        "Out-of-board destination did not cancel the gesture"
     )
     dragBy(-edge[3] * source:GetWidth(), -edge[4] * source:GetHeight())
     releaseDrag(source)
@@ -1739,7 +1740,7 @@ check(Drag.swap and Drag.swap.valid and Drag.model.moves == 1, "Click-to-swap st
 for _, missed in ipairs({ false, true }) do
     dragRound()
     source = dragFrom(2, 1)
-    dragBy(0, -source:GetHeight() * 0.99)
+    dragBy(0, -source:GetHeight() * 0.25)
     dragClient.env.mouseDown = false
     if missed then
         Drag:UpdateDrag()
@@ -1760,7 +1761,7 @@ dragRound()
 source = dragFrom(2, 1)
 cursorOn(2, 2)
 releaseDrag(source)
-check(not Drag.swap and Drag.model.moves == 0, "Mouse-up evaluated an untracked threshold crossing")
+check(not Drag.swap and Drag.model.moves == 0, "Mouse-up evaluated an untracked neighbor entry")
 -- Invalid matches retain rollback timing, even while the button stays held.
 dragRound()
 local attempts = 0
