@@ -193,6 +193,8 @@ local function client(name, realm)
         "SetBackdrop",
         "SetClampedToScreen",
         "EnableMouse",
+        "SetClipsChildren",
+        "RegisterForClicks",
         "EnableMouseWheel",
         "SetOrientation",
         "SetValueStep",
@@ -453,8 +455,8 @@ local function register(c, version)
 end
 
 check(
-    #A:GetGames("singleplayer") == 1 and A.Registry.tetris and #A:GetGames("multiplayer") == 0,
-    "Bundled Tetris must only appear in singleplayer"
+    #A:GetGames("singleplayer") == 2 and A.Registry.tetris and A.Registry.bejeweled and #A:GetGames("multiplayer") == 0,
+    "Bundled games must only appear in singleplayer"
 )
 A.UI:Toggle()
 check(A.UI.frame:IsShown(), "Slash/minimap launcher failed to open")
@@ -979,18 +981,18 @@ J:RegisterGame({
     end,
     OnStart = function() end,
 })
-check(#J:GetGames("singleplayer") == 2 and #J:GetGames("multiplayer") == 1, "Game modes were not separated")
+check(#J:GetGames("singleplayer") == 3 and #J:GetGames("multiplayer") == 1, "Game modes were not separated")
 J.UI.singleTab.scripts.OnClick()
 check(
     J.UI.tab == "singleplayer" and not J.UI.browserPanel:IsShown() and J.UI.singlePanel:IsShown(),
     "Singleplayer tab kept multiplayer panels visible"
 )
 check(
-    J.UI.gameRows[1].title.text == "Solo fixture" and J.UI.soloPlay.enabled,
+    J.UI.gameRows[2].title.text == "Solo fixture" and J.UI.soloPlay.enabled,
     "Singleplayer tab did not show an available offline game"
 )
 local queued = #packets
-J.UI.gameRows[1].scripts.OnClick()
+J.UI.gameRows[2].scripts.OnClick()
 J.UI.soloPlay.scripts.OnClick()
 check(
     J.ActiveGame and J.Lobby.mode == "singleplayer" and soloMessages == 1,
@@ -1160,6 +1162,125 @@ check(
     T:Storage().best.score == 0 and T:Storage().best.level == 1 and G.DB.tetris.preset == "MAGE",
     "Invalid saved values were not repaired"
 )
+local jewel = client("Jeweler", "GemRealm")
+local Q, Bj = jewel.games, jewel.games.Bejeweled
+jewel.grouped = true
+local jewelPackets = #packets
+check(Q:StartSingleplayer("bejeweled"), "Bejeweled did not start from the registry")
+check(Bj.running and Bj.root:IsVisible() and #Bj.cells == 64, "Bejeweled board did not initialize")
+check(not Bj.root.keyboardEnabled, "Mouse game unnecessarily captured keyboard input")
+local jewelAssets = assert(loadfile(root .. "../tests/bejeweled-icon-files.lua"))()
+local seenGems = {}
+check(#Bj.Gems == 7, "Bejeweled does not have seven gem kinds")
+for _, gem in ipairs(Bj.Gems) do
+    check(
+        gem.icon ~= 134400 and jewelAssets[gem.icon] and not seenGems[gem.icon],
+        "Bejeweled has a missing or duplicate gem icon"
+    )
+    seenGems[gem.icon] = true
+end
+-- Use an exact stable board so UI checks do not depend on random cascades.
+local function jewelBoard(playable)
+    for y = 1, 8 do
+        for x = 1, 8 do
+            Bj.model.board[y][x] = (x + 2 * y) % 7 + 1
+        end
+    end
+    if playable then
+        Bj.model.board[1][1], Bj.model.board[1][2], Bj.model.board[1][3], Bj.model.board[2][2] = 1, 2, 1, 1
+    end
+end
+jewelBoard(true)
+jewel.env.rejectTexture = Bj.Gems[1].icon
+Bj:Render()
+check(Bj.cells[1].icon.textureValue == 237189, "Rejected jewel texture did not use a known gem fallback")
+jewel.env.rejectTexture = nil
+local refillIndex = 0
+Bj.model.random = function(n)
+    refillIndex = refillIndex + 1
+    return ({ 2, 1, 2 })[refillIndex] or math.random(n)
+end
+Bj:Hint()
+check(Bj.hint ~= nil and Bj.model.score == 0, "Hint was missing or changed score")
+for _ = 1, 31 do
+    Bj:Advance(0.1)
+end
+check(not Bj.hint and Bj.model.moves == 0 and Bj.model.score == 0, "Hint did not expire or played a move automatically")
+Bj:Hint()
+Bj:Click(2, 1, "LeftButton")
+check(Bj.selected and not Bj.hint, "Gem selection did not clear hint")
+Bj:Click(2, 1, "RightButton")
+check(not Bj.selected, "Right click did not clear selection")
+Bj:Click(8, 8, "LeftButton")
+Bj:Click(7, 8, "LeftButton")
+check(Bj.swap and not Bj.swap.valid, "Invalid swap did not animate back")
+for _ = 1, 4 do
+    Bj:Advance(0.1)
+end
+check(not Bj.swap and Bj.model.moves == 0 and Bj.model.score == 0, "Invalid swap awarded points or did not return")
+Bj:Click(2, 1, "LeftButton")
+Bj:Click(2, 2, "LeftButton")
+check(Bj.swap and Bj.swap.valid and Bj.model.moves == 1, "Neighbor clicks did not animate a valid swap")
+Bj:Click(7, 7, "LeftButton")
+check(not Bj.selected and Bj.model.moves == 1, "Input was accepted while a swap was animating")
+local swapTime = Bj.swap.time
+Q.UI:ShowHome()
+Bj:Advance(0.1)
+check(Bj.paused and Bj.swap.time == swapTime, "Hidden Bejeweled did not pause its animation")
+Q.UI:ShowGame()
+Bj:Pause(false)
+jewel.env.keyboardFocus = {}
+Bj:Advance(0.1)
+check(Bj.paused and Bj.swap.time == swapTime, "Typing in chat advanced a gem swap")
+jewel.env.keyboardFocus = nil
+Bj:Pause(false)
+Q.UI:ShowResults()
+Bj:Advance(0.1)
+check(Bj.paused, "History did not pause Bejeweled")
+Q.UI.resultsFrame:Hide()
+Bj:Pause(false)
+for _ = 1, 200 do
+    Bj:Advance(0.1)
+    if not Bj.swap and not Bj.fall and Bj.model.phase == "idle" then
+        break
+    end
+end
+check(Bj.model.score >= 150 and Q.DB.bejeweled.best.score == Bj.model.score, "Resolved clear did not save high score")
+check(not Bj.swap and not Bj.fall and Bj.model.phase == "idle", "Animated cascades did not settle")
+local jewelBest = Q.DB.bejeweled.best.score
+jewel.env.SlashCmdList.KICBEJEWELED("share")
+check(
+    Bj.paused and jewel.env.chatDraft:find("/p KIC Bejeweled best:", 1, true) == 1,
+    "Bejeweled share did not draft party chat"
+)
+Q:AbortGame()
+check(
+    not Bj.running and not Q.ActiveGame and not Q.Lobby and Q.DB.bejeweled.best.score == jewelBest,
+    "Quick stop lost the Bejeweled best or failed to release the session"
+)
+check(#packets == jewelPackets, "Bejeweled emitted multiplayer messages")
+local jewelFrames = #jewel.frames
+check(Q:StartSingleplayer("bejeweled"), "Bejeweled replay did not start")
+check(
+    #jewel.frames == jewelFrames and Q.DB.bejeweled.best.score == jewelBest,
+    "Bejeweled replay leaked UI frames or lost best"
+)
+jewelBoard(false)
+Bj.model.score, Bj.model.moves, Bj.model.cleared, Bj.model.bestCascade = 200, 1, 4, 1
+Bj.model:CheckEnd()
+Bj:Advance(0)
+check(not Q.ActiveGame and not Q.Lobby and Bj.summary:IsShown(), "No moves did not complete Bejeweled and show results")
+check(Q:GetResults()[1].entries[1].score == 200, "Bejeweled completed result lost the score")
+check(Bj.summary.movable and Bj.summary.strata == "FULLSCREEN_DIALOG", "Bejeweled result lost overlay dragging")
+Q.UI.frame:Hide()
+check(not Bj.summary:IsShown(), "Closing launcher left Bejeweled results behind")
+local jewelSaved = Q.DB.bejeweled
+local jewelReload = client("ReloadedJeweler", "GemRealm")
+jewelReload.env.KICGamesDB = { bejeweled = jewelSaved }
+jewelReload:event("ADDON_LOADED", "KIC-Games")
+check(jewelReload.games.Bejeweled:Storage().best.score == jewelSaved.best.score, "Reload lost Bejeweled high score")
+Q.DB.bejeweled = { best = { score = 0 / 0, moves = -1, cleared = math.huge } }
+check(Bj:Storage().best.score == 0 and Bj:Storage().best.moves == 0, "Malformed Bejeweled save was not repaired")
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))
 
 -- Optional layout snapshots from the actual UI constructors, for offline visual review.
@@ -1178,12 +1299,13 @@ if arg[1] == "--preview" then
         end
         return "null"
     end
-    local function snapshot(name)
+    local function snapshot(name, owner)
+        local previewFrames = (owner or t).frames
         local ids, rows = {}, {}
-        for i, frame in ipairs(t.frames) do
+        for i, frame in ipairs(previewFrames) do
             ids[frame] = i
         end
-        for i, frame in ipairs(t.frames) do
+        for i, frame in ipairs(previewFrames) do
             local fields = { '"id":' .. i }
             for _, key in ipairs({
                 "width",
@@ -1235,4 +1357,13 @@ if arg[1] == "--preview" then
     T.model.gameover = true
     T:Advance(0)
     snapshot("game-over")
+    Q.UI:SelectTab("singleplayer")
+    Q:StartSingleplayer("bejeweled")
+    Bj:Hint()
+    snapshot("bejeweled", jewel)
+    jewelBoard(false)
+    Bj.model.score, Bj.model.moves, Bj.model.cleared, Bj.model.bestCascade = 3200, 12, 50, 3
+    Bj.model:CheckEnd()
+    Bj:Advance(0)
+    snapshot("bejeweled-results", jewel)
 end

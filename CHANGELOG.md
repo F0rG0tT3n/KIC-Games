@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 - 2026-10-15
+
+- Added Bejeweled as a second independent singleplayer module with an 8×8 board and seven fixed WoW gem icons.
+- Added adjacent swaps, match-three lines, falling gems, animated cascades, free hints and untimed no-moves game over.
+- Added cascade scoring, saved high scores, editable chat sharing, replay and movable results.
+- Paused gameplay and animations on hidden windows, chat focus or match history; kept immediate framework stopping.
+- Added pure engine checks and integration coverage for launching, animation input locks, pauses, records, results and replay.
+
 ## 0.5.0 - 2026-10-14
 
 - Restyled the launcher, lobby, Tetris and result dialogs with dark cards, blue accents, clean typography, custom flat buttons and thin scrollbars.

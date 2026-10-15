@@ -1,0 +1,61 @@
+# Bejeweled
+
+Open **Singleplayer → Bejeweled → Play**, or use `/kicbejeweled`.
+This is a relaxed, untimed singleplayer match-three game on an 8×8 board.
+
+## Playing
+
+Click a gem, then click a gem immediately above, below, left or right to swap.
+A swap must create a horizontal or vertical line of at least three matching gems.
+An invalid swap animates back and does not count as a move. Click the selected
+gem again, or right-click any cell, to clear your selection. Clicking a different
+non-neighbor selects that gem instead.
+
+Matches disappear, gems fall into the gaps, and new gems enter from above.
+New matches create cascades until the board settles. Input is blocked during
+swap and cascade animations. The starting board has no automatic matches and
+always has a legal move.
+
+**Hint** highlights one available swap for three seconds without spending points.
+There is no timer or move limit. A run ends when the settled board has no legal
+swaps left. This initial version uses ordinary gems; long matches clear all gems
+in their line, and crossing matches count their intersection once.
+
+## Score, records and sharing
+
+Each cleared gem earns **50 × cascade number** points: the first clear uses ×1,
+the next automatic clear uses ×2, and so on. The multiplier resets on your next
+manual swap. The side panel shows score, best score, accepted moves, cleared gems
+and your largest cascade. Hints and invalid swaps do not add points or moves.
+
+The account-wide best is saved under `KICGamesDB.bejeweled.best`, with score,
+moves, gems, best cascade and timestamp. It updates after each clear and survives
+a quick interruption. WoW writes SavedVariables on UI reload or normal logout;
+the active board is not restored after reloading.
+
+**Share best**, or `/kicbejeweled share`, opens an editable normal chat draft.
+It defaults to instance/raid/party chat when grouped, or say when solo. Press Enter
+to send. Sharing pauses an active run and never sends a message automatically.
+
+## Pausing and stopping
+
+Use **Pause / Resume**. Hiding the game, returning to Launcher, opening match
+history or focusing a chat/edit box pauses the board and its animations. Reopen
+with **Open game** or `/kicbejeweled`, then click **Resume**.
+
+**Stop match** or `/kicgames stop` immediately ends the session without a
+confirmation. The framework records it as interrupted, without a loss. Game over
+instead records your score and opens a movable result dialog above the launcher,
+with **Play again / Share best**. Closing the launcher also closes that dialog.
+
+## Module
+
+`Games/Bejeweled/Engine.lua` contains pure rules, move search and staged cascades.
+`UI.lua` handles the board, animations, hints, pauses and result dialog.
+`Module.lua` registers the game and handles saved records, results and chat drafts.
+It uses seven fixed WoW jewel texture FileDataIDs, independent of spell lookups;
+the fallback is another known jewel icon. No separate addon installation is needed,
+and the game sends no multiplayer addon messages. Combat handling is outside scope.
+
+Run `lua tests/bejeweled.lua` for the rules checks and `lua tests/framework.lua`
+for launcher, animation, focus, result, persistence and quick-stop integration checks.
