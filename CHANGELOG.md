@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0 - 2026-10-15 - Both gameplay screens
+
+- Rebuilt Bejeweled around the supplied artwork/instructions/actions, centered square 8x8 class-icon board, and score/gold-best/statistics/tip composition.
+- Rebuilt Tetris with a left information/keycap panel, square-cell 10x20 playfield, grouped score/best/lines/level, five real queue slots, violet hold and Pause action.
+- Extended the shared Theme with framed boards, diamond/crown accents, icon actions/rows, keycaps, fitted scores, gold-best panels and reusable pause menus; registered eleven small original transparent TGA masks.
+- Gameplay headers show Back to Launcher, live group status and Close; Back/Close immediately pause without replacing the run. Restart/Stop remain in the pause menu and urgent-stop slash commands remain available.
+- Preserved engines, simulation timing, saved schema, class presets, results/recent-game integration and multiplayer protocol. Drag distances and cursor hit-testing now follow the resized Bejeweled board.
+- Added focused responsive, navigation, input, pause-menu, feedback and frame-reuse regressions; documented illustrated skin/ornament replacements. No ZIP or changes to the approved Launcher presentation beyond the gameplay header/container integration.
+
 ## 0.11.0 - 2026-10-15 - Shared premium UI components
 
 - Removed the Featured Game surface's opaque native backdrop fill and normalized texture tint/blend/visibility when refreshing artwork.

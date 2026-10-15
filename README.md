@@ -1,7 +1,7 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.11.0. Intended for waiting for the group to fill and the time between dungeons.
+0.12.0. Intended for waiting for the group to fill and the time between dungeons.
 Includes **[Tetris](TETRIS.md)** with 13 class icon presets and
 **[Bejeweled](BEJEWELED.md)** with animated gem swaps and cascades.
 Both singleplayer modules have saved high scores, editable chat sharing and
@@ -18,7 +18,13 @@ and [replaceable artwork slots](design/MISSING_ASSETS.md) for remaining art.
 The [shared component checkpoint](design/CHECKPOINT_3.md) adds opt-in premium
 frames, stateful neon buttons, statistic/status panels, game cards and section
 headings. See the [component API](design/COMPONENTS.md) for module reuse.
-Bejeweled and Tetris gameplay UI redesigns remain deferred.
+Both gameplay screens now use the reference three-column composition: artwork or
+keycap controls on the left, a framed square-cell board in the center, and real
+statistics/previews on the right. See the [gameplay checkpoint](design/CHECKPOINT_4.md)
+for changed files, automated validation, artwork substitutions and live WoW tests.
+The gameplay header contains **Back to Launcher**, party status and Close.
+Back/Close pause and preserve the run; Resume opens it again. Each game's pause
+menu supplies **Resume**, **Restart run** and **Stop match**.
 
 Choose your class once in **Options**; it updates both games immediately without
 resetting the board or score. Your previous Tetris class selection migrates on
@@ -91,9 +97,9 @@ packets. Join-request IDs ensure an earlier roster cannot acknowledge a new join
 
 ## Dungeon group ready: stop immediately
 
-The framework supplies a **Stop match** button above every game's own UI, and
-the same action in the lobby and through `/kicgames stop`. Any participant can
-use it. There is no confirmation and the local game stops and closes without
+Use **Stop match** from the Launcher/lobby, the bundled games' pause menu, or
+`/kicgames stop`. The gameplay header uses **Back to Launcher** to preserve the
+session. Any participant can stop a match. There is no confirmation and the local game stops and closes without
 waiting for the host. The interrupt travels on a separate, prioritized addon
 queue, so it cannot be trapped behind a large module-state transfer or break
 its multipart framing. Remote delivery still depends on WoW's communication

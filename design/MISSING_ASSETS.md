@@ -1,4 +1,4 @@
-# Artwork replacement slots — Launcher checkpoint
+# Artwork replacement slots
 
 All eight supplied textures needed by this checkpoint are present and copied,
 unchanged, to `KIC-Games/Media/KICUI/`. No game artwork is missing for the two
@@ -59,4 +59,33 @@ file. Illustrated corner/glow variants can replace the parent component's
 window/button/card/stat/status skin through the registry. They do not require
 screenshots, fake Unicode ornaments, extra icon downloads or continuously running
 animation. All eight supplied artwork TGAs and the five navigation TGAs remain
-unchanged. No new game artwork is missing.
+unchanged. The gameplay checkpoint adds the optional decorative slots below.
+
+## Gameplay checkpoint (0.12.0)
+
+The actual `new-bejeweled.png` and `new-tetris.png` references include illustrated
+frames and ornaments that are not separate files in the supplied runtime kit.
+Their overall composition is implemented with native controls and the existing
+supplied artwork. These replacements are intentionally more geometric than the
+painted reference; they are not pixel-perfect texture replicas.
+
+| Registry key / asset | Approximate source size and alpha | Intended appearance and use | Current replaceable placeholder |
+| --- | --- | --- | --- |
+| `game-board-frame` | 1024x1024 RGBA, transparent center; must support square and tall variants | Stepped cyan double frame, soft outward bloom, luminous corner cuts and diamonds around both boards | `file=false`; `Theme:GameBoard` supplies layered PremiumFrame, inset L rails, static glow and four separate diamond textures. Supply an edge-only TGA via Artwork.lua; use scalable borders for final aspect-specific work. |
+| `game-stats-frame` | 512x1024 RGBA, transparent center | Engraved cyan/gold crown-top Bejeweled statistics frame; compatible shared Tetris statistics border | `file=false`; PremiumFrame native rails/corners, separate crown and supplied low-alpha lion crest; gold best uses tinted native premium edges. |
+| `gem-cluster` | 256x128 RGBA, fully transparent background | Low violet/blue crystal cluster above Bejeweled's tip panel | `file=false`; a muted crop of the supplied `bejeweled-card` in the same bounded decoration region. Replace this slot without editing the game UI. Hidden when the compact region cannot fit. |
+| `ornament-crown` | 64x64 RGBA mask | Illustrated gold crown above Bejeweled stats, beside BEST in both games | Original geometric `Icons/crown.tga`, tinted gold. Replace the central registry path for a more ornate crown. |
+| `ornament-diamond` | 64x64 RGBA mask | Thin luminous cyan lozenge at each board edge | Original geometric `Icons/diamond.tga`. Replace through the registry for illustrated glow. |
+
+Preferred final filenames are `game-board-frame.tga`, `game-stats-frame.tga`,
+`gem-cluster.tga`, `crown.tga`, and `diamond.tga`, inside runtime Media/KICUI.
+Keep transparency around ornaments and inside border centers; do not bake text,
+scores, icons or buttons into them. Every registered real path currently exists.
+
+Nine matching gameplay action/instruction masks (`gem`, `hint`, `share`, `swap`,
+`clock`, `infinity`, `cascade`, `pause`, `back`) plus the two ornaments are original
+64x64 antialiased RGBA TGAs in `Media/KICUI/Icons/`. They use shared Theme tint,
+are centrally replaceable, and avoid missing Blizzard atlas dependencies.
+`tools/generate_gameplay_icons.py` is their editable geometric source and belongs
+outside installable packages. The Tetris brand uses four native violet squares.
+All eight supplied artwork TGAs and five existing navigation TGAs remain unchanged.

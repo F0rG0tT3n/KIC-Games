@@ -1137,12 +1137,12 @@ check(T.running and T.root:IsVisible() and T.root.keyboardEnabled, "Tetris UI or
 check(#T.cells == 200 and #T.Presets == 13, "Missing board cells or class presets")
 check(T.board.points[1][2] < T.sidebar.points[1][2], "Tetris board is not to the left of its sidebar")
 check(
-    T.shareButton.parent == T.sidebar
-        and T.optionsButton.parent == T.sidebar
-        and T.controlsText.parent == T.sidebar
-        and T.nextCells[1][1].bg.parent == T.sidebar
-        and T.holdCells[1].bg.parent == T.sidebar,
-    "Tetris controls or previews remained outside the right sidebar"
+    T.shareButton.parent == T.left
+        and T.optionsButton.parent == T.left
+        and T.controlsText.parent == T.left
+        and T.nextCells[1][1].bg.parent == T.nextSlots[1]
+        and T.holdCells[1].bg.parent == T.holdSlot,
+    "Tetris information, controls or preview slots have the wrong parent"
 )
 -- Spell lookup must be completely unnecessary, even when it returns question marks.
 t.env.C_Spell.GetSpellTexture = function()
@@ -1463,8 +1463,8 @@ local function dragRound()
 end
 local function cursorOn(x, y)
     local scale = Drag.board:GetEffectiveScale()
-    dragClient.env.cursorX = (Drag.board:GetLeft() + 9 + (x - 1) * 46 + 22) * scale
-    dragClient.env.cursorY = (Drag.board:GetTop() - 9 - (y - 1) * 46 - 22) * scale
+    dragClient.env.cursorX = (Drag.board:GetLeft() + Drag.boardInset + (x - 1) * Drag.step + Drag.tileSize / 2) * scale
+    dragClient.env.cursorY = (Drag.board:GetTop() - Drag.boardInset - (y - 1) * Drag.step - Drag.tileSize / 2) * scale
 end
 local function dragFrom(x, y)
     cursorOn(x, y)
@@ -2091,6 +2091,215 @@ do
         "Shared component checks constructed individual game screens"
     )
 end
+-- Gameplay redesign: real constructors, responsive geometry and safe navigation.
+do
+    local owner = client("GameplayUI", "LayoutRealm")
+    owner.grouped = false
+    local games, ui = owner.games, owner.games.UI
+    local function fits(frame, width, height)
+        local point = frame.points[1]
+        return point
+            and point[2] >= 0
+            and point[3] <= 0
+            and point[2] + frame.width <= width + 0.01
+            and -point[3] + frame.height <= height + 0.01
+    end
+    for _, id in ipairs({ "bejeweled", "tetris" }) do
+        check(games:StartSingleplayer(id), "Gameplay UI fixture did not start")
+        local game = id == "tetris" and games.Tetris or games.Bejeweled
+        local model, active = game.model, games.ActiveGame
+        check(
+            ui.homeButton:IsShown()
+                and ui.groupPanel:IsShown()
+                and ui.closeButton:IsShown()
+                and not ui.abortButton:IsShown()
+                and not ui.optionsButton:IsShown()
+                and not ui.resultsButton:IsShown(),
+            "Gameplay header must contain Back, live party status and Close only"
+        )
+        check(
+            ui.homeButton.caption.width == 134 and ui.homeButton.gameIcon.artLoaded,
+            "Back caption or navigation artwork did not resize"
+        )
+        for _, size in ipairs({ { 1000, 700 }, { 1120, 700 }, { 1500, 900 }, { 1000, 1000 } }) do
+            ui:SetWindowSize(size[1], size[2])
+            local w, h = ui.gameContainer.width, ui.gameContainer.height
+            for _, panel in ipairs({ game.left, game.board, game.right }) do
+                check(fits(panel, w, h), id .. " panel exceeds responsive content bounds")
+            end
+            local bp, rp = game.board.points[1], game.right.points[1]
+            check(game.left.width < bp[2] and bp[2] + game.board.width < rp[2], id .. " side panels overlap the board")
+            check(
+                ui.gameContainer.backdropInfo == nil and game.board.premium and #game.board.diamonds == 4,
+                "Board lost shared frame or layered ornaments"
+            )
+            local before = #owner.frames
+            game:LayoutUI()
+            game:Render(true)
+            check(#owner.frames == before and game.model == model, "Resize recreated UI or reset the game")
+            if id == "bejeweled" then
+                check(
+                    #game.cells == 64
+                        and game.tileSize == game.step - 2
+                        and game.board.width == 8 * game.step + 24
+                        and game.board.width == game.board.height,
+                    "Bejeweled grid lost square 8x8 proportions"
+                )
+                check(
+                    game.viewport.clipsChildren
+                        and game.cells[64].parent == game.viewport
+                        and fits(game.cells[64], game.viewport.width, game.viewport.height),
+                    "Bejeweled cells or clipped animation viewport exceed board"
+                )
+                check(
+                    game.leftArt.artLoaded
+                        and game.leftArt.drawLayer == "ARTWORK"
+                        and game.hintButton.points[1][3] > game.pauseButton.points[1][3]
+                        and game.pauseButton.points[1][3] > game.shareButton.points[1][3]
+                        and game.shareButton.points[1][3] > game.optionsButton.points[1][3],
+                    "Bejeweled artwork or required action order changed"
+                )
+                check(
+                    -game.gemDecor.points[1][3] >= -game.cascadeRow.points[1][3] + game.cascadeRow.height,
+                    "Decorative gem art overlaps a statistic"
+                )
+            else
+                check(
+                    #game.cells == 200
+                        and (game.board.width - 24) * 2 == game.board.height - 24
+                        and game.cells[1].bg.width == game.cells[1].bg.height,
+                    "Tetris cells or 10x20 proportions changed"
+                )
+                check(
+                    #game.nextSlots == 5
+                        and #game.nextCells == 5
+                        and #game.holdCells == 8
+                        and game.controlRows[8].key.label.text == "Chat",
+                    "Queue, hold or truthful chat auto-pause instruction missing"
+                )
+                for _, panel in ipairs({ game.statPanel, game.nextPanel, game.holdPanel, game.pauseButton }) do
+                    check(fits(panel, game.right.width, h), "Tetris right-side section exceeds bounds")
+                end
+                for _, slot in ipairs(game.nextSlots) do
+                    check(fits(slot, game.nextPanel.width, game.nextPanel.height), "Next slot exceeds panel")
+                end
+                check(
+                    -game.controlsText.points[1][3] + game.controlsText.height < -game.optionsButton.points[1][3],
+                    "Tetris keycaps overlap bottom actions"
+                )
+            end
+        end
+        ui:SetWindowSize(1120, 700)
+        ui:SetWindowScale(1.2)
+        if id == "tetris" then
+            game:KeyDown("LEFT")
+        end
+        local recents = #games.DB.recentGames
+        ui.homeButton.scripts.OnClick()
+        check(
+            game.paused and game.model == model and games.ActiveGame == active and #games.DB.recentGames == recents,
+            "Back reset session/history or did not pause immediately"
+        )
+        if id == "tetris" then
+            check(next(game.keys) == nil, "Back left held keyboard input active")
+        end
+        ui:LaunchGame(id)
+        check(game.model == model and game.pauseOverlay:IsShown(), "Launcher Resume lost paused session")
+        game.pauseOverlay.resume.scripts.OnClick()
+        check(not game.paused and not game.pauseOverlay:IsShown(), "Pause menu Resume failed")
+        ui.closeButton.scripts.OnClick()
+        check(
+            not ui.frame:IsShown() and game.paused and games.ActiveGame == active and game.model == model,
+            "Close lost the current run or failed to pause"
+        )
+        ui:Toggle()
+        ui:LaunchGame(id)
+        game.pauseOverlay.resume.scripts.OnClick()
+        ui:ShowOptions()
+        game:Advance(0.01)
+        check(
+            game.paused and game.model == model and ui.optionsFrame:IsShown() and not ui.gameContainer:IsShown(),
+            "Options did not safely block the active game"
+        )
+        ui.pageBack.scripts.OnClick()
+        game.pauseOverlay.resume.scripts.OnClick()
+        local before = #owner.frames
+        if id == "bejeweled" then
+            model.score = model.score + 150
+            game:Render()
+            check(game.scorePulseLeft == 0.35, "Score increase did not trigger feedback")
+            for _ = 1, 5 do
+                game:Advance(0.1)
+            end
+            check(
+                game.scorePulseLeft == 0 and game.scorePulse.alpha == 0,
+                "Score feedback did not finish on the existing update loop"
+            )
+        else
+            for _ = 1, 40 do
+                game:KeyDown("UP")
+                game.root.scripts.OnKeyUp(game.root, "UP")
+                game:Advance(0.001)
+            end
+        end
+        check(#owner.frames == before, "Gameplay updates allocated UI frames/textures")
+        ui:SetWindowSize(1000, 700)
+        model.score = 2147483647
+        game:SaveBest()
+        game:Render(true)
+        check(
+            game.scoreText.text == "2147483647"
+                and game.bestText.text == "2147483647"
+                and game.scoreText:GetStringWidth() <= game.scoreText.width
+                and game.bestText:GetStringWidth() <= game.bestText.width,
+            "Large real score values were truncated or did not fit the compact readouts"
+        )
+        game:Pause(true)
+        game.pauseOverlay.restart.scripts.OnClick()
+        check(
+            games.ActiveGame
+                and game.model ~= model
+                and game.model.score == 0
+                and #games.DB.recentGames == recents
+                and #owner.frames == before,
+            "Restart did not reuse UI, create a clean run or preserve history"
+        )
+        check(game:Storage().best.score == 2147483647, "Restart lost the prior run's saved best")
+        game:Pause(true)
+        game.pauseOverlay.stop.scripts.OnClick()
+        check(
+            not games.ActiveGame and not game.running and not game.root:IsShown(),
+            "Explicit in-game Stop did not end the run"
+        )
+    end
+    -- Resized drag hit-testing still uses the same engine action and timing.
+    dragRound()
+    DragGames.UI:SetWindowSize(1500, 900)
+    DragGames.UI:SetWindowScale(1.2)
+    local source = dragFrom(2, 1)
+    cursorOn(2, 2)
+    Drag:UpdateDrag()
+    source.scripts.OnDragStop(source)
+    check(
+        Drag.swap and Drag.swap.valid and Drag.model.moves == 1 and Drag.swap.time == 0,
+        "Resized drag changed swap validation/timing"
+    )
+    Drag:Render()
+    check(Drag.cells[2].border[1] == DragGames.Theme.Colors.ice[1], "Valid swap lost visual feedback")
+    Drag:Pause(true)
+    Drag:Render()
+    local before = #dragClient.frames
+    DragGames.UI:ShowGame()
+    Drag:Pause(false)
+    dragClient.env.mouseDown = true
+    dragFrom(4, 4)
+    DragGames.UI.closeButton.scripts.OnClick()
+    check(
+        not Drag.drag and Drag.paused and not Drag.dragFrame:IsShown() and #dragClient.frames == before,
+        "Closing during drag did not clean up the floating icon"
+    )
+    DragGames:AbortGame()
+end
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))
 
 -- Optional layout snapshots from the actual UI constructors, for offline visual review.
@@ -2165,6 +2374,32 @@ if arg[1] == "--preview" then
         local file = assert(io.open(arg[2] .. "/" .. name .. ".json", "w"))
         file:write("[" .. table.concat(rows, ",") .. "]")
         file:close()
+    end
+    local preview = client("PreviewGames", "PreviewRealm")
+    preview.grouped = false
+    local pg = preview.games
+    for _, id in ipairs({ "bejeweled", "tetris" }) do
+        pg:StartSingleplayer(id)
+        local module = id == "tetris" and pg.Tetris or pg.Bejeweled
+        if id == "tetris" then
+            module.model:Hold()
+            module.model:HardDrop()
+        end
+        for _, layout in ipairs({
+            { "default", 1120, 700, 1 },
+            { "120", 1120, 700, 1.2 },
+            { "compact", 1000, 700, 1 },
+            { "wide", 1500, 900, 1 },
+            { "tall", 1000, 1000, 1 },
+        }) do
+            pg.UI:SetWindowSize(layout[2], layout[3])
+            pg.UI:SetWindowScale(layout[4])
+            module:Render(true)
+            snapshot(id .. "-" .. layout[1], preview)
+        end
+        module:Pause(true)
+        snapshot(id .. "-pause", preview)
+        pg:AbortGame()
     end
     G.UI:SelectTab("singleplayer")
     G:StartSingleplayer("tetris")

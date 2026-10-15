@@ -2,7 +2,8 @@
 
 Access with `local Theme = KICGames.Theme`. Constructors take a parent and
 logical UI coordinates. They inherit the parent's scale; callers own gameplay,
-networking and saved data. None of the components starts a game or invents data.
+networking and saved data. Presentation components do not invent data; gameplay
+pause-menu actions delegate to the existing framework start/stop lifecycle.
 They do not register decorative timers, keyboard handlers or mouse-catching
 overlay frames. Existing `Panel`, `Button` and two-argument `Window` remain
 compatible with the current game screens.
@@ -64,3 +65,31 @@ real runtime path, then reload; no launcher layout edits are required. See
 [MISSING_ASSETS.md](MISSING_ASSETS.md) for artwork specifications. Full-frame
 skins must preserve a transparent center; procedural corners remain crisp across
 aspect ratios while final illustrated/scalable skins are unavailable.
+
+## Gameplay extensions (0.12.0)
+
+`GameplayUI.lua` extends the same `Games.Theme` table, after Theme.lua in the TOC.
+It owns presentation helpers, never engine state or network behavior. Coordinates
+in `PlaceGame` / `PlaceGameButton` use positive **downward** Y, unlike the older
+negative-Y Theme constructors. Layout only runs on construction/navigation/resize.
+
+| Helper | Contract |
+| --- | --- |
+| `PlaceGame(frame, x, y, width, height)` | Reanchors an existing object at TOPLEFT; optional measured width/height. |
+| `GameLabel(parent, text, size, color)` | Native label using shared fonts and palette. |
+| `ScoreValue(label, value, maxSize)` | Updates real text and fits its font to the current width; caches formatting until text/width/size changes. |
+| `GameIcon(parent, registryKey, size, color)` | Shared Artwork texture with state-independent theme tint. |
+| `GameButton(parent, text, iconKey, callback, primary)` | NeonButton plus centrally registered icon; `PlaceGameButton` lays out both caption and icon. |
+| `GameBoard(parent)` | PremiumFrame with the optional `game-board-frame` skin, inset corner rails, static glow and four edge diamonds. |
+| `InstructionRow(parent, iconKey, text)` | Compact icon and reflowing two-line instruction. |
+| `GameStatRow(parent, iconKey, title)` | Icon/title, right-aligned `.value`, and thin divider. |
+| `KeycapRow(parent, key, action)` | Native keycap frame and separate action label. |
+| `GoldBest(parent)` | Gold premium border, crown, BEST label and fitted `.value`. |
+| `TintFrame(frame, color)` | Applies a shared accent to premium edges/corners or a custom skin. |
+| `PauseMenu(board, gameID, module)` | Native Resume/Restart/Stop actions; calls existing module/framework lifecycle. `.Layout(width,x,y)` places the fixed-height menu above board/drag layers. No per-frame timers. |
+
+`StatPanel(..., options)` accepts `{plain=true}` for grouped readouts inside an
+already framed panel. It retains `.label`, `.value`, `.detail` and SetStat; callers
+can hide detail and adjust the label/value positions for shorter readouts.
+Each game owns one pooled board and preview set. Bejeweled feedback uses its
+existing Advance callback; Tetris continues to paint on engine revision changes.

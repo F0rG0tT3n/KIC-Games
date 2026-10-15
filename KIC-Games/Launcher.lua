@@ -266,10 +266,11 @@ function UI:LayoutLauncher()
     self.launcherMotto:ClearAllPoints()
     self.launcherMotto:SetPoint("BOTTOMRIGHT", -90, 17)
     self.launcherMotto:SetWidth(220)
-    place(self.gameContainer, nil, (width - 860) / 2, -116)
+    self:LayoutGameContainer()
     place(self.optionsButton, nil, width - 526, -30, 80, 28)
     place(self.resultsButton, nil, width - 438, -30, 80, 28)
-    place(self.homeButton, nil, width - 232, -30, 94, 28)
+    Theme:PlaceGameButton(self.homeButton, width - 522, 26, 182, 36)
+    self.homeButton:SetText("Back to Launcher")
     if self.optionsFrame then
         self:LayoutOptions()
     end
@@ -321,10 +322,13 @@ function UI:RefreshLauncher()
     local settingsPage = self.launcherPage == "options"
     local resultsPage = self.launcherPage == "results"
     local width, height = self.content:GetWidth(), self.content:GetHeight()
-    self.optionsButton:SetShown(inGame)
-    self.resultsButton:SetShown(inGame)
+    self.optionsButton:Hide()
+    self.resultsButton:Hide()
+    if inGame then
+        self.abortButton:Hide()
+    end
     place(self.abortButton, nil, self.frame:GetWidth() - (inGame and 350 or 452), -30, 110, 28)
-    self.groupPanel:SetShown(not inGame)
+    self.groupPanel:Show()
     self.launcherMotto:SetShown(not inGame)
     self.hero:SetShown(home)
     self.multiplayerPage:SetShown(multi)

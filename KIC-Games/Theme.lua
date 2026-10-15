@@ -16,6 +16,7 @@ Theme.Colors = {
     primary = { 0.025, 0.24, 0.46, 1 },
     success = { 0.1, 0.9, 0.55, 1 },
     ice = { 0.64, 0.91, 1, 1 },
+    gold = { 1, 0.77, 0.22, 1 },
 }
 Theme.Components = { inset = 5, corner = 14, borderAlpha = 0.7, glowAlpha = 0.1 }
 local WHITE = "Interface\\Buttons\\WHITE8X8"
@@ -424,8 +425,15 @@ function Theme:SectionHeader(parent, title, width, x, y, fontSize)
     header:SetText(title)
     return header
 end
-function Theme:StatPanel(parent, title, width, height, x, y)
-    local frame = self:PremiumFrame(parent, width, height, x, y, { skin = "stat-frame", compact = true })
+function Theme:StatPanel(parent, title, width, height, x, y, options)
+    local frame
+    if options and options.plain then
+        frame = CreateFrame("Frame", nil, parent)
+        frame:SetSize(width, height)
+        frame:SetPoint("TOPLEFT", x, y)
+    else
+        frame = self:PremiumFrame(parent, width, height, x, y, { skin = "stat-frame", compact = true })
+    end
     frame.component = "StatPanel"
     frame.label = self:Label(frame, title, 16, -12, width - 32, "GameFontHighlightSmall")
     frame.label:SetTextColor(unpack(self.Colors.accent))

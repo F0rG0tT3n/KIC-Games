@@ -5,13 +5,13 @@ local function text(parent, value, x, y, width, large)
     return Theme:Label(parent, value, x, y, width, large and "GameFontNormalLarge" or nil)
 end
 local function button(parent, value, x, y, width, callback)
-    return Theme:Button(parent, value, width, x, y, callback, 24)
+    return Theme:NeonButton(parent, value, width, x, y, callback, 28)
 end
 local function panel(parent, width, height, x, y)
     return Theme:Panel(parent, width, height, x, y)
 end
 local function cell(parent, x, y, size)
-    local bg = parent:CreateTexture(nil, "BACKGROUND")
+    local bg = parent:CreateTexture(nil, "ARTWORK", nil, -2)
     bg:SetSize(size - 1, size - 1)
     bg:SetPoint("TOPLEFT", x, y)
     local icon = parent:CreateTexture(nil, "ARTWORK")
@@ -22,7 +22,7 @@ local function cell(parent, x, y, size)
 end
 function T:Paint(cell, kind, ghost)
     if not kind then
-        cell.bg:SetColorTexture(0.07, 0.085, 0.12, 1)
+        cell.bg:SetColorTexture(0.035, 0.06, 0.1, cell.preview and 0 or 1)
         cell.icon:Hide()
     else
         local c = self.Colors[kind]
@@ -42,6 +42,11 @@ function T:Preview(cells, kind)
         end
     end
     for i, c in ipairs(cells) do
+        if c.preview and c.size then
+            local offset = kind and (4 - self.Engine.Shapes[kind].size) * c.size / 2 or 0
+            Theme:PlaceGame(c.bg, c.baseX + offset, c.baseY)
+            Theme:PlaceGame(c.icon, c.baseX + offset + 2, c.baseY + 2)
+        end
         self:Paint(c, map[i])
     end
 end
@@ -67,15 +72,10 @@ function T:Render(force)
                 self:Paint(self.cells[i], kind, not m.board[y][x] and not active[i] and ghost[i] ~= nil)
             end
         end
-        self.scoreText:SetText(
-            string.format(
-                "Score: %d\nBest: %d\nLines: %d    Level: %d",
-                m.score,
-                self:Storage().best.score,
-                m.lines,
-                m.level
-            )
-        )
+        Theme:ScoreValue(self.scoreText, m.score, 26)
+        Theme:ScoreValue(self.bestText, self:Storage().best.score, 26)
+        Theme:ScoreValue(self.linesText, m.lines, 26)
+        Theme:ScoreValue(self.levelText, m.level, 26)
         for i, cells in ipairs(self.nextCells) do
             self:Preview(cells, m.queue[i])
         end
@@ -200,58 +200,100 @@ local function preview(parent, x, y, size)
 end
 function T:CreateUI(parent)
     if self.root then
+        self:LayoutUI()
         return self.root
     end
     local root = CreateFrame("Frame", nil, parent)
-    root:SetAllPoints(parent)
+    root:SetPoint("TOPLEFT", 0, 0)
     self.root, self.keys = root, {}
-    local board = panel(root, 202, 402, 28, -24)
+    self.left = Theme:PremiumFrame(root, 320, 550, 0, 0)
+    self.brandBlocks = {}
+    for i, point in ipairs({ { 1, 0 }, { 0, 1 }, { 1, 1 }, { 2, 1 } }) do
+        local block = Theme:Highlight(self.left, 0, 0, 18, 18, Theme.Colors.violet)
+        block.gridX, block.gridY = point[1], point[2]
+        self.brandBlocks[i] = block
+    end
+    self.title = Theme:GameLabel(self.left, "TETRIS", 36)
+    self.tagline = Theme:GameLabel(self.left, "STACK / CLEAR / BEAT YOUR BEST", 12, Theme.Colors.accent)
+    self.intro = Theme:GameLabel(
+        self.left,
+        "Stack, clear lines, and keep the pieces falling. Simple to learn, endlessly replayable.",
+        14
+    )
+    self.intro:SetMaxLines(3)
+    self.controlsHeading = Theme:SectionHeader(self.left, "CONTROLS", 270, 16, -202, 16)
+    self.controlsText = Theme:PremiumFrame(self.left, 270, 226, 16, -234, { compact = true })
+    self.controlRows = {}
+    for _, row in ipairs({
+        { "L / R", "Move left / right" },
+        { "Up / X", "Rotate clockwise" },
+        { "Z", "Rotate reverse" },
+        { "Down", "Soft drop" },
+        { "Space", "Hard drop" },
+        { "C", "Hold piece" },
+        { "P", "Pause / resume" },
+        { "Chat", "Typing auto-pauses" },
+    }) do
+        self.controlRows[#self.controlRows + 1] = Theme:KeycapRow(self.controlsText, row[1], row[2])
+    end
+    self.optionsButton = Theme:GameButton(self.left, "Options", "nav-options", function()
+        Games.UI:ShowOptions()
+    end)
+    self.shareButton = Theme:GameButton(self.left, "Share Best to Chat", "icon-share", function()
+        self:ShareBest()
+    end)
+    self.presetLabel = Theme:GameLabel(self.left, "", 12)
+    self.presetLabel:Hide()
+    local board = Theme:GameBoard(root)
     self.board = board
-    board:SetBackdropColor(0.025, 0.03, 0.05, 1)
-    board:SetBackdropBorderColor(unpack(Theme.Colors.accent))
     self.cells = {}
     for y = 1, 20 do
         for x = 1, 10 do
-            self.cells[#self.cells + 1] = cell(board, 1 + (x - 1) * 20, -1 - (y - 1) * 20, 20)
+            self.cells[#self.cells + 1] = cell(board, 0, 0, 20)
         end
     end
-    self.pauseOverlay = panel(board, 200, 108, 1, -147)
-    self.pauseOverlay:SetFrameLevel(board:GetFrameLevel() + 5)
-    self.pauseOverlay:SetBackdropColor(0.035, 0.043, 0.065, 0.97)
-    self.pauseText = text(self.pauseOverlay, "PAUSED", 18, -24, 164, true)
-    self.pauseText:SetJustifyH("CENTER")
-    text(self.pauseOverlay, "Press P to resume", 18, -60, 164):SetJustifyH("CENTER")
-    local sidebar = panel(root, 580, 418, 264, -16)
-    self.sidebar = sidebar
-    text(sidebar, "TETRIS", 20, -18, 260, true):SetTextColor(unpack(Theme.Colors.accent))
-    self.presetLabel = text(sidebar, "", 20, -52, 260)
-    self.scoreText = text(sidebar, "", 20, -90, 270, true)
-    self.scoreText:SetFont("Fonts\\ARIALN.TTF", 18, "")
-    text(sidebar, "UP NEXT", 334, -18, 220):SetTextColor(unpack(Theme.Colors.muted))
-    self.nextCells = {}
-    for i = 1, 5 do
-        self.nextCells[i] = preview(sidebar, 334 + (i % 2 == 0 and 104 or 0), -48 - math.floor((i - 1) / 2) * 48, 20)
+    self.pauseOverlay = Theme:PauseMenu(board, "tetris", self)
+    self.pauseText = self.pauseOverlay.title
+    self.right = CreateFrame("Frame", nil, root)
+    self.sidebar = self.right
+    self.statPanel = Theme:PremiumFrame(self.right, 340, 180, 0, 0, { skin = "game-stats-frame" })
+    self.statHeading = Theme:SectionHeader(self.statPanel, "STATS", 300, 16, -12, 16)
+    self.readouts = {}
+    for _, name in ipairs({ "SCORE", "BEST", "LINES", "LEVEL" }) do
+        local readout = Theme:StatPanel(self.statPanel, name, 150, 68, 0, 0, { plain = true })
+        readout.value:SetFont(Theme.Fonts.display, 26, "")
+        readout.detail:Hide()
+        self.readouts[#self.readouts + 1] = readout
     end
-    text(sidebar, "HOLD / C", 334, -216, 220):SetTextColor(unpack(Theme.Colors.muted))
-    self.holdCells = preview(sidebar, 334, -246, 20)
-    text(sidebar, "CONTROLS", 20, -192, 270):SetTextColor(unpack(Theme.Colors.muted))
-    self.controlsText = text(
-        sidebar,
-        "Left / Right: move\nUp / X: rotate   Z: reverse\nDown: soft drop\nSpace: hard drop\nC: hold   P: pause",
-        20,
-        -220,
-        270
-    )
-    text(sidebar, "Clear lines to score.\n10 lines = next level.\n\nHidden window / chat: auto-pause.", 334, -316, 220)
-    self.optionsButton = button(sidebar, "Options", 20, -350, 118, function()
-        Games.UI:ShowOptions()
-    end)
-    self.shareButton = button(sidebar, "Share best", 148, -350, 150, function()
-        self:ShareBest()
-    end)
-    self.pauseButton = button(sidebar, "Pause (P)", 20, -386, 278, function()
+    self.scoreText, self.bestText = self.readouts[1].value, self.readouts[2].value
+    self.linesText, self.levelText = self.readouts[3].value, self.readouts[4].value
+    self.bestText:SetTextColor(unpack(Theme.Colors.gold))
+    self.crown = Theme:GameIcon(self.readouts[2], "ornament-crown", 20, Theme.Colors.gold)
+    self.statDivider = Theme:Separator(self.statPanel, 16, -100, 300)
+    self.nextPanel = Theme:PremiumFrame(self.right, 340, 126, 0, 0)
+    self.nextHeading = Theme:SectionHeader(self.nextPanel, "NEXT", 300, 16, -12, 16)
+    self.nextSlots, self.nextCells = {}, {}
+    for i = 1, 5 do
+        local slot = Theme:PremiumFrame(self.nextPanel, 60, 64, 0, 0, { compact = true })
+        self.nextSlots[i] = slot
+        self.nextCells[i] = preview(slot, 0, 0, 16)
+        for _, c in ipairs(self.nextCells[i]) do
+            c.preview = true
+        end
+    end
+    self.holdPanel = Theme:PremiumFrame(self.right, 340, 150, 0, 0)
+    Theme:TintFrame(self.holdPanel, Theme.Colors.violet)
+    self.holdHeading = Theme:SectionHeader(self.holdPanel, "HOLD", 140, 16, -12, 16)
+    self.holdHeading.title:SetTextColor(unpack(Theme.Colors.violet))
+    self.holdSlot = Theme:PremiumFrame(self.holdPanel, 120, 70, 16, -42, { compact = true })
+    self.holdCells = preview(self.holdSlot, 0, 0, 20)
+    for _, c in ipairs(self.holdCells) do
+        c.preview = true
+    end
+    self.crest = Theme:Art(self.holdPanel, "crest", 140, 140, 180, -4, 0.07, "ARTWORK")
+    self.pauseButton = Theme:GameButton(self.right, "Pause (P)", "icon-pause", function()
         self:Pause(not self.paused)
-    end)
+    end, true)
     root:SetScript("OnKeyDown", function(_, key)
         self:KeyDown(key)
     end)
@@ -269,14 +311,115 @@ function T:CreateUI(parent)
     end)
     root:SetPropagateKeyboardInput(true)
     root:Hide()
+    self:LayoutUI()
     self:CreateSummary()
     return root
+end
+local function positionCell(c, x, y, size)
+    c.baseX, c.baseY, c.size = x, y, size
+    Theme:PlaceGame(c.bg, x, y, size - 1, size - 1)
+    Theme:PlaceGame(c.icon, x + 2, y + 2, size - 5, size - 5)
+end
+function T:LayoutUI()
+    if not self.root then
+        return
+    end
+    local parent = self.root:GetParent()
+    local w, h = parent:GetWidth(), parent:GetHeight()
+    self.root:SetSize(w, h)
+    self.cellSize = math.floor(math.min((h - 40) / 20, (w - 616) / 10))
+    local bw, bh = 10 * self.cellSize + 24, 20 * self.cellSize + 24
+    local leftW = math.max(280, math.floor((w - bw - 32) * 0.48))
+    local rightX, rightW = leftW + bw + 32, w - leftW - bw - 32
+    Theme:PlaceGame(self.left, 0, 0, leftW, h)
+    Theme:PlaceGame(self.board, leftW + 16, math.floor((h - bh) / 2), bw, bh)
+    Theme:PlaceGame(self.right, rightX, 0, rightW, h)
+    for _, block in ipairs(self.brandBlocks) do
+        Theme:PlaceGame(block, 18 + block.gridX * 20, 28 + block.gridY * 20)
+    end
+    Theme:PlaceGame(self.title, 92, 22, leftW - 108, 46)
+    Theme:PlaceGame(self.tagline, 18, 86, leftW - 36, 26)
+    Theme:PlaceGame(self.intro, 18, 126, leftW - 36, 64)
+    local compact = h < 550
+    local controlsY = compact and 192 or 206
+    local step = compact and 23 or math.max(26, math.min(34, math.floor(h / 22)))
+    Theme:PlaceGame(self.controlsHeading, 18, controlsY, leftW - 36, 26)
+    Theme:PlaceGame(self.controlsText, 16, controlsY + 30, leftW - 32, step * 8 + 18)
+    for i, row in ipairs(self.controlRows) do
+        Theme:PlaceGame(row, 10, 9 + (i - 1) * step, leftW - 52, 22)
+    end
+    Theme:PlaceGameButton(self.optionsButton, 18, h - 86, leftW - 36, 34)
+    Theme:PlaceGameButton(self.shareButton, 18, h - 46, leftW - 36, 34)
+    for i, c in ipairs(self.cells) do
+        positionCell(
+            c,
+            12 + ((i - 1) % 10) * self.cellSize,
+            12 + math.floor((i - 1) / 10) * self.cellSize,
+            self.cellSize
+        )
+    end
+    self.pauseOverlay:Layout(bw - 20, 10, (bh - 180) / 2)
+    local statsH = math.max(176, math.min(250, math.floor(h * 0.32)))
+    Theme:PlaceGame(self.statPanel, 0, 0, rightW, statsH)
+    self.statHeading:SetWidth(rightW - 32)
+    for i, readout in ipairs(self.readouts) do
+        Theme:PlaceGame(
+            readout,
+            2 + ((i - 1) % 2) * (rightW - 4) / 2,
+            30 + math.floor((i - 1) / 2) * 68,
+            (rightW - 4) / 2,
+            68
+        )
+    end
+    Theme:PlaceGame(self.crown, (rightW - 4) / 2 - 38, 10)
+    Theme:PlaceGame(self.statDivider, 16, 101, rightW - 32, 1)
+    local columns = rightW >= 350 and 5 or 3
+    local slotW = (rightW - 32 - (columns - 1) * 6) / columns
+    local slotH = columns == 5 and math.max(66, math.min(100, math.floor(h * 0.11))) or 54
+    local nextH = 44 + math.ceil(5 / columns) * (slotH + 6)
+    Theme:PlaceGame(self.nextPanel, 0, statsH + 12, rightW, nextH)
+    self.nextHeading:SetWidth(rightW - 32)
+    for i, slot in ipairs(self.nextSlots) do
+        Theme:PlaceGame(
+            slot,
+            16 + ((i - 1) % columns) * (slotW + 6),
+            40 + math.floor((i - 1) / columns) * (slotH + 6),
+            slotW,
+            slotH
+        )
+        local size = math.floor(math.min((slotW - 8) / 4, (slotH - 8) / 2))
+        for j, c in ipairs(self.nextCells[i]) do
+            positionCell(
+                c,
+                (slotW - 4 * size) / 2 + ((j - 1) % 4) * size,
+                (slotH - 2 * size) / 2 + math.floor((j - 1) / 4) * size,
+                size
+            )
+        end
+    end
+    local holdY = statsH + nextH + 24
+    local holdH = h - holdY - 58
+    Theme:PlaceGame(self.holdPanel, 0, holdY, rightW, holdH)
+    Theme:PlaceGame(self.holdSlot, 16, 38, 120, math.min(70, holdH - 46))
+    local holdSize = math.floor(math.min(24, (holdH - 52) / 2))
+    for i, c in ipairs(self.holdCells) do
+        positionCell(
+            c,
+            (120 - 4 * holdSize) / 2 + ((i - 1) % 4) * holdSize,
+            6 + math.floor((i - 1) / 4) * holdSize,
+            holdSize
+        )
+    end
+    local emblem = math.min(140, holdH - 16)
+    Theme:PlaceGame(self.crest, rightW - emblem - 18, 8, emblem, emblem)
+    Theme:PlaceGameButton(self.pauseButton, 0, h - 42, rightW, 38)
+    self:Render(true)
 end
 function T:CreateSummary()
     local f = panel(UIParent, 440, 284, 0, 0)
     f:ClearAllPoints()
     f:SetPoint("CENTER", Games.UI.frame, "CENTER", 0, 0)
-    Theme:Window(f, true)
+    Theme:Window(f, true, true)
     _G.KICGamesTetrisResult = f
     UISpecialFrames[#UISpecialFrames + 1] = "KICGamesTetrisResult"
     Theme:CloseButton(f)

@@ -49,6 +49,7 @@ function UI:Initialize()
         end
         frame:StopMovingOrSizing()
         UI:HideAuxiliaryWindows()
+        UI:PauseGameplay()
     end)
     frame:Hide()
     _G.KICGamesWindow = frame
@@ -59,13 +60,14 @@ function UI:Initialize()
     title:SetFont("Fonts\\ARIALN.TTF", 28, "")
     title:SetTextColor(unpack(Theme.Colors.text))
     label(frame, "A little play between adventures", 94, -53, 410, "GameFontHighlightSmall")
-    Theme:CloseButton(frame)
+    self.closeButton = Theme:CloseButton(frame)
     self.optionsButton = button(frame, "Options", 90, 440, -34, function()
         UI:ShowOptions()
     end)
     self.homeButton = button(frame, "Launcher", 100, 742, -34, function()
         UI:OpenLauncher("home")
     end)
+    self.homeButton.gameIcon = Theme:GameIcon(self.homeButton, "icon-back", 20)
     self.homeButton:Hide()
     self.resultsButton = button(frame, "Results", 90, 536, -34, function()
         UI:ShowResults()
@@ -251,10 +253,41 @@ function UI:HideAll()
 end
 
 function UI:GetGameContainer()
+    self:LayoutGameContainer()
     return self.gameContainer
+end
+function UI:LayoutGameContainer()
+    local id = Games.ActiveGame and Games.ActiveGame.game.id
+    local module = id == "bejeweled" and Games.Bejeweled or id == "tetris" and Games.Tetris
+    self.gameContainer:ClearAllPoints()
+    if module then
+        self.gameContainer:SetPoint("TOPLEFT", 20, -100)
+        self.gameContainer:SetSize(self.frame:GetWidth() - 40, self.frame:GetHeight() - 134)
+        self.gameContainer:SetBackdrop(nil)
+        if module.root then
+            module:LayoutUI()
+        end
+    else
+        self.gameContainer:SetPoint("TOPLEFT", (self.frame:GetWidth() - 860) / 2, -116)
+        self.gameContainer:SetSize(860, 450)
+        self.gameContainer:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            edgeSize = 1,
+        })
+    end
+end
+
+function UI:PauseGameplay()
+    local id = Games.ActiveGame and Games.ActiveGame.game.id
+    local module = id == "tetris" and Games.Tetris or id == "bejeweled" and Games.Bejeweled
+    if module and module.running then
+        module:Pause(true)
+    end
 end
 
 function UI:ShowHome()
+    self:PauseGameplay()
     self:HideAuxiliaryWindows()
     self.home:Show()
     self.gameContainer:Hide()
@@ -270,6 +303,7 @@ function UI:ShowGame()
     self.home:Hide()
     self.resultsFrame:Hide()
     self.optionsFrame:Hide()
+    self:LayoutGameContainer()
     self.gameContainer:Show()
     self.homeButton:Show()
     self.frame:Show()

@@ -5,6 +5,12 @@ This is a relaxed, untimed singleplayer match-three game on an 8×8 board, using
 the same class ability icons as Tetris. Choose one of 13 classes in **Options**;
 the setting applies to both games immediately and is saved between sessions.
 
+The reference layout places artwork, instructions and Hint/Pause/Share/Class
+Options on the left, the square board in the center, and real score/gold best/
+statistics/tips on the right. Cyan layered board edges and diamonds use the same
+shared theme as the Launcher. Selection, hover, valid swaps, matches/cascades and
+score gains have lightweight visual feedback.
+
 ## Playing
 
 Click an icon, then click an icon immediately above, below, left or right to swap.
@@ -52,10 +58,13 @@ Use **Pause / Resume**. Hiding the game, returning to Launcher, opening match
 history or focusing a chat/edit box pauses the board and its animations. Reopen
 with **Open game** or `/kicbejeweled`, then click **Resume**.
 
-**Stop match** or `/kicgames stop` immediately ends the session without a
+**Stop match** in the pause menu or `/kicgames stop` immediately ends the session without a
 confirmation. The framework records it as interrupted, without a loss. Game over
 instead records your score and opens a movable result dialog above the launcher,
 with **Play again / Share best**. Closing the launcher also closes that dialog.
+The pause menu also offers **Restart run**, preserving the old run's best score.
+**Back to Launcher** and X preserve the current board until it is resumed; they
+do not restart the game. Active boards still do not survive a UI reload.
 
 ## Module
 

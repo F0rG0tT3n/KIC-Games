@@ -1,6 +1,5 @@
 local _, Games = ...
 local B, Theme = Games.Bejeweled, Games.Theme
-local STEP = 46
 local function key(x, y)
     return (y - 1) * 8 + x
 end
@@ -13,12 +12,13 @@ end
 function B:CursorCell()
     local px, py = GetCursorPosition()
     local scale = self.board:GetEffectiveScale()
-    local rx, ry = px / scale - self.board:GetLeft() - 9, self.board:GetTop() - py / scale - 9
+    local rx, ry =
+        px / scale - self.board:GetLeft() - self.boardInset, self.board:GetTop() - py / scale - self.boardInset
     if rx < 0 or ry < 0 then
         return
     end
-    local x, y = math.floor(rx / STEP) + 1, math.floor(ry / STEP) + 1
-    if x > 8 or y > 8 or rx % STEP >= 44 or ry % STEP >= 44 then
+    local x, y = math.floor(rx / self.step) + 1, math.floor(ry / self.step) + 1
+    if x > 8 or y > 8 or rx % self.step >= self.tileSize or ry % self.step >= self.tileSize then
         return
     end
     return x, y
@@ -34,8 +34,8 @@ function B:UpdateDrag()
         "TOPLEFT",
         self.board,
         "TOPLEFT",
-        px / scale - self.board:GetLeft() - 22,
-        py / scale - self.board:GetTop() + 22
+        px / scale - self.board:GetLeft() - self.tileSize / 2,
+        py / scale - self.board:GetTop() + self.tileSize / 2
     )
     local x, y = self:CursorCell()
     self.dragTarget = x and math.abs(x - self.drag.x) + math.abs(y - self.drag.y) == 1 and { x = x, y = y } or nil
@@ -151,6 +151,10 @@ function B:Render()
         return
     end
     local m = self.model
+    if self.visualModel ~= m then
+        self.visualModel, self.lastVisualScore, self.scorePulseLeft = m, m.score, 0
+        self.scorePulse:SetAlpha(0)
+    end
     local matches = {}
     if m.pending and not self.swap and not self.fall then
         for _, c in ipairs(m.pending) do
@@ -173,6 +177,12 @@ function B:Render()
             if selected then
                 cell:SetBackdropColor(0.28, 0.22, 0.045, 1)
                 cell:SetBackdropBorderColor(1, 0.88, 0.25, 1)
+            elseif
+                self.swap
+                and self.swap.valid
+                and ((x == self.swap.x and y == self.swap.y) or (x == self.swap.tx and y == self.swap.ty))
+            then
+                cell:SetBackdropBorderColor(unpack(Theme.Colors.ice))
             elseif target then
                 cell:SetBackdropColor(0.08, 0.22, 0.32, 1)
                 cell:SetBackdropBorderColor(unpack(Theme.Colors.accent))
@@ -193,12 +203,12 @@ function B:Render()
                 local travel = (a.valid or a.dragged) and (1 - progress)
                     or (progress < 0.5 and progress * 2 or (1 - progress) * 2)
                 if x == a.x and y == a.y then
-                    dx, dy = (a.tx - a.x) * STEP * travel, -(a.ty - a.y) * STEP * travel
+                    dx, dy = (a.tx - a.x) * self.step * travel, -(a.ty - a.y) * self.step * travel
                 elseif x == a.tx and y == a.ty and not a.dragged then
-                    dx, dy = -(a.tx - a.x) * STEP * travel, (a.ty - a.y) * STEP * travel
+                    dx, dy = -(a.tx - a.x) * self.step * travel, (a.ty - a.y) * self.step * travel
                 end
             elseif self.fall and self.fall.drops[index] then
-                dy = (y - self.fall.drops[index]) * STEP * (1 - math.min(1, self.fall.time / 0.26)) ^ 2
+                dy = (y - self.fall.drops[index]) * self.step * (1 - math.min(1, self.fall.time / 0.26)) ^ 2
             end
             cell.icon:SetPoint("TOPLEFT", 5 + dx, -5 + dy)
             if kind then
@@ -216,11 +226,15 @@ function B:Render()
             end
         end
     end
-    self.scoreText:SetText(tostring(m.score))
-    self.bestText:SetText("BEST  " .. self:Storage().best.score)
-    self.statsText:SetText(
-        string.format("Moves   %d\n\nGems cleared   %d\n\nBest cascade   x%d", m.moves, m.cleared, m.bestCascade)
-    )
+    Theme:ScoreValue(self.scoreText, m.score, 56)
+    Theme:ScoreValue(self.bestText, self:Storage().best.score, 26)
+    Theme:ScoreValue(self.moveRow.value, m.moves, 24)
+    Theme:ScoreValue(self.clearedRow.value, m.cleared, 24)
+    Theme:ScoreValue(self.cascadeRow.value, "x" .. m.bestCascade, 24)
+    if self.lastVisualScore and m.score > self.lastVisualScore then
+        self.scorePulseLeft = 0.35
+    end
+    self.lastVisualScore = m.score
     self.statusText:SetText(
         self.paused and "Paused. Resume when ready."
             or self.swap and self.message
@@ -254,6 +268,10 @@ function B:Advance(dt)
         return
     end
     dt = math.min(math.max(dt, 0), 0.1)
+    if self.scorePulseLeft and self.scorePulseLeft > 0 then
+        self.scorePulseLeft = math.max(0, self.scorePulseLeft - dt)
+        self.scorePulse:SetAlpha(0.13 * self.scorePulseLeft / 0.35)
+    end
     local redraw = false
     if self.hint then
         self.hintTime = self.hintTime - dt
@@ -300,45 +318,51 @@ function B:Advance(dt)
 end
 function B:CreateUI(parent)
     if self.root then
+        self:LayoutUI()
         return self.root
     end
-    local root = CreateFrame("Frame", nil, parent)
-    root:SetAllPoints(parent)
-    self.root = root
-    local left = Theme:Panel(root, 192, 418, 16, -16)
-    Theme:Label(left, "BEJEWELED", 14, -18, 168, "GameFontNormalLarge"):SetTextColor(unpack(Theme.Colors.accent))
-    Theme:Label(left, "MATCH / CASCADE / REPEAT", 14, -50, 170, "GameFontHighlightSmall")
-    self.presetLabel = Theme:Label(left, "", 14, -76, 164)
-    local help = Theme:Label(
-        left,
-        "Drag an icon to a neighbor, or click two icons.\n\nMatch 3+ in a row or column.\n\nCascades multiply points.\n\nNo timer. No swaps? Run complete.",
-        14,
-        -110,
-        164
-    )
-    help:SetFont("Fonts\\ARIALN.TTF", 12, "")
-    Theme:Button(left, "Class options", 164, 14, -263, function()
-        Games.UI:ShowOptions()
-    end)
-    Theme:Button(left, "Hint", 164, 14, -298, function()
+    self.root = CreateFrame("Frame", nil, parent)
+    self.root:SetPoint("TOPLEFT", 0, 0)
+    self.left = Theme:PremiumFrame(self.root, 250, 550, 0, 0)
+    self.leftArt = Theme:Art(self.left, "bejeweled-hero", 220, 130, 14, -14, 1, "ARTWORK")
+    self.title = Theme:GameLabel(self.left, "BEJEWELED", 28)
+    self.tagline = Theme:GameLabel(self.left, "MATCH / CASCADE / REPEAT", 12, Theme.Colors.accent)
+    self.titleRule = Theme:Separator(self.left, 14, -200, 220)
+    self.presetLabel = Theme:GameLabel(self.left, "", 12)
+    self.presetLabel:Hide()
+    self.instructions = {}
+    for _, row in ipairs({
+        { "icon-gem", "Swap neighboring icons\nto match three or more." },
+        { "icon-swap", "Match 3+ in a row or column." },
+        { "icon-cascade", "Cascades multiply points." },
+        { "icon-clock", "No timer. Take your time." },
+        { "icon-infinity", "No moves left? Run complete." },
+    }) do
+        self.instructions[#self.instructions + 1] = Theme:InstructionRow(self.left, row[1], row[2])
+    end
+    self.hintButton = Theme:GameButton(self.left, "Hint", "icon-hint", function()
         self:Hint()
-    end)
-    self.pauseButton = Theme:Button(left, "Pause", 164, 14, -334, function()
+    end, true)
+    self.pauseButton = Theme:GameButton(self.left, "Pause", "icon-pause", function()
         self:Pause(not self.paused)
     end)
-    Theme:Button(left, "Share best", 164, 14, -370, function()
+    self.shareButton = Theme:GameButton(self.left, "Share Best", "icon-share", function()
         self:ShareBest()
     end)
-    local board = Theme:Panel(root, 386, 386, 224, -28)
+    self.optionsButton = Theme:GameButton(self.left, "Class Options", "nav-options", function()
+        Games.UI:ShowOptions()
+    end)
+    local board = Theme:GameBoard(self.root)
     self.board = board
-    board:SetClipsChildren(true)
+    self.viewport = CreateFrame("Frame", nil, board)
+    self.viewport:SetClipsChildren(true)
     self.cells = {}
     for y = 1, 8 do
         for x = 1, 8 do
             local cx, cy = x, y
-            local cell = CreateFrame("Button", nil, board, "BackdropTemplate")
+            local cell = CreateFrame("Button", nil, self.viewport, "BackdropTemplate")
             cell:SetSize(44, 44)
-            cell:SetPoint("TOPLEFT", 9 + (x - 1) * STEP, -9 - (y - 1) * STEP)
+            cell:SetPoint("TOPLEFT", 0, 0)
             cell:SetBackdrop({
                 bgFile = "Interface\\Buttons\\WHITE8X8",
                 edgeFile = "Interface\\Buttons\\WHITE8X8",
@@ -381,6 +405,7 @@ function B:CreateUI(parent)
             cell.selection:SetFrameLevel(cell:GetFrameLevel() + 3)
             cell.selection:Hide()
             local strip = cell.selection:CreateTexture(nil, "BACKGROUND")
+            cell.strip = strip
             strip:SetSize(44, 11)
             strip:SetPoint("BOTTOM", 0, 2)
             strip:SetColorTexture(0.12, 0.09, 0.01, 1)
@@ -395,51 +420,122 @@ function B:CreateUI(parent)
     end
     self.dragFrame = Theme:Panel(board, 44, 44, 0, 0)
     self.dragFrame:SetFrameLevel(board:GetFrameLevel() + 25)
-    self.dragFrame:SetBackdropBorderColor(1, 0.9, 0.25, 1)
+    self.dragFrame:SetBackdropBorderColor(unpack(Theme.Colors.gold))
     self.dragFrame.icon = self.dragFrame:CreateTexture(nil, "ARTWORK")
-    self.dragFrame.icon:SetSize(34, 34)
     self.dragFrame.icon:SetPoint("TOPLEFT", 5, -5)
     self.dragFrame.icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
     self.dragFrame:Hide()
-    self.pauseOverlay = Theme:Panel(board, 368, 112, 9, -137)
-    self.pauseOverlay:SetFrameLevel(board:GetFrameLevel() + 10)
-    Theme:Label(self.pauseOverlay, "PAUSED", 22, -22, 324, "GameFontNormalLarge"):SetJustifyH("CENTER")
-    Theme:Button(self.pauseOverlay, "Resume", 160, 104, -65, function()
-        self:Pause(false)
-    end)
-    local right = Theme:Panel(root, 212, 418, 632, -16)
-    Theme:Label(right, "SCORE", 16, -20, 180, "GameFontHighlightSmall")
-    self.scoreText = Theme:Label(right, "0", 16, -42, 180, "GameFontNormalLarge")
-    self.scoreText:SetFont("Fonts\\ARIALN.TTF", 30, "")
-    self.bestText = Theme:Label(right, "", 16, -84, 180)
-    self.bestText:SetTextColor(unpack(Theme.Colors.accent))
-    self.statsText = Theme:Label(right, "", 16, -132, 180)
-    self.statusText = Theme:Label(right, "", 16, -270, 180)
-    Theme:Label(
-        right,
-        "50 points per gem\n× cascade multiplier\n\nRight-click clears selection.",
-        16,
-        -335,
-        180,
-        "GameFontHighlightSmall"
+    self.pauseOverlay = Theme:PauseMenu(board, "bejeweled", self)
+    self.right = Theme:PremiumFrame(self.root, 250, 550, 0, 0, { skin = "game-stats-frame" })
+    self.crest = Theme:Art(self.right, "crest", 160, 160, 80, -18, 0.07, "ARTWORK")
+    self.crown = Theme:GameIcon(self.right, "ornament-crown", 34, Theme.Colors.gold)
+    self.scorePanel = Theme:StatPanel(self.right, "SCORE", 220, 120, 14, -24, { plain = true })
+    self.scorePanel.label:SetFont(Theme.Fonts.display, 18, "")
+    self.scorePanel.value:SetFont(Theme.Fonts.display, 56, "")
+    self.scorePanel.detail:Hide()
+    self.scoreText = self.scorePanel.value
+    self.scorePulse = Theme:Highlight(self.scorePanel, 0, 0, 1, 1, Theme.Colors.accent, 0)
+    self.scorePulse:SetAllPoints(self.scorePanel)
+    self.bestPanel = Theme:GoldBest(self.right)
+    self.bestText = self.bestPanel.value
+    self.moveRow = Theme:GameStatRow(self.right, "icon-swap", "MOVES")
+    self.clearedRow = Theme:GameStatRow(self.right, "icon-gem", "GEMS CLEARED")
+    self.cascadeRow = Theme:GameStatRow(self.right, "icon-cascade", "BEST CASCADE")
+    self.statRule = Theme:SectionHeader(self.right, "", 200, 18, -380)
+    self.gemDecor = Theme:Art(self.right, "bejeweled-card", 130, 70, 40, -370, 0.16, "ARTWORK")
+    self.tipPanel = Theme:PremiumFrame(self.right, 220, 104, 14, -430, { compact = true })
+    self.statusText = Theme:GameLabel(self.tipPanel, "", 13)
+    self.statusText:SetMaxLines(2)
+    self.tipText = Theme:GameLabel(
+        self.tipPanel,
+        "50 points per gem x cascade.\nRight-click clears selection.",
+        12,
+        Theme.Colors.muted
     )
-    root:SetScript("OnUpdate", function(_, dt)
+    self.root:SetScript("OnUpdate", function(_, dt)
         self:Advance(dt)
     end)
-    root:SetScript("OnHide", function()
+    self.root:SetScript("OnHide", function()
         if self.running then
             self:Pause(true)
         end
     end)
-    root:Hide()
+    self.root:Hide()
+    self:LayoutUI()
     self:CreateSummary()
-    return root
+    return self.root
+end
+function B:LayoutUI()
+    if not self.root then
+        return
+    end
+    self:CancelDrag()
+    local parent = self.root:GetParent()
+    local w, h = parent:GetWidth(), parent:GetHeight()
+    self.root:SetSize(w, h)
+    local leftW, rightW, gap = math.floor(w * 0.245), math.floor(w * 0.24), 14
+    local available = w - leftW - rightW - 2 * gap
+    self.boardInset = 12
+    self.step = math.floor((math.min(available, h - 16) - 24) / 8)
+    self.tileSize = self.step - 2
+    local size = self.step * 8 + 24
+    Theme:PlaceGame(self.left, 0, 0, leftW, h)
+    Theme:PlaceGame(self.board, leftW + gap + (available - size) / 2, math.floor((h - size) / 2), size, size)
+    Theme:PlaceGame(self.viewport, 12, 12, size - 24, size - 24)
+    Theme:PlaceGame(self.right, w - rightW, 0, rightW, h)
+    local artH = math.min(178, math.floor(h * (h < 550 and 0.21 or 0.24)))
+    Theme:PlaceGame(self.leftArt, 14, 14, leftW - 28, artH)
+    Theme:SetArt(self.leftArt, "bejeweled-hero", leftW - 28, artH, 1)
+    Theme:PlaceGame(self.title, 14, artH + 24, leftW - 28, 36)
+    Theme:PlaceGame(self.tagline, 14, artH + 65, leftW - 28, 24)
+    Theme:PlaceGame(self.titleRule, 14, artH + 91, leftW - 28, 1)
+    for i, row in ipairs(self.instructions) do
+        Theme:PlaceGame(row, 16, artH + 104 + (i - 1) * (h < 550 and 26 or 31), leftW - 32, h < 550 and 25 or 29)
+    end
+    for i, b in ipairs({ self.hintButton, self.pauseButton, self.shareButton, self.optionsButton }) do
+        Theme:PlaceGameButton(b, 18, h - 160 + (i - 1) * 38, leftW - 36, 32)
+    end
+    for i, cell in ipairs(self.cells) do
+        Theme:PlaceGame(
+            cell,
+            ((i - 1) % 8) * self.step,
+            math.floor((i - 1) / 8) * self.step,
+            self.tileSize,
+            self.tileSize
+        )
+        cell.icon:SetSize(self.tileSize - 10, self.tileSize - 10)
+        cell.strip:SetWidth(self.tileSize)
+        cell.marker:SetWidth(self.tileSize)
+    end
+    self.dragFrame:SetSize(self.tileSize, self.tileSize)
+    self.dragFrame.icon:SetSize(self.tileSize - 10, self.tileSize - 10)
+    self.pauseOverlay:Layout(size - 40, 20, (size - 180) / 2)
+    Theme:PlaceGame(self.crown, (rightW - 34) / 2, -5)
+    Theme:PlaceGame(self.crest, rightW - 172, 18)
+    Theme:PlaceGame(self.scorePanel, 14, 26, rightW - 28, 118)
+    Theme:PlaceGame(self.scoreText, 16, 42, rightW - 60, 68)
+    Theme:PlaceGame(self.bestPanel, 16, 154, rightW - 32, 56)
+    for i, row in ipairs({ self.moveRow, self.clearedRow, self.cascadeRow }) do
+        Theme:PlaceGame(row, 18, 232 + (i - 1) * 48, rightW - 36, 42)
+    end
+    Theme:PlaceGame(self.statRule, 18, math.min(392, h - 134), rightW - 36, 24)
+    local decorY = math.min(392, h - 134) + 22
+    local decorH = math.max(0, math.min(80, h - 118 - decorY))
+    decorY = h - 118 - decorH
+    local cluster = Games.Artwork["gem-cluster"]
+    Theme:PlaceGame(self.gemDecor, (rightW - 130) / 2, decorY, 130, math.max(1, decorH))
+    Theme:SetArt(self.gemDecor, cluster.file and "gem-cluster" or cluster.fallback, 130, math.max(1, decorH), 0.16)
+    self.gemDecor:SetShown(decorH >= 12)
+    Theme:PlaceGame(self.tipPanel, 14, h - 118, rightW - 28, 104)
+    Theme:PlaceGame(self.statusText, 12, 12, rightW - 52, 38)
+    Theme:PlaceGame(self.tipText, 12, 58, rightW - 52, 36)
+    self:Render()
 end
 function B:CreateSummary()
     local f = Theme:Panel(UIParent, 440, 284, 0, 0)
     f:ClearAllPoints()
     f:SetPoint("CENTER", Games.UI.frame, "CENTER", 0, 0)
-    Theme:Window(f, true)
+    Theme:Window(f, true, true)
     Theme:CloseButton(f)
     _G.KICGamesBejeweledResult = f
     UISpecialFrames[#UISpecialFrames + 1] = "KICGamesBejeweledResult"
@@ -447,11 +543,11 @@ function B:CreateSummary()
     Theme:Label(f, "Run complete", 24, -54, 380, "GameFontNormalLarge")
     self.summaryText = Theme:Label(f, "", 24, -104, 392)
     self.summaryText:SetFont("Fonts\\ARIALN.TTF", 17, "")
-    Theme:Button(f, "Play again", 188, 24, -230, function()
+    Theme:NeonButton(f, "Play again", 188, 24, -230, function()
         f:Hide()
         Games:StartSingleplayer("bejeweled")
     end)
-    Theme:Button(f, "Share best", 188, 228, -230, function()
+    Theme:NeonButton(f, "Share best", 188, 228, -230, function()
         self:ShareBest()
     end)
     f:Hide()

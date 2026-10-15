@@ -20,8 +20,9 @@ The board has 10 columns and 20 visible rows, with two hidden spawn rows.
 Each piece kind has its own bright color and spell icon. A translucent ghost
 shows where hard drop will land. Five upcoming pieces and the held piece are
 shown beside the board. Pieces come from shuffled seven-piece bags.
-The board sits on the left; score, controls, sharing, next pieces, hold and pause
-are grouped in one right sidebar. There is no separate left settings panel.
+The tall board is centered between the left information/keycap-controls panel
+and the right STATS/NEXT/HOLD panels. Options and sharing sit below the controls;
+Pause sits below the previews. All cells remain square while resizing.
 
 Choose any of the 13 **class icon presets** in the shared **Options** menu. The
 same selection applies immediately to Tetris and Bejeweled. Your selection is saved;
@@ -66,14 +67,16 @@ then press Enter to send. Nothing is sent automatically.
 
 ## Leaving for the dungeon
 
-**Stop match** or `/kicgames stop` immediately closes the game and releases its
+**Stop match** in the pause menu or `/kicgames stop` immediately closes the game and releases its
 keyboard input. The framework records an interrupted match without a loss;
 your earned best score remains saved. No confirmation is required.
 
-Using **Launcher**, closing the window, opening match history, or focusing a chat/edit box automatically
+Using **Back to Launcher**, closing the window, opening match history, or focusing a chat/edit box automatically
 pauses play and releases held movement keys. Reopen via **Open game** or
 `/kictetris`, then press **P** or **Resume**. Escape and other non-game keys keep
-their normal WoW behavior. Combat-specific handling is outside this addon scope.
+their normal WoW behavior. **Restart run** in the pause menu saves the current best
+and starts a fresh board. Active boards are preserved while navigating or hiding
+the window, and remain paused until resumed. Combat-specific handling is outside scope.
 
 ## Module layout
 
