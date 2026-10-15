@@ -2225,9 +2225,21 @@ do
             check(next(game.keys) == nil, "Back left held keyboard input active")
         end
         ui:LaunchGame(id)
-        check(game.model == model and game.pauseOverlay:IsShown(), "Launcher Resume lost paused session")
+        check(
+            game.model == model
+                and game.pauseOverlay:IsShown()
+                and game.pauseOverlay.dimmer:IsShown()
+                and game.pauseOverlay.dimmer:GetFrameLevel() > game.board:GetFrameLevel() + 25
+                and game.pauseOverlay:GetFrameLevel() > game.pauseOverlay.dimmer:GetFrameLevel()
+                and game.pauseOverlay.background[4] == 1
+                and game.pauseOverlay.width <= 320,
+            "Paused session must show an opaque menu above the dimmed board and drag layers"
+        )
         game.pauseOverlay.resume.scripts.OnClick()
-        check(not game.paused and not game.pauseOverlay:IsShown(), "Pause menu Resume failed")
+        check(
+            not game.paused and not game.pauseOverlay:IsShown() and not game.pauseOverlay.dimmer:IsShown(),
+            "Pause menu Resume failed or left the dimmer visible"
+        )
         ui.closeButton.scripts.OnClick()
         check(
             not ui.frame:IsShown() and game.paused and games.ActiveGame == active and game.model == model,

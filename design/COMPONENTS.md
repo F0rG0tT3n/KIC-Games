@@ -93,3 +93,8 @@ already framed panel. It retains `.label`, `.value`, `.detail` and SetStat; call
 can hide detail and adjust the label/value positions for shorter readouts.
 Each game owns one pooled board and preview set. Bejeweled feedback uses its
 existing Advance callback; Tetris continues to paint on engine revision changes.
+PauseMenu dims the whole board on a separate mouse-blocking layer above drag
+icons and below the opaque menu. Its show/hide scripts synchronize the dimmer;
+resuming removes it. The centered menu caps its width at 320 UI pixels and uses
+a bright cyan premium border, larger heading and divider for contrast. Both
+layers are created once, with no decorative update loop or extra texture files.
