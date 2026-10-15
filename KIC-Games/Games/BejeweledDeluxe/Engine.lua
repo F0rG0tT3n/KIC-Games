@@ -156,7 +156,8 @@ end
 -- Build the entire clear before animating it. Each occupied cell enters this
 -- bounded queue once (at most 64); gravity never runs inside a chain reaction.
 function E:Plan(patterns, destination, combination)
-    local p = { cells = {}, created = {}, events = {}, bonus = 0, activations = 0, longest = 3 }
+    local p =
+        { cells = {}, created = {}, events = {}, bonus = 0, activations = 0, longest = 3, blasts = {}, orbTargets = {} }
     local pieces, queued, queue, activated, protected = {}, {}, {}, {}, {}
     for y = 1, 8 do
         for x = 1, 8 do
@@ -180,6 +181,7 @@ function E:Plan(patterns, destination, combination)
     end
     local function area(id, radius)
         local c = cell(id)
+        p.blasts[#p.blasts + 1] = { kind = "bomb", x = c.x, y = c.y, radius = radius }
         for y = c.y - radius, c.y + radius do
             for x = c.x - radius, c.x + radius do
                 at(x, y)
@@ -188,6 +190,7 @@ function E:Plan(patterns, destination, combination)
     end
     local function cross(id, radius)
         local c = cell(id)
+        p.blasts[#p.blasts + 1] = { kind = "lightning", x = c.x, y = c.y, radius = radius }
         for offset = -radius, radius do
             for i = 1, 8 do
                 at(i, c.y + offset)
@@ -198,6 +201,7 @@ function E:Plan(patterns, destination, combination)
     local function color(kind)
         for id = 1, 64 do
             if E.Kind(pieces[id]) == kind then
+                p.orbTargets[id] = true
                 hit(id)
             end
         end
@@ -239,6 +243,7 @@ function E:Plan(patterns, destination, combination)
                 activate(other)
                 event("boardClear", 1000)
                 for id = 1, 64 do
+                    p.orbTargets[id] = true
                     hit(id)
                 end
             else

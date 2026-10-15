@@ -96,6 +96,7 @@ function Games:RegisterBejeweledModule(B, id, title, slash)
         end,
         OnStart = function(context)
             B:CancelDrag()
+            B:ClearMatchEffect()
             B.context, B.model = context, B.Engine.New()
             B.running, B.paused = true, false
             B.selected, B.hint, B.swap, B.fall = nil, nil, nil, nil
@@ -119,7 +120,7 @@ function Games:RegisterBejeweledModule(B, id, title, slash)
             B:SaveBest()
             B.running = false
             B.swap, B.fall, B.selected, B.hint = nil, nil, nil, nil
-            B.matchEffect = nil
+            B:ClearMatchEffect()
             B.effectPending = nil
             B.effectBanner:Hide()
             B.effectDetail:Hide()

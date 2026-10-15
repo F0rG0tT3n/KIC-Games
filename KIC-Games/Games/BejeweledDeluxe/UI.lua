@@ -38,8 +38,8 @@ local rainbow = {
     { 0.35, 0.35, 1 },
     { 1, 0.3, 0.9 },
 }
--- Overlays anchor to the animated icon, so swaps, drops, hint bounces and the
--- drag ghost all keep their special identity at every interface scale.
+-- Thin corner rails and a small badge leave the center of every icon untouched.
+-- Anchoring to the icon keeps the marker attached during swaps, falls and drags.
 function D:PaintSpecial(frame, piece)
     local special = E.Special(piece)
     local art = frame.deluxeArt
@@ -49,17 +49,13 @@ function D:PaintSpecial(frame, piece)
     if not art then
         art = { parts = {} }
         frame.deluxeArt = art
-        art.glow = frame:CreateTexture(nil, "OVERLAY", nil, 1)
-        art.glow:SetAllPoints(frame.icon)
-        art.glow:SetBlendMode("ADD")
-        for i = 1, 7 do
+        for i = 1, 8 do
             art.parts[i] = frame:CreateTexture(nil, "OVERLAY", nil, 2)
         end
         art.label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        art.label:SetPoint("BOTTOM", frame.icon, "BOTTOM", 0, 0)
+        art.label:SetPoint("BOTTOM", frame.icon, "BOTTOM", 0, -4)
         art.label:SetJustifyH("CENTER")
     end
-    art.glow:SetShown(special ~= nil)
     art.label:SetShown(special ~= nil)
     for _, t in ipairs(art.parts) do
         t:Hide()
@@ -68,69 +64,36 @@ function D:PaintSpecial(frame, piece)
         return
     end
     local size = self.tileSize - 10
-    local color = special == "bomb" and { 1, 0.22, 0.02 }
-        or special == "lightning" and { 0.1, 0.7, 1 }
-        or { 0.65, 0.3, 1 }
-    -- Blizzard's native circular alpha texture gives the energy glow a round
-    -- silhouette without adding or regenerating any artwork assets.
-    art.glow:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask")
-    art.glow:SetVertexColor(color[1], color[2], color[3], 0.4)
-    art.label:SetFont(Theme.Fonts.display, math.max(7, math.floor(size * 0.22)), "OUTLINE")
+    local color = special == "bomb" and { 1, 0.48, 0.08 }
+        or special == "lightning" and { 0.25, 0.85, 1 }
+        or { 0.9, 0.6, 1 }
+    art.label:SetFont(Theme.Fonts.display, math.max(7, math.floor(size * 0.20)), "OUTLINE")
     art.label:SetText(special == "bomb" and "BOMB" or special == "lightning" and "ZAP" or "ORB")
-    art.label:SetTextColor(1, 1, 1, 1)
-    local function part(i, x, y, w, h, r, g, b, rotation, texture)
-        local t = art.parts[i]
-        t:ClearAllPoints()
-        t:SetPoint("CENTER", frame.icon, "CENTER", x * size, y * size)
-        t:SetSize(w * size, h * size)
-        if texture then
-            t:SetTexture(texture)
-            t:SetVertexColor(r, g, b, 1)
-        else
-            t:SetColorTexture(r, g, b, 1)
-            t:SetVertexColor(1, 1, 1, 1)
-        end
-        t:SetRotation(rotation or 0)
-        t:Show()
-    end
-    if special == "bomb" then
-        -- Layered flame diamonds and a bright fuse leave the spell icon visible.
-        part(1, 0.29, 0.25, 0.30, 0.38, 1, 0.12, 0.01, 0.4)
-        part(2, 0.29, 0.28, 0.17, 0.31, 1, 0.6, 0.02, 0.4)
-        part(3, 0.29, 0.3, 0.08, 0.21, 1, 1, 0.65, 0.4)
-    elseif special == "lightning" then
-        -- A three-stroke electric bolt, readable on every class/spec icon.
-        part(1, 0.23, 0.27, 0.10, 0.40, 0.75, 1, 1, -0.6)
-        part(2, 0.26, 0.10, 0.28, 0.10, 1, 1, 1, 0)
-        part(3, 0.30, -0.07, 0.10, 0.40, 0.75, 1, 1, -0.6)
-    else
-        -- Seven colored facets form a luminous energy sphere; no normal color.
-        for i, c in ipairs(rainbow) do
-            local angle = (i - 1) * math.pi * 2 / 7
-            part(
-                i,
-                math.cos(angle) * 0.25,
-                math.sin(angle) * 0.25,
-                0.47,
-                0.47,
-                c[1],
-                c[2],
-                c[3],
-                angle,
-                Games.Artwork["original-gem-" .. i].file
-            )
-        end
-    end
+    art.label:SetTextColor(color[1], color[2], color[3], 1)
     local alpha = self.drag
             and frame ~= self.dragFrame
             and self.cells[(self.drag.y - 1) * 8 + self.drag.x] == frame
             and 0.2
         or 1
-    art.glow:SetAlpha(alpha)
-    art.label:SetAlpha(alpha)
-    for _, t in ipairs(art.parts) do
+    for i, t in ipairs(art.parts) do
+        local corner = math.floor((i - 1) / 2)
+        local sx, sy = corner % 2 == 0 and -1 or 1, corner < 2 and 1 or -1
+        local horizontal = i % 2 == 1
+        local c = special == "orb" and rainbow[(i - 1) % 7 + 1] or color
+        t:ClearAllPoints()
+        t:SetPoint(
+            "CENTER",
+            frame.icon,
+            "CENTER",
+            sx * size * (horizontal and 0.36 or 0.5),
+            sy * size * (horizontal and 0.5 or 0.36)
+        )
+        t:SetSize(horizontal and size * 0.32 or 1.5, horizontal and 1.5 or size * 0.32)
+        t:SetColorTexture(c[1], c[2], c[3], 1)
         t:SetAlpha(alpha)
+        t:Show()
     end
+    art.label:SetAlpha(alpha)
 end
 function D:MatchSoundEvent()
     local p = self.model.plan

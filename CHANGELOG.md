@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased - Deluxe special visuals
+
+- Replaced opaque special overlays with thin orange/cyan/rainbow corner rails and small bottom badges, keeping gem and class/spec icons readable during swaps, falls and dragging.
+- Bombs now produce expanding fiery shockwaves and debris; Lightning discharges along affected rows and columns; Color Orbs send descending cyan/violet bolts to every cleared color target (all 64 cells for Orb + Orb).
+- Special clears wait for their impact animation; effects respect pause, restart/stop, scale, board clipping and Off/Subtle/Full settings. Recycled textures have a fixed budget and do not use game RNG or timers.
+- Added dedicated effect regressions and inspected an offline geometry preview. Live WoW rendering still needs verification.
+
 ## Unreleased - Direct Share Best
 
 - Share Best in Tetris, Bejeweled and Bejeweled Deluxe now sends directly to instance (`/i`) chat on an explicit click or share command. No chat draft or Enter key is required.

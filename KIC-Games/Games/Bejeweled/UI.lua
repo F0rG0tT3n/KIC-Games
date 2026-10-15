@@ -562,7 +562,7 @@ function B:Advance(dt)
             self.effectPending = matched
         end
         self.phaseTime = self.phaseTime + dt
-        if self.phaseTime >= 0.3 then
+        if self.phaseTime >= (self.GetClearDuration and self:GetClearDuration() or 0.3) then
             local event, cascade = self:MatchSoundEvent(), self.model.cascade
             self.model:Step()
             self.scoreIdleTime = 0

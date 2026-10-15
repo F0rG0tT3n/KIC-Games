@@ -104,10 +104,17 @@ saved across UI reloads, matching standard Bejeweled.
 - The exact supplied `bejeweled-deluxe-hero.tga` (1024x512) and
   `bejeweled-deluxe-card.tga` (256x256) were copied from the provided artwork archive
   to the runtime media folder. The hero uses left-side text. Existing art is unchanged.
-- Bombs have an orange/red flame treatment; Lightning has a cyan/white bolt; Orbs
-  have seven colored facets over a circular energy glow. Persistent labels identify
-  all three. Overlays follow animated icons and drag ghosts. Bombs/Lightning retain
-  the original gem or spec spell icon underneath. No generated replacement artwork.
+- Specials use thin orange (Bomb), cyan (Lightning) or rainbow (Orb) corner rails
+  and small bottom badges, leaving the icon center clear. Markers follow animated
+  icons and drag ghosts. Bombs/Lightning retain the original gem or spec spell icon;
+  the colorless Orb keeps its dedicated gem icon. No generated replacement artwork.
+- `Games/BejeweledDeluxe/Effects.lua` renders expanding fiery Bomb shockwaves,
+  Lightning discharges along the affected rows/columns, and descending cyan/violet
+  Orb bolts to every targeted color cell. Orb + Orb strikes all 64 cells. Full
+  special clear durations are 0.65s for Bomb, 0.6s for Lightning and 0.85s for Orb,
+  so impacts precede removal. Off keeps the original 0.3s clear; Subtle reduces
+  strength/detail. A pool capped at 1,024 native textures is reused, clipped to the
+  board and cleaned up on restart/stop. No timers, gameplay RNG calls or new audio.
 - Creation, activation, combination and major-chain events map to existing audited
   match sound categories. Only the highest-priority sound plays per phase. Resolution
   audio uses the existing Bejeweled event owner to preserve class/spec mappings,
@@ -122,10 +129,12 @@ Added:
 
 - `KIC-Games/Games/BejeweledDeluxe/Engine.lua`
 - `KIC-Games/Games/BejeweledDeluxe/UI.lua`
+- `KIC-Games/Games/BejeweledDeluxe/Effects.lua`
 - `KIC-Games/Games/BejeweledDeluxe/Module.lua`
 - `KIC-Games/Media/KICUI/bejeweled-deluxe-hero.tga`
 - `KIC-Games/Media/KICUI/bejeweled-deluxe-card.tga`
 - `tests/bejeweled_deluxe.lua`
+- `tests/deluxe_effects.lua`
 - `BEJEWELED-DELUXE.md`
 
 Updated:
@@ -144,6 +153,7 @@ Run from the repository root:
 
 ```powershell
 lua tests/bejeweled_deluxe.lua
+lua tests/deluxe_effects.lua
 lua tests/framework.lua
 lua tests/bejeweled.lua
 lua tests/tetris.lua
@@ -170,7 +180,8 @@ Final automated results:
 - StyLua checks and `git diff --check` passed.
 
 Only mocked Lua clients and asset checks were run; no live WoW validation is claimed.
-In Retail, verify special readability and the circular native glow, title/art
+An offline preview of the real mocked UI marker and effect geometry was inspected.
+In Retail, verify special readability and the shockwave/lightning/storm rendering, title/art
 placement, swap/fall/chain animation, cursor behavior at 75%-150% scale, class/spec
 graphics changes, perceived sound volume and throttling, and pause/reopen/restart/
 stop/completion including reload persistence. No remote push or release ZIP.
