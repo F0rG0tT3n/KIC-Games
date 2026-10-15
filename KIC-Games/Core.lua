@@ -176,9 +176,12 @@ end
 function Games:StartModule(restored)
     local lobby = self.Lobby
     if not lobby or not self:Compatible(lobby) then
-        return
+        return false
     end
     self:StopModule("restart")
+    if self.Lobby ~= lobby or lobby.status ~= "running" then
+        return false
+    end
     local game = self.Registry[lobby.gameID]
     local sessionID, run = lobby.id, lobby.run
     local active
@@ -267,28 +270,32 @@ function Games:StartModule(restored)
     if game.CreateUI then
         local ok, frame = self:CallGame("CreateUI", self.UI:GetGameContainer())
         if not ok then
-            self:StopModule("error")
-            return
+            if self.ActiveGame == active then
+                self:StopModule("error")
+            end
+            return false
         end
         if self.ActiveGame ~= active then
-            if frame then
+            if (type(frame) == "table" or type(frame) == "userdata") and type(frame.Hide) == "function" then
                 frame:Hide()
             end
-            return
+            return true
         end
         if (type(frame) ~= "table" and type(frame) ~= "userdata") or type(frame.Hide) ~= "function" then
             self:Notify(game.title .. " / CreateUI: return the module's root frame.")
             self:StopModule("error")
-            return
+            return false
         end
         active.frame = frame
     end
     if not self:CallGame("OnStart", self:GetSession(), restored == true) then
-        self:StopModule("error")
-        return
+        if self.ActiveGame == active then
+            self:StopModule("error")
+        end
+        return false
     end
-    if not self.ActiveGame or not self.Lobby or self.Lobby.status ~= "running" then
-        return
+    if not current() then
+        return true
     end
     self:RecordGameLaunch(game.id)
     self.UI:ShowGame()
@@ -301,6 +308,7 @@ function Games:StartModule(restored)
             gameVersion = lobby.gameVersion,
         })
     end
+    return true
 end
 
 local events = CreateFrame("Frame")
@@ -314,6 +322,8 @@ events:SetScript("OnEvent", function(_, event, name)
         end
         Games.DB = KICGamesDB
         Games.DB.minimapAngle = tonumber(Games.DB.minimapAngle) or 220
+        local angle = Games.DB.minimapAngle
+        Games.DB.minimapAngle = angle == angle and angle > -math.huge and angle < math.huge and angle % 360 or 220
         Games:InitializeResults()
     elseif event == "PLAYER_LOGIN" then
         Games.Profiles:Refresh()

@@ -74,6 +74,8 @@ two tabs by this field. A singleplayer module defaults to `minPlayers = 1` and
 `KICGames:StartSingleplayer(gameID)`, requires no party, and sends no network
 packets. Its action/state callbacks, results, managed timers and quick stop
 use the same module contract as multiplayer. Finishing releases the solo session.
+Startup errors return `false, reason` and finalize the failed round as interrupted.
+An old callback cannot stop a replacement session started by a lifecycle hook.
 
 For multiplayer, `KICGames:CreateLobby(gameID)` creates and advertises a lobby
 with the selected game in one operation. Any party member may host. A game's
@@ -203,14 +205,17 @@ snapshots and old module contexts cannot resume a locally stopped round.
 Stopping during the countdown cancels the pending start without creating a
 match result. A solo game finishes or stops locally using the same result schema.
 
-`KICGames:GetResults(gameID)` returns copies of the most recent 20 local match
-records, optionally filtered by game ID. `KICGames:GetResultStats(gameID)` counts
+`KICGames:GetResults(gameID)` returns copies of the current character's records
+from the account's bounded 20-match history, optionally filtered by game ID.
+`KICGames:GetResultStats(gameID)` counts
 completed/interrupted matches and explicit local wins/losses/draws in that
 retained history. Those are not lifetime totals. Result fields include `id`,
 `sessionID`, `run`, `host`, `gameID`, `gameVersion`, `startedAt`, `endedAt`,
 `status`, `reason`, `summary`, `entries` and optional `abortedBy`/`provisional`.
 Repeated snapshots are deduplicated by match ID. Only matches containing the
-local player are stored. The framework owns history persistence and presentation.
+local player are added. Existing records belonging to other characters survive
+initialization and remain subject to the same account-wide 20-record limit.
+The framework owns history persistence and presentation.
 
 ## Payload and performance rules
 

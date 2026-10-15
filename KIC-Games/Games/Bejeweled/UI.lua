@@ -51,7 +51,7 @@ function B:CancelDrag()
     if self.dragTracker then
         self.dragTracker:SetScript("OnUpdate", nil)
     end
-    self.drag, self.dragTarget = nil, nil
+    self.drag = nil
     if self.dragFrame then
         self.dragFrame:Hide()
     end
@@ -89,7 +89,6 @@ function B:UpdateDrag()
     local scale = self.board:GetEffectiveScale()
     local left = self.board:GetLeft() + self.boardInset
     local top = self.board:GetTop() - self.boardInset
-    self.dragTarget = nil
     local first, targetX, targetY
     -- Hit actual neighboring tile rectangles, excluding the gaps between cells.
     -- Compare in physical cursor coordinates to account for effective UI scale.
@@ -285,7 +284,6 @@ function B:Render()
             cell:SetBackdropColor(c[1] * 0.11 + 0.025, c[2] * 0.11 + 0.025, c[3] * 0.11 + 0.025, 1)
             cell.selection:SetShown(selected == true)
             cell.marker:SetShown(selected == true)
-            local target = self.dragTarget and self.dragTarget.x == x and self.dragTarget.y == y
             if selected then
                 cell:SetBackdropColor(0.28, 0.22, 0.045, 1)
                 cell:SetBackdropBorderColor(1, 0.88, 0.25, 1)
@@ -295,9 +293,6 @@ function B:Render()
                 and ((x == self.swap.x and y == self.swap.y) or (x == self.swap.tx and y == self.swap.ty))
             then
                 cell:SetBackdropBorderColor(unpack(Theme.Colors.ice))
-            elseif target then
-                cell:SetBackdropColor(0.08, 0.22, 0.32, 1)
-                cell:SetBackdropBorderColor(unpack(Theme.Colors.accent))
             elseif hint then
                 cell:SetBackdropBorderColor(1, 0.85, 0.25, 1)
             elseif matches[index] then
@@ -436,8 +431,6 @@ function B:CreateUI(parent)
     self.title = Theme:GameLabel(self.left, "BEJEWELED", 28)
     self.tagline = Theme:GameLabel(self.left, "MATCH / CASCADE / REPEAT", 12, Theme.Colors.accent)
     self.titleRule = Theme:Separator(self.left, 14, -200, 220)
-    self.presetLabel = Theme:GameLabel(self.left, "", 12)
-    self.presetLabel:Hide()
     self.instructions = {}
     for _, row in ipairs({
         { "icon-gem", "Swap neighboring icons\nto match three or more." },

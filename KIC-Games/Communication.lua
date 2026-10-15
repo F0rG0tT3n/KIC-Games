@@ -37,6 +37,25 @@ function Games:ValidData(data)
     return safe(data, 0, {}, { n = 0 })
 end
 
+-- Network rosters and result entries must not hide unchecked values from ipairs.
+function Games:IsArray(value)
+    if type(value) ~= "table" then
+        return false
+    end
+    local length = #value
+    for key in pairs(value) do
+        if type(key) ~= "number" or key % 1 ~= 0 or key < 1 or key > length then
+            return false
+        end
+    end
+    for i = 1, length do
+        if value[i] == nil then
+            return false
+        end
+    end
+    return true
+end
+
 function Games:InitializeCommunication()
     self.Comm = {}
     LibStub("AceComm-3.0"):Embed(self.Comm)

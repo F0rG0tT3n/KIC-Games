@@ -24,9 +24,6 @@ function B:ApplyPreset(token)
     local shared = Games.IconPresets
     self.icons = Games:GetPieceIcons("bejeweled")
     self.fallbackIcon = shared.FallbackIcons[token] or shared.FallbackIcons.MAGE
-    if self.presetLabel then
-        self.presetLabel:SetText(token .. " icons")
-    end
     self:Render()
 end
 function B:SaveBest()

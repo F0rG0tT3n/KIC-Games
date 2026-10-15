@@ -6,7 +6,8 @@ Original colored gems or the same class/spec spell profiles as Tetris. Choose
 **Options -> Graphics** for the theme, class/spec, Follow My Character and preview.
 The selection applies immediately to both games and is saved between sessions.
 **Audio** independently selects arcade or class/spec effects, mute and volume.
-Spell-file effects follow WoW SFX volume; 0% or Off silences them too.
+Spell-file effects use WoW's Master channel; 0% or Off silences them too.
+Verified single-file SoundKit adapters also support the addon volume slider.
 
 The reference layout places artwork, instructions and Hint/Pause/Share/Class
 Options on the left, the square board in the center, and real score/gold best/

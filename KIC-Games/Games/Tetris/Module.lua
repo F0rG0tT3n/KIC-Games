@@ -35,6 +35,7 @@ function T:SaveBest()
             achievedAt = GetServerTime(),
         }
     end
+    self.lastSavedScore = m and m.score
 end
 function T:ShareBest()
     if self.running then
@@ -139,6 +140,7 @@ Games:RegisterGame({
         T.model = T.Engine.New()
         T:AttachAudio(T.model)
         T.running, T.paused, T.drawRevision = true, false, nil
+        T.lastSavedScore = nil
         T:ReleaseKeys()
         T:Storage()
         T:ApplyPreset(Games:GetClassPreset())

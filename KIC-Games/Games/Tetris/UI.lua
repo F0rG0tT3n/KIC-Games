@@ -101,9 +101,6 @@ function T:ApplyPreset(token)
     end
     self.originalGraphics = Games:GetSettings().graphicsTheme == "original"
     self.fallbackIcon = self.FallbackIcons[token] or self.FallbackIcons.MAGE
-    if self.presetLabel then
-        self.presetLabel:SetText(token .. " icons")
-    end
     self:Render(true)
 end
 local captured =
@@ -169,7 +166,9 @@ function T:Advance(dt)
         return
     end
     if not self.root:IsVisible() or self:HasFocus() then
-        self:Pause(true)
+        if not self.paused then
+            self:Pause(true)
+        end
         return
     end
     if not self.paused then
@@ -189,7 +188,9 @@ function T:Advance(dt)
             end
         end
         self.model:Update(dt)
-        self:SaveBest()
+        if self.lastSavedScore ~= self.model.score then
+            self:SaveBest()
+        end
     end
     self:Render()
     if self.model.gameover then
@@ -244,8 +245,6 @@ function T:CreateUI(parent)
     self.shareButton = Theme:GameButton(self.left, "Share Best to Chat", "icon-share", function()
         self:ShareBest()
     end)
-    self.presetLabel = Theme:GameLabel(self.left, "", 12)
-    self.presetLabel:Hide()
     local board = Theme:GameBoard(root)
     self.board = board
     self.cells = {}

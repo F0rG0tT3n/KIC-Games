@@ -44,7 +44,8 @@ controls; Arcade Sounds disables the audio profile controls. New settings defaul
 to Class Spells, Follow My Character ON and Class & Specialization audio. Existing
 saved choices are retained. Arcade SoundKits support independent volume on current
 Retail.
-Spell-file effects follow WoW's SFX volume; Off or 0% silences all addon effects.
+Spell-file effects use WoW's Master channel; Off or 0% silences all addon effects.
+Verified single-file SoundKit adapters also support the addon volume slider.
 Some profiles/events use documented arcade fallbacks. No global audio CVars change.
 
 Window contains only **Interface Scale**, 75%-150% in 5% steps, plus Reset to 100%.
@@ -135,8 +136,10 @@ round. A module's framework-managed timers stop automatically. Each module's
 
 Game modules finish a normal match using `context:FinishGame(result)`. The
 framework validates and distributes the host's result, displays scores/ranks
-and explicit win/loss/draw outcomes, and retains the last 20 matches you played
-in SavedVariables. Open **Results** or use `/kicgames results`.
+and explicit win/loss/draw outcomes. SavedVariables retains the last 20 matches
+across your characters; Results filters that history to the current character.
+Switching characters does not erase the other characters' retained matches.
+Open **Results** or use `/kicgames results`.
 
 Interrupted matches are labeled **Interrupted**, with no scores, rankings or
 win/loss outcomes. They never count as a defeat. If the host cannot respond,
@@ -204,7 +207,12 @@ lua tests/framework.lua
 lua tests/tetris.lua
 lua tests/bejeweled.lua
 python tests/artwork.py
+python tests/options_assets.py
 ```
+
+The focused audit regressions can also run with `lua tests/framework.lua --audit`.
+They are included in the full framework suite. See
+[the code review report](design/CODE_REVIEW_REPORT.md) for findings and release checks.
 
 The checks load the real bundled libraries and addon files with mocked WoW APIs,
 including the UI creation paths. They exercise cross-realm sessions, version

@@ -36,6 +36,13 @@ function Games:LocalMember()
     return member(self.Lobby, self:PlayerName())
 end
 
+function Games:InvalidateReadiness()
+    self.Lobby.epoch = self.Lobby.epoch + 1
+    for _, entry in ipairs(self.Lobby.members) do
+        entry.ready = false
+    end
+end
+
 function Games:PublishLobby()
     if not self:IsHost() then
         return
@@ -159,9 +166,8 @@ function Games:SelectGame(id)
     end
     self.Lobby.gameID, self.Lobby.gameVersion = id, game.version
     self.Lobby.result = nil
-    self.Lobby.epoch = self.Lobby.epoch + 1
+    self:InvalidateReadiness()
     for _, entry in ipairs(self.Lobby.members) do
-        entry.ready = false
         entry.version = entry.name == self:PlayerName() and game.version or ""
     end
     self:PublishLobby()
@@ -212,10 +218,10 @@ function Games:ResetLobby(reason)
             self:RecordResult(result)
         end
     end
-    self:StopModule(reason)
     self.Lobby, self.Pending, self.LastSnapshot = nil, nil, nil
     self.StoppedRound = nil
     self.PendingAbort = nil
+    self:StopModule(reason)
     self:Changed()
 end
 
@@ -227,6 +233,9 @@ function Games:LeaveLobby()
         end
         if self:IsHost() and lobby.status == "running" then
             self:FinishRound("aborted", "closed")
+            if self.Lobby ~= lobby then
+                return
+            end
         end
         if lobby.mode == "multiplayer" then
             self:Send(self:IsHost() and "CLOSE" or "LEAVE", {
@@ -316,6 +325,7 @@ function Games:LaunchGame()
     if not ok then
         return false, err
     end
+    local lobby = self.Lobby
     self.Lobby.status = "running"
     self.Lobby.run = self.Lobby.run + 1
     self.Lobby.startedAt = GetServerTime()
@@ -323,9 +333,12 @@ function Games:LaunchGame()
     self.Lobby.countdownHide = nil
     self.Lobby.result, self.StoppedRound = nil, nil
     self:PublishLobby()
-    self:StartModule(false)
-    if not self.ActiveGame then
-        self:FinishRound("aborted", "error")
+    local started = self:StartModule(false)
+    if started == false then
+        if self.Lobby == lobby and lobby.status == "running" then
+            self:FinishRound("aborted", "error")
+        end
+        return false, "The game module could not start."
     end
     return true
 end
@@ -338,15 +351,20 @@ function Games:RemoveMember(name)
     if not self:IsHost() or name == self.Lobby.host then
         return
     end
-    for i, entry in ipairs(self.Lobby.members) do
+    local lobby, run = self.Lobby, self.Lobby.run
+    for i, entry in ipairs(lobby.members) do
         if entry.name == name then
             if self.Lobby.status == "countdown" then
                 self:CancelCountdown(true, true)
             end
             if self.Lobby.status == "running" then
                 self:FinishRound("aborted", "player_left", nil, name)
+                if self.Lobby ~= lobby or lobby.run ~= run then
+                    return
+                end
             end
             table.remove(self.Lobby.members, i)
+            self:InvalidateReadiness()
             self:PublishLobby()
             return
         end
@@ -370,7 +388,7 @@ function Games:ValidSnapshot(data, sender)
         or not integer(data.startedAt, 0, 9999999999)
         or not integer(data.countdownToken, 0, 2147483647)
         or (data.status ~= "waiting" and data.status ~= "countdown" and data.status ~= "running")
-        or type(data.members) ~= "table"
+        or not self:IsArray(data.members)
         or #data.members < 1
         or #data.members > self.MAX_PLAYERS
     then
@@ -464,9 +482,13 @@ function Games:AcceptSnapshot(data, sender)
         return
     end
     self.Lobby, self.Pending, self.LastSnapshot = self.Copy(data), nil, GetTime()
+    local accepted = self.Lobby
     if data.result then
         self:RecordResult(data.result)
         self:CallGame("OnResult", self.Copy(data.result))
+        if self.Lobby ~= accepted then
+            return
+        end
     end
     if self.StoppedRound and self.StoppedRound.run < data.run then
         self.StoppedRound = nil
@@ -476,6 +498,9 @@ function Games:AcceptSnapshot(data, sender)
         self.PendingAbort = nil
         self.StoppedRound = nil
         self:StopModule(data.result and data.result.status or "lobby")
+        if self.Lobby ~= accepted then
+            return
+        end
         if old and old.status == "running" and data.result and data.result.status == "aborted" then
             self.UI:HideAll()
         end
@@ -593,7 +618,12 @@ function Games:Receive(kind, data, sender)
         self:Changed()
         return
     elseif kind == "REJECT" then
-        if self.Pending and self.Pending.host == sender and self.Pending.id == data.id then
+        if
+            self.Pending
+            and self.Pending.host == sender
+            and self.Pending.id == data.id
+            and (data.request == nil or data.request == self.Pending.request)
+        then
             self.Pending = nil
             self:Notify(text(data.reason, 120) and data.reason or "Unable to join this lobby.")
             self:Changed()
@@ -612,10 +642,12 @@ function Games:Receive(kind, data, sender)
         local game = self.Registry[lobby.gameID]
         local max = game and game.maxPlayers or self.MAX_PLAYERS
         if not existing and ((lobby.status ~= "waiting" and lobby.status ~= "countdown") or #lobby.members >= max) then
-            self:Send(
-                "REJECT",
-                { target = sender, id = lobby.id, reason = "The lobby is full or the game has started." }
-            )
+            self:Send("REJECT", {
+                target = sender,
+                id = lobby.id,
+                request = data.request,
+                reason = "The lobby is full or the game has started.",
+            })
         else
             if not existing then
                 if lobby.status == "countdown" then
@@ -627,7 +659,16 @@ function Games:Receive(kind, data, sender)
                     version = data.gameID == lobby.gameID and text(data.version, 32) and data.version or "",
                     request = data.request,
                 }
+                self:InvalidateReadiness()
             else
+                if existing.request ~= data.request and lobby.status ~= "running" then
+                    if lobby.status == "countdown" then
+                        self:CancelCountdown(true)
+                    else
+                        self:InvalidateReadiness()
+                    end
+                    existing.version = data.gameID == lobby.gameID and text(data.version, 32) and data.version or ""
+                end
                 existing.request = data.request
             end
             self:PublishLobby()

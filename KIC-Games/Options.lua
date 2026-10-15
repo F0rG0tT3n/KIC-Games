@@ -85,6 +85,24 @@ function Theme:SettingsDropdown(parent, popupParent, root, title, callback)
         end
     end
     b.SetOptions = function(_, entries, selected, enabled)
+        local same = b.optionEntries
+            and #b.optionEntries == #entries
+            and b.optionSelected == selected
+            and b.optionEnabled == enabled
+        if same then
+            for i, entry in ipairs(entries) do
+                local old = b.optionEntries[i]
+                if old.key ~= entry.key or old.name ~= entry.name or old.icon ~= entry.icon then
+                    same = false
+                    break
+                end
+            end
+        end
+        if same then
+            return
+        end
+        b.optionEntries, b.optionSelected, b.optionEnabled = entries, selected, enabled
+        b.selectedIndex = nil
         b:Close()
         b.buttons = {}
         local chosen

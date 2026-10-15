@@ -33,12 +33,11 @@ function Games:CancelCountdown(resetReady, hide)
     lobby.status, lobby.countdownAt = "waiting", nil
     lobby.countdownHide = hide == true
     lobby.countdownToken = lobby.countdownToken + 1
-    lobby.epoch = lobby.epoch + 1
     self.StoppedRound, self.PendingAbort = nil, nil
     if resetReady then
-        for _, entry in ipairs(lobby.members) do
-            entry.ready = false
-        end
+        self:InvalidateReadiness()
+    else
+        lobby.epoch = lobby.epoch + 1
     end
     self:SendControl("COUNTDOWN_CANCEL", {
         id = lobby.id,

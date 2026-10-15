@@ -584,6 +584,12 @@ local function client(name, realm, saved)
     return c
 end
 
+if arg[1] == "--audit" then
+    assert(loadfile("tests/audit_regressions.lua"))()(client, check)
+    print(string.format("PASS: %d audit assertions", tests))
+    return
+end
+
 local function pump(seconds)
     for _ = 1, math.ceil((seconds or 8) * 10) do
         now = now + 0.1
@@ -3541,6 +3547,7 @@ do
         "Mute failed to gate Master kit previews"
     )
 end
+assert(loadfile("tests/audit_regressions.lua"))()(client, check)
 print(string.format("PASS: %d assertions; real AceComm/ChatThrottleLib, isolated clients, UI smoke checks.", tests))
 
 -- Optional layout snapshots from the actual UI constructors, for offline visual review.

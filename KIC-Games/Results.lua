@@ -9,23 +9,6 @@ end
 local function integer(value, min, max)
     return finite(value) and value % 1 == 0 and value >= min and value <= max
 end
-local function array(value)
-    if type(value) ~= "table" then
-        return false
-    end
-    local length = #value
-    for key in pairs(value) do
-        if not integer(key, 1, length) then
-            return false
-        end
-    end
-    for i = 1, length do
-        if value[i] == nil then
-            return false
-        end
-    end
-    return true
-end
 local function includes(result, player)
     for _, entry in ipairs(result.entries) do
         if entry.player == player then
@@ -33,6 +16,14 @@ local function includes(result, player)
         end
     end
     return false
+end
+
+local function latest(history, player)
+    for _, result in ipairs(history) do
+        if includes(result, player) then
+            return result
+        end
+    end
 end
 
 function Games:ValidResult(result, lobby)
@@ -52,7 +43,7 @@ function Games:ValidResult(result, lobby)
         or (result.provisional ~= nil and (type(result.provisional) ~= "boolean" or result.status ~= "aborted"))
         or result.id ~= result.sessionID .. ":" .. result.run
         or (result.status ~= "completed" and result.status ~= "aborted")
-        or not array(result.entries)
+        or not self:IsArray(result.entries)
         or #result.entries < 1
         or #result.entries > self.MAX_PLAYERS
     then
@@ -100,18 +91,18 @@ function Games:InitializeResults()
         if #results >= LIMIT then
             break
         end
-        if self:ValidResult(result) and includes(result, self:PlayerName()) then
+        if self:ValidResult(result) then
             results[#results + 1] = self.Copy(result)
         end
     end
     self.DB.results = results
-    self.LastResult = results[1]
+    self.LastResult = latest(results, self:PlayerName())
 end
 
 function Games:GetResults(gameID)
     local results = {}
     for _, result in ipairs(self.DB.results) do
-        if not gameID or result.gameID == gameID then
+        if (not gameID or result.gameID == gameID) and includes(result, self:PlayerName()) then
             results[#results + 1] = self.Copy(result)
         end
     end
@@ -153,7 +144,7 @@ function Games:RecordResult(result)
                 return true
             end
             history[i] = self.Copy(result)
-            self.LastResult = history[1]
+            self.LastResult = latest(history, self:PlayerName())
             return true
         end
     end
@@ -161,7 +152,7 @@ function Games:RecordResult(result)
     while #history > LIMIT do
         table.remove(history)
     end
-    self.LastResult = history[1]
+    self.LastResult = latest(history, self:PlayerName())
     return true
 end
 
@@ -175,7 +166,7 @@ function Games:BuildResult(status, reason, details, abortedBy)
         type(details) ~= "table"
         or not self:ValidData(details)
         or (details.summary ~= nil and not stringValue(details.summary, 160))
-        or (details.entries ~= nil and not array(details.entries))
+        or (details.entries ~= nil and not self:IsArray(details.entries))
     then
         return nil, "Invalid match result."
     end
@@ -253,16 +244,20 @@ function Games:FinishRound(status, reason, details, abortedBy)
     if not result then
         return false, err
     end
+    local lobby, active, run = self.Lobby, self.ActiveGame, self.Lobby.run
     -- Finalize the shared state before hooks, disabling stale callbacks immediately.
     self.Lobby.status, self.Lobby.result = "waiting", result
-    self.Lobby.epoch = self.Lobby.epoch + 1
-    for _, entry in ipairs(self.Lobby.members) do
-        entry.ready = false
-    end
+    self:InvalidateReadiness()
     self.StoppedRound = { id = self.Lobby.id, run = self.Lobby.run }
     self:RecordResult(result)
     self:CallGame("OnResult", self.Copy(result))
-    self:StopModule(status == "aborted" and "aborted" or "completed")
+    if self.ActiveGame == active then
+        self:StopModule(status == "aborted" and "aborted" or "completed")
+    end
+    -- Hooks may leave the lobby or start another solo game. Finish only this round.
+    if self.Lobby ~= lobby or lobby.run ~= run then
+        return true
+    end
     if status == "aborted" then
         self.UI:HideAll()
     end
