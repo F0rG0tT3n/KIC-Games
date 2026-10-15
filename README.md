@@ -6,7 +6,7 @@ Includes **[Tetris](TETRIS.md)** with Original and class/spec graphics and
 **[Bejeweled](BEJEWELED.md)** with animated gem swaps and cascades.
 Also includes **[Bejeweled Deluxe](BEJEWELED-DELUXE.md)**, an independent game with
 Bomb, Lightning and Color Orb combinations and separate saved records.
-All singleplayer modules have saved high scores, editable chat sharing and
+All singleplayer modules have saved high scores, direct instance-chat sharing and
 shared graphics, audio and interface scale settings from **Options**.
 
 The Neon Arcade Launcher has a shared Home / Singleplayer / Multiplayer / Results /
@@ -74,10 +74,10 @@ installable folder at its root.
 - `/kicgames stop` or `/kicgames abort`: interrupt the current match and close the windows immediately.
 - `/kicgames results`: view the shared result history.
 - `/kictetris`: start Tetris, or reopen your current Tetris game.
-- `/kictetris share`: draft your saved best score in chat; press Enter to send.
+- `/kictetris share`: send your saved best score directly to instance (/i) chat.
 - `/kicbejeweled`: start Bejeweled, or reopen your active run.
-- `/kicbejeweled share`: draft your best gem-matching score in chat.
-- `/kicbejeweleddeluxe`: start or reopen Bejeweled Deluxe; add `share` to draft its best score.
+- `/kicbejeweled share`: send your best gem-matching score directly to /i chat.
+- `/kicbejeweleddeluxe`: start or reopen Bejeweled Deluxe; add `share` to send its best score directly to /i chat.
 
 ## Singleplayer and Multiplayer tabs
 
@@ -212,6 +212,7 @@ lua tests/framework.lua
 lua tests/tetris.lua
 lua tests/bejeweled.lua
 lua tests/bejeweled_deluxe.lua
+lua tests/share_best.lua
 python tests/artwork.py
 python tests/options_assets.py
 ```
@@ -229,7 +230,7 @@ responsive columns, embedded navigation and saved settings, urgent interruption
 during a large transfer, independent
 hosts, tabs, singleplayer without networking, the displayed 3-2-1 sequence,
 countdown cancellation and join acknowledgment. They also check Tetris launching,
-presets, saved records, chat drafts, focus, pauses and quick stopping. Pure engine
+presets, saved records, instance-chat sharing, focus, pauses and quick stopping. Pure engine
 checks cover bags, rotation, bounds, holding, drops, line clearing, scoring,
 gravity, locking, top-out and randomized board invariants. Bejeweled checks also
 cover legal opening boards, invalid swaps, crossing/long matches, falling-gem order,

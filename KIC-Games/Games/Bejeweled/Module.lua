@@ -51,23 +51,13 @@ function Games:RegisterBejeweledModule(B, id, title, slash)
         end
         local best = self:Storage().best
         local message = string.format(
-            "KIC " .. title .. " best: %d points | %d gems | %d moves | Cascade x%d",
+            "KIC " .. title .. " best: %d points - %d gems - %d moves - Cascade x%d",
             best.score,
             best.cleared,
             best.moves,
             best.bestCascade
         )
-        local channel = Games:GroupChannel()
-        local prefix = channel == "INSTANCE_CHAT" and "/i "
-            or channel == "RAID" and "/raid "
-            or channel == "PARTY" and "/p "
-            or "/s "
-        local open = ChatFrameUtil and ChatFrameUtil.OpenChat or ChatFrame_OpenChat
-        if open then
-            open(prefix .. message)
-        else
-            Games:Notify(message)
-        end
+        return Games:ShareBestToInstance(message)
     end
     function B:Complete()
         if not self.running then

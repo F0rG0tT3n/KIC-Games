@@ -44,23 +44,13 @@ function T:ShareBest()
     end
     local best = self:Storage().best
     local message = string.format(
-        "KIC Tetris best: %d points | %d lines | Level %d | %s",
+        "KIC Tetris best: %d points - %d lines - Level %d - %s",
         best.score,
         best.lines,
         best.level,
         Games.Graphics:Label("tetris", best)
     )
-    local channel = Games:GroupChannel()
-    local prefix = channel == "INSTANCE_CHAT" and "/i "
-        or channel == "RAID" and "/raid "
-        or channel == "PARTY" and "/p "
-        or "/s "
-    local open = ChatFrameUtil and ChatFrameUtil.OpenChat or ChatFrame_OpenChat
-    if open then
-        open(prefix .. message)
-    else
-        Games:Notify(message)
-    end
+    return Games:ShareBestToInstance(message)
 end
 function T:Complete()
     if not self.running then

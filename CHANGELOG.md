@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased - Direct Share Best
+
+- Share Best in Tetris, Bejeweled and Bejeweled Deluxe now sends directly to instance (`/i`) chat on an explicit click or share command. No chat draft or Enter key is required.
+- Replaced pipe separators with hyphens and sanitized the shared sender. Outside an instance group, show a local notice instead of switching channels.
+
 ## Unreleased - Bejeweled Deluxe
 
 - Added standalone `bejeweled_deluxe` with Bomb, Lightning and colorless Orb creation, all special combinations, bounded chain resolution and deterministic cascade scoring.

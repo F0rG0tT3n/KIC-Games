@@ -65,10 +65,9 @@ The best is updated as you earn points, including before a quick interruption.
 WoW writes SavedVariables to disk on UI reload or normal logout; a client crash
 can lose changes since the last save. Active board state is not restored on reload.
 
-Click **Share best to chat** or use `/kictetris share` at any time. This opens a
-normal chat draft with your saved record. It defaults to instance, raid or party
-chat when grouped, and say when solo. You can edit it or choose another channel,
-then press Enter to send. Nothing is sent automatically.
+Click **Share best to chat** or use `/kictetris share` to send your best directly
+to instance (`/i`) chat. This pauses and saves an active run. Plain hyphens separate
+the score fields. Without an instance group, a local notice appears; nothing is sent.
 
 ## Leaving for the dungeon
 
@@ -91,6 +90,5 @@ game and connects persistence, completion and chat sharing to the framework.
 They are bundled in the existing addon folder, so one KIC-Games installation or
 junction is enough. The multiplayer protocol remains API v3.
 
-Chat drafting follows Blizzard's
-[ChatFrameUtil.OpenChat](https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_ChatFrameBase/Shared/ChatFrameUtil.lua),
-with a legacy fallback when available.
+Chat sharing uses `C_ChatInfo.SendChatMessage` with `INSTANCE_CHAT`, with a legacy
+`SendChatMessage` fallback. Only an explicit Share action sends a message.

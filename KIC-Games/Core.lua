@@ -51,6 +51,19 @@ function Games:GroupChannel()
     end
 end
 
+-- Called by explicit Share Best clicks/commands, never by automatic score saves.
+function Games:ShareBestToInstance(message)
+    if not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+        self:Notify("Join an instance group to share your best score in /i chat.")
+        return false
+    end
+    -- A literal pipe is WoW chat markup, not a safe text separator.
+    message = message:gsub("|", "-")
+    local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
+    send(message, "INSTANCE_CHAT")
+    return true
+end
+
 function Games:Roster()
     local roster = { [self:PlayerName()] = true }
     if IsInRaid() then

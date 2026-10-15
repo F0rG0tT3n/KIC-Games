@@ -1,8 +1,9 @@
 # Bejeweled Deluxe
 
 A separate, playable singleplayer game registered as `bejeweled_deluxe`.
-Open it in Singleplayer or with `/kicbejeweleddeluxe`. The `share` argument drafts
-its best score in chat, following the existing game behavior.
+Open it in Singleplayer or with `/kicbejeweleddeluxe`. The `share` argument immediately sends
+its best score to instance (`/i`) chat. Outside an instance group, it shows a local
+notice without sending. Score fields use plain hyphens instead of pipe characters.
 
 Standard Bejeweled remains `bejeweled`, with its original engine and rules.
 Deluxe does not rename, migrate or overwrite Bejeweled or Tetris records.
@@ -97,7 +98,7 @@ saved across UI reloads, matching standard Bejeweled.
   The directional drag/hit-testing algorithm and timing are unchanged.
 - The existing module registration/lifecycle code is a small parameterized factory.
   Each invocation captures its own controller, game ID, title and command, retaining
-  pause, restart, stop, finish, chat drafting and best-score behavior.
+  pause, restart, stop, finish, instance-chat sharing and best-score behavior.
 - Launcher, Recent Games, Featured Game, Results, Continue Game, graphics changes,
   effects settings and the existing interface scale apply to Deluxe.
 - The exact supplied `bejeweled-deluxe-hero.tga` (1024x512) and

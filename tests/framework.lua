@@ -11,7 +11,7 @@ end
 
 local function client(name, realm, saved)
     local frames, notices, env = {}, {}, {}
-    local c = { sounds = {}, stoppedSounds = {} }
+    local c = { sounds = {}, stoppedSounds = {}, chatMessages = {} }
     setmetatable(env, { __index = _G })
     env._G, env.unpack = env, table.unpack
     env.KICGamesDB = saved
@@ -549,7 +549,9 @@ local function client(name, realm, saved)
         RegisterAddonMessagePrefix = function()
             return 0
         end,
-        SendChatMessage = function() end,
+        SendChatMessage = function(message, channel)
+            c.chatMessages[#c.chatMessages + 1] = { message = message, channel = channel }
+        end,
         SendAddonMessageLogged = function()
             return 0
         end,
@@ -1321,8 +1323,15 @@ T:KeyDown("SPACE")
 T.root.scripts.OnKeyUp(T.root, "SPACE")
 check(G.DB.tetris.best.score > 0, "Drop score did not save the best")
 local best = G.DB.tetris.best.score
+t.grouped, t.channel = true, "INSTANCE_CHAT"
 T:ShareBest()
-check(t.env.chatDraft:find("/s KIC Tetris best:", 1, true) == 1 and T.paused, "Best share did not draft chat and pause")
+check(
+    t.chatMessages[1].message:find("KIC Tetris best:", 1, true) == 1
+        and t.chatMessages[1].channel == "INSTANCE_CHAT"
+        and T.paused,
+    "Best share did not send to instance chat and pause"
+)
+t.grouped, t.channel = false, nil
 T:Pause(false)
 t.env.keyboardFocus = {}
 T:KeyDown("LEFT")
@@ -1364,8 +1373,10 @@ check(G:GetResults()[1].entries[1].score == T.model.score, "Tetris completion lo
 check(G.DB.tetris.best.lines == 2, "Best record lost line metadata")
 G.UI:HideAll()
 check(not T.summary:IsShown(), "Quick stop did not hide the game-over dialog")
+t.grouped, t.channel = true, "INSTANCE_CHAT"
 t.env.SlashCmdList.KICTETRIS("share")
-check(t.env.chatDraft:find("Druid icons", 1, true), "Share command did not use saved record")
+check(t.chatMessages[#t.chatMessages].message:find("Druid icons", 1, true), "Share command did not use saved record")
+t.grouped, t.channel = false, nil
 local saved = G.DB.tetris
 local reload = client("Reloaded", "TestRealm")
 reload.env.KICGamesDB = { tetris = saved }
@@ -1485,10 +1496,13 @@ end
 check(Bj.model.score >= 150 and Q.DB.bejeweled.best.score == Bj.model.score, "Resolved clear did not save high score")
 check(not Bj.swap and not Bj.fall and Bj.model.phase == "idle", "Animated cascades did not settle")
 local jewelBest = Q.DB.bejeweled.best.score
+jewel.channel = "INSTANCE_CHAT"
 jewel.env.SlashCmdList.KICBEJEWELED("share")
 check(
-    Bj.paused and jewel.env.chatDraft:find("/p KIC Bejeweled best:", 1, true) == 1,
-    "Bejeweled share did not draft party chat"
+    Bj.paused
+        and jewel.chatMessages[1].message:find("KIC Bejeweled best:", 1, true) == 1
+        and jewel.chatMessages[1].channel == "INSTANCE_CHAT",
+    "Bejeweled share did not send to instance chat"
 )
 Q:AbortGame()
 check(
@@ -3021,9 +3035,12 @@ do
     games.Tetris.model.score = 1024
     games.Tetris:SaveBest()
     games:SetOption("graphicsTheme", "class")
+    owner.grouped, owner.channel = true, "INSTANCE_CHAT"
     games.Tetris:ShareBest()
+    owner.grouped, owner.channel = false, nil
     check(
-        owner.env.chatDraft:find("Original blocks", 1, true) and games.DB.tetris.best.graphicsTheme == "original",
+        owner.chatMessages[#owner.chatMessages].message:find("Original blocks", 1, true)
+            and games.DB.tetris.best.graphicsTheme == "original",
         "Original-mode best was incorrectly shared as class spell icons"
     )
     games:AbortGame()
