@@ -3290,6 +3290,9 @@ do
                 clearFlash[level][count] = t.lineFlash.alpha
                 check(
                     t.lineTitle.text == ({ "LINE CLEAR!", "DOUBLE CLEAR!", "TRIPLE CLEAR!", "TETRIS!" })[count]
+                        and t.lineTitle.parent == t.root
+                        and t.lineTitle.points[1][1] == "BOTTOM"
+                        and t.lineTitle.points[1][2] == t.board
                         and t.lineStrips[count]:IsShown()
                         and not (t.lineStrips[count + 1] and t.lineStrips[count + 1]:IsShown())
                         and t.lineFlash.alpha > 0

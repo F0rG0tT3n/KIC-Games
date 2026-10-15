@@ -359,7 +359,7 @@ function T:CreateUI(parent)
         spark:Hide()
         self.lineSparks[i] = spark
     end
-    self.lineTitle = Theme:GameLabel(self.lineLayer, "", 22, Theme.Colors.gold)
+    self.lineTitle = Theme:GameLabel(root, "", 22, Theme.Colors.gold)
     self.lineTitle:SetJustifyH("CENTER")
     self.lineTitle:Hide()
     self.pauseOverlay = Theme:PauseMenu(board, "tetris", self)
@@ -437,7 +437,7 @@ function T:LayoutUI()
     local parent = self.root:GetParent()
     local w, h = parent:GetWidth(), parent:GetHeight()
     self.root:SetSize(w, h)
-    self.cellSize = math.floor(math.min((h - 40) / 20, (w - 616) / 10))
+    self.cellSize = math.floor(math.min((h - 108) / 20, (w - 616) / 10))
     local bw, bh = 10 * self.cellSize + 24, 20 * self.cellSize + 24
     local leftW = math.max(280, math.floor((w - bw - 32) * 0.48))
     local rightX, rightW = leftW + bw + 32, w - leftW - bw - 32
@@ -467,7 +467,9 @@ function T:LayoutUI()
         )
     end
     Theme:PlaceGame(self.lineFlash, 12, 12, self.cellSize * 10, self.cellSize * 20)
-    Theme:PlaceGame(self.lineTitle, 12, 12 + self.cellSize * 9, self.cellSize * 10, 36)
+    self.lineTitle:ClearAllPoints()
+    self.lineTitle:SetPoint("BOTTOM", self.board, "TOP", 0, 8)
+    self.lineTitle:SetSize(bw, 28)
     for i, strip in ipairs(self.lineStrips) do
         Theme:PlaceGame(strip, 12, 12 + self.cellSize * (4 * i - 1), self.cellSize * 10, math.max(3, self.cellSize / 4))
     end
