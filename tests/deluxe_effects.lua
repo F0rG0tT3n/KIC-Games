@@ -44,20 +44,62 @@ for _, theme in ipairs({ "original", "class" }) do
             D.model.board[1][x] = E.Piece(x, special)
             D:Render()
             local cell = D.cells[x]
-            check(not cell.deluxeArt.glow and #cell.deluxeArt.parts == 8, "Opaque overlay returned")
-            for _, rail in ipairs(cell.deluxeArt.parts) do
-                local point = rail.points[1]
-                check(
-                    point[2] == cell.icon
-                        and math.max(math.abs(point[4]), math.abs(point[5])) >= (D.tileSize - 10) * 0.49,
-                    "Rail covers center or detached from icon"
-                )
-                check(math.min(rail.width, rail.height) <= 1.5, "Border obscures icon")
+            local art = cell.deluxeArt
+            check(not art.glow and art.special == special and art.builtSpecial == special, "Special frame missing")
+            check(
+                art.used >= 25 and art.used <= 64,
+                "Special has no clear geometric treatment or exceeds texture budget"
+            )
+            check(cell.icon:IsShown() and art.parts[1].points[1][2] == cell.icon, "Underlying icon/frame anchor lost")
+            check(art.label.points[1][5] < 0, "Secondary label overlaps emblem")
+            local base = theme == "original" and G.Artwork["original-gem-" .. x].file or G:GetPieceIcons("bejeweled")[x]
+            if x < 3 then
+                check(cell.icon.textureValue == base, "Special replaced the normal/spec icon")
             end
-            check(cell.deluxeArt.label.points[1][5] < 0, "Badge overlaps icon center")
+            local core, edge = 0, 0
+            for i = 1, art.used do
+                local part = art.parts[i]
+                check(part:IsShown() and part.points[1][2] == cell.icon, "Special piece detached from icon")
+                local point = part.points[1]
+                local reach = math.max(math.abs(point[4]), math.abs(point[5])) / (D.tileSize - 10)
+                if reach < 0.27 then
+                    core = core + 1
+                end
+                if reach > 0.34 then
+                    edge = edge + 1
+                end
+            end
+            check(core >= 2 and edge >= 8, "Missing center emblem or distinct silhouette")
+            -- Recognition still works if the small label is unreadable.
+            art.label:Hide()
+            check(art.parts[art.used]:IsShown() and core >= 2 and edge >= 8, "Treatment relies on label")
+            D:Render()
+            if special == "bomb" then
+                check(art.used >= 35 and art.used <= 48, "Bomb lacks heavy armor/fuse")
+            elseif special == "lightning" then
+                check(art.used >= 25 and art.used < 35, "Lightning lacks bolt/bracket geometry")
+            else
+                check(art.used >= 50 and art.used <= 64, "Orb lacks prismatic spherical geometry")
+            end
         end
     end
 end
+G:SetOption("effectsLevel", 2)
+reset()
+D.model.board[1][1] = E.Piece(1, "bomb")
+D:Render()
+local hotGlow = D.cells[1].deluxeArt.pulseParts[1]
+local beforePulse = hotGlow.alpha
+D:UpdateMatchEffect(0.15)
+check(hotGlow.alpha ~= beforePulse, "Special glow did not pulse")
+D:Pause(true)
+local stoppedPulse = hotGlow.alpha
+D:Advance(1)
+check(hotGlow.alpha == stoppedPulse, "Paused glow kept pulsing")
+D:Pause(false)
+G:SetOption("effectsLevel", 0)
+D:UpdateMatchEffect(0.15)
+check(math.abs(hotGlow.alpha - hotGlow.markerAlpha) < 0.0001, "Off mode did not stop pulse")
 G:SetOption("effectsLevel", 2)
 for _, center in ipairs({ { 1, 1 }, { 4, 4 }, { 8, 8 } }) do
     hit("bomb", center[1], center[2])

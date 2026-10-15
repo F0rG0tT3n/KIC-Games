@@ -107,10 +107,14 @@ saved across UI reloads, matching standard Bejeweled.
 - The exact supplied `bejeweled-deluxe-hero.tga` (1024x512) and
   `bejeweled-deluxe-card.tga` (256x256) were copied from the provided artwork archive
   to the runtime media folder. The hero uses left-side text. Existing art is unchanged.
-- Specials use thin orange (Bomb), cyan (Lightning) or rainbow (Orb) corner rails
-  and small bottom badges, leaving the icon center clear. Markers follow animated
-  icons and drag ghosts. Bombs/Lightning retain the original gem or spec spell icon;
-  the colorless Orb keeps its dedicated gem icon. No generated replacement artwork.
+- Bombs wear thick ember octagonal armor with hazard teeth, a compact bomb core
+  and lit fuse. Lightning uses open cyan brackets, cardinal terminals and a bright
+  white bolt with a dark keyline. Color Orbs have a full rainbow circular halo,
+  orbit and prismatic core. These distinct silhouettes and center symbols carry
+  recognition even without the small secondary text labels or color cues.
+  Underlying gem/spec spell icons stay visible around the compact emblems; markers
+  follow swaps, falls and drag ghosts. Glows pulse subtly while active, with static
+  shapes retained when effects are Off. No generated replacement artwork.
 - `Games/BejeweledDeluxe/Effects.lua` renders expanding fiery Bomb shockwaves,
   Lightning discharges along the affected rows/columns, and descending cyan/violet
   Orb bolts to every targeted color cell. Orb + Orb strikes all 64 cells. Full

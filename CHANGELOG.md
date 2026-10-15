@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased - Deluxe special gem readability
+
+- Bombs now have octagonal ember armor, hazard teeth and a compact fused explosive core; Lightning has cyan directional brackets and a bold white bolt; Color Orbs have a circular rainbow halo, orbit and prismatic core.
+- Underlying original gems and class/spec spell icons remain visible. Geometry is cached per tile, while existing update timing gives glow layers a subtle pulse. Small labels are secondary.
+- Added visual regressions for both graphics modes, interface scales, label-independent silhouettes and center emblems; reviewed an offline board-size preview. Live WoW rendering remains to be checked.
+
 ## Unreleased - Manual Bejeweled hints
 
 - Restored Hint buttons in standard Bejeweled and Deluxe, with a visible three-use allowance per run. Removed automatic hints; both suggested tiles retain the existing vertical bounce.
