@@ -36,9 +36,9 @@ restart the game. Opening Options pauses play; close it, then resume when ready.
 The former Tetris class picker now lives entirely in Options.
 **Audio** independently chooses arcade/spec effects, mute and volume. Movement,
 hold, landing, clears, combos and game over feed the shared audio API. SoundKits
-support independent volume on current Retail; spell-file effects use WoW's Master
-channel, with independent gain for verified single-file SoundKit adapters.
-Off or 0% silences all addon effects.
+use independent volume on Master. Verified spell kits retain their original effects;
+unmapped spell files use event-matched arcade sounds. A shared gain gives every
+effect headroom. Off or 0% silences all addon effects.
 
 ## Score and speed
 

@@ -44,9 +44,11 @@ controls; Arcade Sounds disables the audio profile controls. New settings defaul
 to Class Spells, Follow My Character ON and Class & Specialization audio. Existing
 saved choices are retained. Arcade SoundKits support independent volume on current
 Retail.
-Spell-file effects use WoW's Master channel; Off or 0% silences all addon effects.
-Verified single-file SoundKit adapters also support the addon volume slider.
-Some profiles/events use documented arcade fallbacks. No global audio CVars change.
+All audible effects use volume-controlled SoundKits on WoW's Master channel.
+Verified single-file SoundKit adapters retain their spell effects; the 134 spell
+files without verified kits use event-matched arcade sounds until mapped. The
+slider applies to both themes, with shared 65% headroom. Off or 0% silences all
+addon effects. No global audio CVars change.
 
 Window contains only **Interface Scale**, 75%-150% in 5% steps, plus Reset to 100%.
 The resize handle and separate size controls are removed. The base canvas is

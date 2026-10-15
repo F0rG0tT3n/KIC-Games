@@ -75,6 +75,16 @@ function UI:Initialize()
         UI:OpenLauncher(page)
     end)
     self.abortButton:Hide()
+    self.continueButton = button(frame, "Continue game", 136, 478, -34, function()
+        local id = Games.ActiveGame and Games.ActiveGame.game.id
+        local module = id == "tetris" and Games.Tetris or id == "bejeweled" and Games.Bejeweled
+        if module and module.running and module.paused then
+            UI:ShowGame()
+            module:Pause(false)
+        end
+    end)
+    self.continueButton:Hide()
+    self.continueButton.variant = "continue"
     self.home = CreateFrame("Frame", nil, frame)
     self.home:SetAllPoints()
     self.tab = Games.DB.launcherTab == "singleplayer" and "singleplayer" or "multiplayer"

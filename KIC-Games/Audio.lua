@@ -1,6 +1,8 @@
 local _, Games = ...
 local Audio = { games = {}, specs = {}, handles = {}, last = {}, lastAny = -math.huge }
 Games.Audio = Audio
+-- Shared headroom for every effect; the saved slider still spans 0..1.
+Audio.gain = 0.65
 Audio.events = { "select", "move", "swap", "land", "clear", "combo", "gameOver", "victory" }
 -- Verified simple, single-file kits; profiles retain their original FileDataIDs.
 -- SoundKit/SoundKitEntry 12.1.0.69933 evidence: tests/master-sound-kits.json.
@@ -96,7 +98,7 @@ for id, profile in pairs(Games.ProfileData) do
     for event, file in pairs(profile.soundEvents or {}) do
         events[event] = { file = file }
     end
-    -- Keep existing previews meaningful (and their file-volume limitation visible)
+    -- Preserve the selected spell event for verified kit lookup and previews.
     -- for profiles which previously had no generic spell effects.
     events.clear = events.clear
         or events.bejeweled_match_3
@@ -143,9 +145,6 @@ function Audio:Resolve(gameID, event, cascade)
     then
         entry = spec.bejeweled_cascade or spec.combo or entry
     end
-    if entry and entry.file and not PlaySoundFile and not self:VolumeSupported(entry) then
-        entry = nil
-    end
     return entry or fallback(game, event, cascade), entry == nil
 end
 function Audio:VolumeSupported(entry)
@@ -166,10 +165,18 @@ function Audio:Play(gameID, event, preview, cascade, arcadeFallback)
         self:StopAll()
         return false
     end
-    local entry = arcadeFallback and self.games[gameID] and fallback(self.games[gameID], event, cascade)
-        or self:Resolve(gameID, event, cascade)
+    local game = self.games[gameID]
+    local entry = arcadeFallback and game and fallback(game, event, cascade) or self:Resolve(gameID, event, cascade)
     if not entry then
         return false
+    end
+    -- Unmapped files and older clients must never play at uncontrolled volume.
+    if not self:VolumeSupported(entry) then
+        entry = game and fallback(game, event, cascade)
+        if not self:VolumeSupported(entry) then
+            return false
+        end
+        arcadeFallback = true
     end
     local time = GetTime()
     local resolution = self.internalEvents[event] == gameID
@@ -188,28 +195,16 @@ function Audio:Play(gameID, event, preview, cascade, arcadeFallback)
     end
     local ok, success, handle
     local kit = soundKit(entry)
-    local controlled = self:VolumeSupported(entry)
-    if controlled then
-        if C_Sound.PlaySound then
-            ok, success, handle = pcall(C_Sound.PlaySound, kit, "Master", true, false, nil, s.soundVolume)
-        else
-            ok, success, handle = pcall(C_Sound.PlaySoundWithOptions, {
-                soundKitID = kit,
-                uiSoundSubType = "Master",
-                volumeOverride = s.soundVolume,
-                forceNoDuplicates = true,
-            })
-        end
-    elseif entry.file and PlaySoundFile then
-        -- No independent gain exists for this API; nonzero levels follow Master.
-        ok, success, handle = pcall(PlaySoundFile, entry.file, "Master")
-    elseif PlaySound then
-        -- Legacy kit playback has no supported independent volume argument.
-        ok, success, handle = pcall(PlaySound, entry.kit, "Master", true)
-    end
-    if controlled and entry.file and not (ok and success) and PlaySoundFile then
-        -- A missing/unsupported mapped kit must preserve the selected spell file.
-        ok, success, handle = pcall(PlaySoundFile, entry.file, "Master")
+    local volume = s.soundVolume * self.gain
+    if C_Sound.PlaySound then
+        ok, success, handle = pcall(C_Sound.PlaySound, kit, "Master", true, false, nil, volume)
+    else
+        ok, success, handle = pcall(C_Sound.PlaySoundWithOptions, {
+            soundKitID = kit,
+            uiSoundSubType = "Master",
+            volumeOverride = volume,
+            forceNoDuplicates = true,
+        })
     end
     if ok and success then
         self.last[key], self.lastAny = time, time
@@ -218,8 +213,8 @@ function Audio:Play(gameID, event, preview, cascade, arcadeFallback)
         end
         return true
     end
-    if entry.file and not arcadeFallback and self.games[gameID][event] then
-        -- File missing in this build: retry a verified kit, without changing globals.
+    if not arcadeFallback and entry.file and game and fallback(game, event, cascade) then
+        -- A failed mapped kit may retry only a volume-controlled arcade kit.
         return self:Play(gameID, event, preview, cascade, true)
     end
     return false

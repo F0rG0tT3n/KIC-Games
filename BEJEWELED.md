@@ -6,10 +6,11 @@ Original colored gems or the same class/spec spell profiles as Tetris. Choose
 **Options -> Graphics** for the theme, class/spec, Follow My Character and preview.
 The selection applies immediately to both games and is saved between sessions.
 **Audio** independently selects arcade or class/spec effects, mute and volume.
-Spell-file effects use WoW's Master channel; 0% or Off silences them too.
-Verified single-file SoundKit adapters also support the addon volume slider.
+Verified spell SoundKits and arcade fallback effects use Master with the addon
+volume slider. Unmapped spell files are represented by arcade sounds. 0% or Off
+silences all KIC effects.
 
-The reference layout places artwork, instructions and Hint/Pause/Share/Class
+The reference layout places artwork, instructions and Hint/Pause/Share/
 Options on the left, the square board in the center, and real score/gold best/
 statistics/tips on the right. Cyan layered board edges and diamonds use the same
 shared theme as the Launcher. Selection, hover, valid swaps, matches/cascades and

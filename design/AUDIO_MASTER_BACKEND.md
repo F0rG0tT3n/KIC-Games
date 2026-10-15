@@ -1,15 +1,16 @@
 # Master-channel audio backend
 
-Date: 2026-10-15. Base checkpoint: `7493007`. Only `KIC-Games/Audio.lua` changes at runtime.
+Date: 2026-10-15. Original backend research began at checkpoint `7493007`; this document records the later volume correction.
 
-## Playback contract
+## Playback contract (volume correction, 2026-10-15)
 
-- Every explicit KIC-Games playback path now requests **Master**: preferred `C_Sound.PlaySound`, structured `C_Sound.PlaySoundWithOptions`, `PlaySoundFile`, legacy `PlaySound` and failed-file/kit fallbacks. No backend path uses the default channel or SFX.
-- SoundKit playback prefers `C_Sound.PlaySound(kit, "Master", true, false, nil, soundVolume)`. When only the structured modern API exists, it receives `uiSoundSubType="Master"` and the same normalized `volumeOverride`. The existing 0-100% slider supplies 0..1 directly.
-- The backend does not read, multiply, compensate for or write WoW Master/SFX CVars. It lets the native mixer handle the explicitly requested channel. **The exact relationship between volumeOverride and Master gain has not been tested in a live client and is not assumed to be a simple product.**
-- Addon 0% and mute stop tracked handles and prevent every new kit/file call, including previews and fallbacks. Existing settings, profiles, throttling, resolution priority, handle limits and internal event routing are preserved.
-- File sounds with no verified simple kit still use `PlaySoundFile(FileDataID, "Master")`. That API receives no invented gain parameter; nonzero addon levels do not independently attenuate those files. Their actual output follows the native Master path and requires client verification.
-- On clients older than interface 120100, with an unknown build, or without either modern kit API, legacy kits remain safely routed to Master but have no independent nonzero addon gain. A verified file-to-kit mapping uses the original file if modern kit playback fails or is unavailable; if that file also fails, the existing arcade fallback remains.
+The previous version still sent unmapped spell files and failed mapped kits through `PlaySoundFile(..., "Master")`. Master routing alone did not provide independent addon volume, so nonzero slider levels could sound equally loud. This correction removes that playback path. `PlaySoundFile` and legacy `PlaySound` are never called by the backend.
+
+The runtime now plays only verified SoundKitIDs through `C_Sound.PlaySound` or `C_Sound.PlaySoundWithOptions`, always requesting `Master` and passing `soundVolume * Audio.gain` as `volumeOverride`. The internal shared gain is 0.65; the saved slider remains a normalized 0..1 value. At 0%, or while muted, no new sound starts and tracked handles stop. Settings also stops active handles on any volume change, preventing a previously loud effect from continuing. The backend does not read or write WoW audio CVars. If the volume-capable API is unavailable, the effect is silent rather than uncontrolled.
+
+For a profile FileDataID, the verified single-file kit is preferred. When no verified kit exists, the game's corresponding arcade event kit is used. Failed mapped kits can retry only that arcade kit. All original profile FileDataIDs and event routing remain in data for future verification. This temporarily substitutes arcade effects for 134 of 148 distinct spell files. Missing profile events already used arcade kits. No SoundKitID was inferred from a SpellID or FileDataID.
+
+Offline tests check exact playback API, kit, channel and normalized override at 0%, 10%, 25%, 50% and 100%, with both sound themes and SFX enabled/disabled. They cannot establish perceived loudness or the native Master mixing formula. In a live client, `C_Sound.GetSoundScaledVolume(soundHandle)` accepts a playing handle; after a KIC preview, `/dump C_Sound.GetSoundScaledVolume(KICGames.Audio.handles[1])` can help compare effective levels where this API is available. A handle may already have ended, so repeat with a currently playing effect. The API and argument are documented in [Blizzard's generated sound documentation](https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_APIDocumentationGenerated/SoundDocumentation.lua).
 
 ## Verified file-to-kit adapter
 
@@ -38,9 +39,9 @@ The [generated client API documentation](https://github.com/Gethe/wow-ui-source/
 
 The 15 earlier research-kit links were not sufficient evidence by themselves; none of their example FileDataIDs are among the 148 currently referenced files. The new adapter uses direct SoundKitEntry/SoundKit rows instead. Other kits were rejected when they contained multiple files, advanced settings, nonzero flags, routing/pitch/randomization overrides or otherwise failed the strict criteria. FileDataIDs are never passed as SoundKitIDs.
 
-## Remaining independent-volume limitations
+## Spell files awaiting verified kits
 
-**134 of the 148 distinct spell FileDataIDs remain file-only.** Addon 25%, 50% and 100% therefore use the same file API without addon gain; 0%/mute still gate and stop them. The following table lists every remaining file-only ID by profile. Empty rows mean no remaining file-only effects in that profile, not a complete specialization sound set. Original/Arcade effects use the 11 existing verified SoundKits and accept normalized gain through the modern API.
+**134 of the 148 distinct spell FileDataIDs still have no verified single-file SoundKit adapter.** They now use volume-controlled arcade event sounds. The table below lists those FileDataIDs by profile for future adapter research. Original/Arcade effects use the existing verified kits. The exact intrinsic loudness of every kit still needs live listening.
 
 | Specialization | Remaining file-only FileDataIDs |
 |---|---|
@@ -80,34 +81,12 @@ The 15 earlier research-kit links were not sufficient evidence by themselves; no
 | DEMONHUNTER Havoc (577) | 1280632 |
 | DEMONHUNTER Vengeance (581) | 1345254 |
 
-Full ID-to-path names for these 134 files remain in `tests/sound-research.json` (`soundFiles`). If one of the 14 mapped kits fails at runtime, its original-file fallback also temporarily lacks independent nonzero gain. No global volume manipulation is used to hide these limitations.
+Full ID-to-path names for these 134 files remain in `tests/sound-research.json` (`soundFiles`). If a mapped kit fails at runtime, its arcade fallback is played with the same requested gain. No file is played directly.
 
-**Frozen Options wording:** Options.lua was not changed as requested. Its existing file-effect notice still mentions SFX. That wording is now stale: this backend routes those files through Master. Some notices also conservatively classify an entire file-backed profile even when individual effects now use mapped kits. The slider itself is unchanged and supplies its real saved value to the backend.
+The Options page was left unchanged as requested. Its existing help text still warns that file-backed profiles have effects outside slider control; that warning now describes the old backend. The control itself sends the saved 0..1 value correctly.
 
-## Automated checks versus live verification
+## Automated checks and live verification
 
-- Framework: **3,538 assertions**. The new backend contract tests drive the real existing volume slider at 0/25/50/100%, check explicit Master arguments under both simulated SFX states and Master settings 0/25/50/100%, verify preferred and structured kit APIs, all 14 mapped samples, mapped-kit failure, file-API absence, legacy fallback, unconverted files, file-to-arcade fallback, mute and previews. Global CVar writes throw and reads are counted; the backend uses neither.
-- Those tests use API doubles: simulated Master/SFX settings verify routing/noninterference only. They **do not** emulate native audio mixing or establish audibility when SFX is off or Master changes.
-- Tetris: 44,303 assertions. Bejeweled: 68,272 assertions. Profile/assets, runtime texture/TOC coverage, Lua51 formatting and whitespace checks pass.
-- Protected-file comparison confirms Options, layouts, Theme, artwork, settings/schema, ProfileData, gameplay modules/engines and other UI code are unchanged.
+The framework tests exercise Original and Class/Spec effects at 0%, 10%, 25%, 50% and 100%, including a mapped Starfire sample (FileDataID 568008, kit 22468), an unmapped Fire sample (1390656), both games, SFX disabled/enabled, mapped-kit failure, the structured API, and missing modern APIs. They reject all file playback and global CVar writes. A volume change is checked to stop the prior handle. Other engine and asset suites run separately.
 
-### Required live-client listening matrix (not run here)
-
-1. With the existing Options previews, test Original/Arcade (kit), a mapped class sample (e.g. Arcane Mage Combo preview, FileDataID 568678 / kit 11769), and an unmapped sample (Fire Combustion, file 1390656, from a four-line clear). Include the generic Class/Spec preview buttons and actual game events; no new preview controls were added.
-2. For each, test addon 0/25/50/100% with WoW Master at 0/25/50/100%, then repeat with SFX enabled and disabled. Set these through the normal WoW UI yourself; the addon must never change them. Record audibility and relative levels rather than assuming the product of the two values.
-3. At Master 0, verify silence. At nonzero Master, verify that disabling SFX does not silence the explicitly Master-routed sounds. Check monotonic kit attenuation at addon 25/50/100% and compare how each responds when Master changes.
-4. For file-only sounds, verify Master routing and the documented unchanged nonzero addon level; 0%/mute must remain silent. Repeat with muted addon previews and mute during an active effect, confirming stopped handles and no new playback.
-5. Listen to each mapped kit to confirm it is the intended single original sample and still exists in the current build. Verify fallback behavior on unavailable kit/file paths, and compare gain/priority with rapid input and cascade events.
-6. If available, read `C_Sound.GetSoundScaledVolume(handle)` while a diagnostic kit is still active to help record native scaling, and corroborate it with listening. This API alone is not a substitute for measuring/observing the final channel output. No diagnostic utility or UI was added.
-
-**No live WoW playback or native Master/volumeOverride mixing verification was possible in this environment.** Master-relative independent gain is implemented as a native API request for supported kits, not claimed as acoustically verified. If the live matrix reveals bypassing or double scaling, adjust only after collecting those results; do not compensate speculatively by reading/multiplying Master CVars.
-
-## Exact scope
-
-- `KIC-Games/Audio.lua`: explicit Master playback, preferred modern kit API and a 14-entry verified file-to-kit adapter with original-file fallback.
-- `tests/framework.lua`: API recording and focused backend regression checks.
-- `tests/options_assets.py`: Master contract and strict kit metadata checks.
-- `tests/master-sound-kits.json`: development-only pinned source evidence.
-- `design/AUDIO_MASTER_BACKEND.md`: this report and pending live matrix.
-
-No other runtime file, profile data, UI, layout, gameplay behavior or SavedVariables structure changes. No release ZIP.
+In a live Retail client, listen to both modes at these five slider levels with Master enabled and SFX disabled, then repeat with SFX enabled and different Master levels. Confirm that 0% is silent, higher levels rise as intended, fallback effects suit the events, and changing the slider stops an active louder effect. Where available, inspect a current handle with `C_Sound.GetSoundScaledVolume`; the API cannot replace listening and offline mocks cannot establish perceived loudness or the native mix equation. The 14 mapped kits were verified against historical client data and still need current-build listening.

@@ -170,6 +170,7 @@ function UI:InitializeLauncher()
         self.resultsButton,
         self.homeButton,
         self.abortButton,
+        self.continueButton,
     }) do
         Theme:StyleNeonButton(b)
     end
@@ -328,6 +329,12 @@ function UI:RefreshLauncher()
         self.abortButton:Hide()
     end
     place(self.abortButton, nil, self.frame:GetWidth() - (inGame and 350 or 452), -30, 110, 28)
+    place(self.continueButton, nil, self.frame:GetWidth() - 596, -30, 136, 28)
+    local activeID = Games.ActiveGame and Games.ActiveGame.game.id
+    local activeModule = activeID == "tetris" and Games.Tetris or activeID == "bejeweled" and Games.Bejeweled
+    self.continueButton:SetShown(
+        not inGame and activeModule and activeModule.running and activeModule.paused and not Games:IsRoundStopped()
+    )
     self.groupPanel:Show()
     self.launcherMotto:SetShown(not inGame)
     self.hero:SetShown(home)

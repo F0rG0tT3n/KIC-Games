@@ -371,13 +371,18 @@ function Theme:PaintNeonButton(button)
     button.visualState = state
     local active = state == "hover" or state == "selected"
     local color = state == "disabled" and self.Colors.background
+        or button.variant == "continue" and (active and { 0.035, 0.34, 0.19, 1 } or { 0.025, 0.25, 0.14, 1 })
         or state == "pressed" and { 0.018, 0.11, 0.22, 1 }
         or active and self.Colors.selected
         or button.variant == "primary" and self.Colors.primary
         or self.Colors.card
     button:SetBackdropColor(unpack(color))
     button:SetBackdropBorderColor(
-        unpack(enabled and (active or button.variant == "primary") and self.Colors.accent or self.Colors.border)
+        unpack(
+            enabled and button.variant == "continue" and self.Colors.success
+                or enabled and (active or button.variant == "primary") and self.Colors.accent
+                or self.Colors.border
+        )
     )
     button.sheen:SetAlpha(state == "disabled" and 0.025 or state == "pressed" and 0.05 or active and 0.4 or 0.16)
     button.premium.custom:SetAlpha(not enabled and 0.15 or active and 1 or 0.65)

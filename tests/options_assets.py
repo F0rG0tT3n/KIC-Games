@@ -49,8 +49,9 @@ kits = json.loads((ROOT / 'tests/sound-kits.json').read_text(encoding='utf-8'))[
 assert set(re.findall(r'kit\s*=\s*(\d+)', audio_source)) == set(kits)
 for file in ['Audio.lua', 'Settings.lua', 'Options.lua']:
     assert not re.search(r'\bSetCVar\s*\(|C_CVar\s*\.\s*SetCVar', (ROOT/'KIC-Games'/file).read_text(encoding='utf-8'))
-assert 'volumeOverride' in audio_source and 'PlaySoundFile, entry.file, "Master"' in audio_source
-assert 'C_Sound.PlaySound, kit, "Master", true, false, nil, s.soundVolume' in audio_source
+assert 'volumeOverride = volume' in audio_source and 'PlaySoundFile' not in audio_source
+assert 'local volume = s.soundVolume * self.gain' in audio_source
+assert 'C_Sound.PlaySound, kit, "Master", true, false, nil, volume' in audio_source
 assert 'uiSoundSubType = "Master"' in audio_source and '"SFX"' not in audio_source
 master_kits = json.loads((ROOT / 'tests/master-sound-kits.json').read_text(encoding='utf-8'))
 mapping = re.search(r'Audio.fileKits = \{(.*?)\}', audio_source, re.S).group(1)
