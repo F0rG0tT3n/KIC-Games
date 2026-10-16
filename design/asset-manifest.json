@@ -1,0 +1,92 @@
+{
+  "logo-d20": {
+    "source_png": "design/sources/logo-d20.png",
+    "game_texture": "Media/KICUI/logo-d20.tga",
+    "dimensions": [
+      256,
+      256
+    ],
+    "usage": "Header logo / brand icon. Alpha texture; original is not identical to full CurseForge logo."
+  },
+  "crest-lion": {
+    "source_png": "design/sources/crest-lion.png",
+    "game_texture": "Media/KICUI/crest-lion.tga",
+    "dimensions": [
+      256,
+      256
+    ],
+    "usage": "Optional faint sidebar/decorative watermark; use very low alpha."
+  },
+  "sidebar-decor": {
+    "source_png": "design/sources/sidebar-decor.png",
+    "game_texture": "Media/KICUI/sidebar-decor.tga",
+    "dimensions": [
+      512,
+      1024
+    ],
+    "usage": "Decorative art on sidebar lower region, not behind readable nav text."
+  },
+  "background-hall": {
+    "source_png": "design/sources/background-hall.png",
+    "game_texture": "Media/KICUI/background-hall.tga",
+    "dimensions": [
+      1024,
+      512
+    ],
+    "usage": "Optional launcher/window backdrop; darken under legible text."
+  },
+  "bejeweled-hero": {
+    "source_png": "design/sources/bejeweled-hero.png",
+    "game_texture": "Media/KICUI/bejeweled-hero.tga",
+    "dimensions": [
+      1024,
+      512
+    ],
+    "usage": "Wide featured/hero Bejeweled banner, text on dark right side."
+  },
+  "bejeweled-card": {
+    "source_png": "design/sources/bejeweled-card.png",
+    "game_texture": "Media/KICUI/bejeweled-card.tga",
+    "dimensions": [
+      256,
+      256
+    ],
+    "usage": "Square thumbnail for Bejeweled card."
+  },
+  "tetris-hero": {
+    "source_png": "design/sources/tetris-hero.png",
+    "game_texture": "Media/KICUI/tetris-hero.tga",
+    "dimensions": [
+      1024,
+      512
+    ],
+    "usage": "Wide Tetris hero banner, text can overlay dark left side."
+  },
+  "tetris-card": {
+    "source_png": "design/sources/tetris-card.png",
+    "game_texture": "Media/KICUI/tetris-card.tga",
+    "dimensions": [
+      256,
+      256
+    ],
+    "usage": "Square Tetris card icon."
+  },
+  "pug-hero": {
+    "source_png": "design/sources/pug-hero.png",
+    "game_texture": "Media/KICUI/pug-hero.tga",
+    "dimensions": [
+      1024,
+      512
+    ],
+    "usage": "Future PUG Simulator hero banner; not an installed game."
+  },
+  "pug-card": {
+    "source_png": "design/sources/pug-card.png",
+    "game_texture": "Media/KICUI/pug-card.tga",
+    "dimensions": [
+      256,
+      256
+    ],
+    "usage": "Future PUG Simulator thumbnail; not an installed game."
+  }
+}
