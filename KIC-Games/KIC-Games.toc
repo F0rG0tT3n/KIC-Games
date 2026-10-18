@@ -2,7 +2,7 @@
 ## Title: KIC-Games
 ## Notes: Party game launcher and multiplayer lobby framework.
 ## Author: KIC
-## Version: 0.13.0
+## Version: 0.17.0
 ## Category: KIC
 ## IconTexture: Interface\Icons\INV_Misc_Dice_01
 ## SavedVariables: KICGamesDB
@@ -13,6 +13,7 @@ Libs\ChatThrottleLib.lua
 Libs\AceComm-3.0.lua
 Libs\AceSerializer-3.0.lua
 Core.lua
+Migrations.lua
 Communication.lua
 Results.lua
 Countdown.lua
@@ -37,7 +38,20 @@ Games\Tetris\Module.lua
 Games\Bejeweled\Engine.lua
 Games\Bejeweled\UI.lua
 Games\Bejeweled\Module.lua
-Games\BejeweledDeluxe\Engine.lua
-Games\BejeweledDeluxe\UI.lua
-Games\BejeweledDeluxe\Effects.lua
-Games\BejeweledDeluxe\Module.lua
+Games\KICBejeweled\Engine.lua
+Games\KICBejeweled\UI.lua
+Games\KICBejeweled\Effects.lua
+Games\KICBejeweled\Roguelite.lua
+Games\KICBejeweled\Module.lua
+Games\KICBejeweled\RogueliteUI.lua
+Games\KICBejeweled\Modes.lua
+Games\Chess\Engine.lua
+Games\Chess\Session.lua
+Games\Chess\UI.lua
+Games\Chess\Module.lua
+Games\Blindshot\Rules.lua
+Games\Blindshot\Protocol.lua
+Games\Blindshot\Session.lua
+Games\Blindshot\UI.lua
+Games\Blindshot\Practice.lua
+Games\Blindshot\Module.lua

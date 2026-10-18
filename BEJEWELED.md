@@ -72,9 +72,11 @@ moves, gems, best cascade and timestamp. It updates after each clear and survive
 a quick interruption. WoW writes SavedVariables on UI reload or normal logout;
 the active board is not restored after reloading.
 
-**Share best**, or `/kicbejeweled share`, immediately sends your best to instance
-(`/i`) chat, using plain hyphen separators. Sharing pauses and saves an active run.
-Without an instance group, a local notice appears and no message is sent.
+**Share best**, or `/bejeweled share`, immediately sends your best to the current
+group chat: party (`/p`), raid (`/raid`) or instance (`/i`), using plain hyphen
+separators. Sharing saves an active run's best without changing its pause state.
+Without a group, Share Best sends to `/say` instead. Instance groups use `/i`,
+including five-player instance parties; ordinary parties use `/p` and raids `/raid`.
 
 ## Pausing and stopping
 
@@ -94,7 +96,7 @@ do not restart the game. Active boards still do not survive a UI reload.
 
 `Games/Bejeweled/Engine.lua` contains pure rules, move search and staged cascades.
 `UI.lua` handles the board, animations, hints, pauses and result dialog.
-`Module.lua` registers the game and handles saved records, results and instance-chat sharing.
+`Module.lua` registers the game and handles saved records, results and group-chat sharing.
 It uses seven fixed WoW class texture FileDataIDs from `IconPresets.lua`, independent
 of spell lookups; the fallback is the selected class icon. No separate addon installation is needed,
 and the game sends no multiplayer addon messages. Combat handling is outside scope.

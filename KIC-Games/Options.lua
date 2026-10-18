@@ -303,25 +303,6 @@ function UI:CreateOptions()
         self:CloseProfileDropdowns()
     end)
     self.graphicsPreview = panel(g, "LIVE PREVIEW", "Read-only pieces. Your active board and score stay intact.")
-    self.previewGameButtons = {}
-    for _, game in ipairs(Games:GetGames()) do
-        if Games.Graphics.providers[game.id] then
-            local id = game.id
-            self.previewGameButtons[#self.previewGameButtons + 1] = Theme:NeonButton(
-                self.graphicsPreview,
-                game.title,
-                120,
-                0,
-                0,
-                function()
-                    self.previewGame = id
-                    self:RefreshOptions()
-                end,
-                28
-            )
-            self.previewGameButtons[#self.previewGameButtons].gameID = id
-        end
-    end
     self.previewCells = {}
     for i = 1, 6 do
         local cell = Theme:PremiumFrame(self.graphicsPreview, 58, 58, 0, 0, { compact = true })
@@ -367,18 +348,6 @@ function UI:CreateOptions()
     self.volumeSlider.high:Hide()
     self.audioProfilePanel = panel(a, "SOUND PREVIEW", "")
     self.audioProfilePanel.detail:SetFont(Theme.Fonts.body, 11, "")
-    self.audioGameButtons = {}
-    for _, game in ipairs(Games:GetGames()) do
-        if Games.Audio.games[game.id] then
-            local id = game.id
-            local b = Theme:NeonButton(self.audioProfilePanel, game.title, 120, 0, 0, function()
-                self.previewGame = id
-                self:RefreshOptions()
-            end, 28)
-            b.gameID = id
-            self.audioGameButtons[#self.audioGameButtons + 1] = b
-        end
-    end
     self.soundPreviewButtons = {}
     for _, event in ipairs(Games.Audio.events) do
         local display = event == "gameOver" and "Game Over" or event:sub(1, 1):upper() .. event:sub(2)
@@ -451,23 +420,18 @@ function UI:LayoutOptions()
     local half = (available - 12) / 2
     local dropdownWidth = (available - 48) / 2
     for _, p in ipairs(self.profilePanels) do
-        section(p, 76, 112)
-        p.heading:SetWidth(available - 288)
-        place(p.followLabel, available - 256, 12, 160, 24)
-        place(p.switch, available - 78, 10, 60, 26)
-        p.classDropdown:Layout(18, 38, dropdownWidth)
-        p.specDropdown:Layout(30 + dropdownWidth, 38, dropdownWidth)
+        section(p, 76, 142)
+        place(p.followLabel, 18, 40, 168, 24)
+        place(p.switch, 198, 40, 60, 24)
+        p.classDropdown:Layout(18, 68, dropdownWidth)
+        p.specDropdown:Layout(30 + dropdownWidth, 68, dropdownWidth)
     end
     place(self.graphicsChoices.original, 0, 0, half, 68)
     place(self.graphicsChoices.class, half + 12, 0, half, 68)
-    section(self.graphicsPreview, 196, 208)
-    self.graphicsPreview.heading:SetWidth(available - 36 - #self.previewGameButtons * 112)
-    for i, b in ipairs(self.previewGameButtons) do
-        place(b, available - 18 - (#self.previewGameButtons - i + 1) * 112, 10, 104, 26)
-    end
+    section(self.graphicsPreview, 226, 178)
     local cellSize = math.min(64, math.floor((available - 36 - 5 * 10) / 6))
     for i, cell in ipairs(self.previewCells) do
-        place(cell, 18 + (i - 1) * (cellSize + 10), 88, cellSize, cellSize)
+        place(cell, 18 + (i - 1) * (cellSize + 10), 78, cellSize, cellSize)
         cell.icon:SetSize(cellSize - 10, cellSize - 10)
     end
     self.optionsPages.graphics:SetHeight(404)
@@ -475,19 +439,15 @@ function UI:LayoutOptions()
     place(self.audioChoices.class, half + 12, 0, half, 68)
     local enableWidth = math.max(200, math.floor(available * 0.26))
     local volumeWidth = available - enableWidth - 12
-    section(self.soundEnabledPanel, 196, 104, 0, enableWidth)
+    section(self.soundEnabledPanel, 226, 104, 0, enableWidth)
     place(self.soundEnabledPanel.switch, 18, 66, 72, 26)
-    section(self.volumePanel, 196, 104, enableWidth + 12, volumeWidth)
+    section(self.volumePanel, 226, 104, enableWidth + 12, volumeWidth)
     self.volumePanel.heading:SetWidth(volumeWidth - 108)
     place(self.volumePanel.detail, 18, 68, volumeWidth - 36, 28)
     self.volumeSlider:Layout(18, 44, volumeWidth - 36)
-    section(self.audioProfilePanel, 308, 148)
+    section(self.audioProfilePanel, 338, 118)
     place(self.audioProfilePanel.detail, 18, 36, available - 36, 26)
-    self.audioProfilePanel.heading:SetWidth(available - 36 - #self.audioGameButtons * 112)
-    for i, b in ipairs(self.audioGameButtons) do
-        place(b, available - 18 - (#self.audioGameButtons - i + 1) * 112, 10, 104, 26)
-    end
-    local audioCols = math.max(4, math.floor((available - 36) / 140))
+    local audioCols = math.min(#Games.Audio.events, math.max(4, math.floor((available - 36) / 80)))
     local aw = (available - 36 - (audioCols - 1) * 8) / audioCols
     for i, event in ipairs(Games.Audio.events) do
         place(
@@ -501,7 +461,7 @@ function UI:LayoutOptions()
     local previewBottom = 66 + math.ceil(#Games.Audio.events / audioCols) * 30
     place(self.audioPreviewStatus, 18, previewBottom, available - 36, 16)
     self.audioProfilePanel:SetHeight(previewBottom + 22)
-    self.optionsPages.audio:SetHeight(308 + previewBottom + 22)
+    self.optionsPages.audio:SetHeight(338 + previewBottom + 22)
     section(self.windowPanel, 0, 284)
     place(self.scaleTitle, 24, 88, available - 150, 28)
     self.scaleSlider:Layout(24, 146, available - 48)
@@ -572,12 +532,6 @@ function UI:RefreshOptions()
         end
         p.classDropdown:SetOptions(classes, token, manual)
         p.specDropdown:SetOptions(choices, id, manual)
-    end
-    for _, b in ipairs(self.previewGameButtons) do
-        Theme:Select(b, b.gameID == self.previewGame)
-    end
-    for _, b in ipairs(self.audioGameButtons) do
-        Theme:Select(b, b.gameID == self.previewGame)
     end
     for i, cell in ipairs(self.previewCells) do
         Games.Graphics:Paint(cell.icon, self.previewGame, i, Games.IconPresets.Colors[Games.IconPresets.Kinds[i]])

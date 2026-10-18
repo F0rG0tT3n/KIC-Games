@@ -1,5 +1,13 @@
 local _, Games = ...
 local serial = 0
+local function partyAllowed(game)
+    return not game
+        or not game.partyOnly
+        or Games:GroupChannel() == "PARTY"
+            and not IsInRaid()
+            and GetNumGroupMembers() >= 2
+            and GetNumGroupMembers() <= 5
+end
 
 local function text(value, max)
     return type(value) == "string" and #value <= max
@@ -36,6 +44,44 @@ function Games:LocalMember()
     return member(self.Lobby, self:PlayerName())
 end
 
+function Games:CanAnnounceLobby()
+    local lobby = self.Lobby
+    if not lobby or not self:IsHost() then
+        return false, "Only the lobby host can announce the lobby."
+    end
+    local game = self.Registry[lobby.gameID]
+    if lobby.mode ~= "multiplayer" or not game or game.mode ~= "multiplayer" then
+        return false, "Select a multiplayer game first."
+    end
+    if lobby.status ~= "waiting" then
+        return false, "Announce the lobby while waiting for players."
+    end
+    if not self:GroupChannel() or self:GroupChannel() ~= lobby.channel or not partyAllowed(game) then
+        return false, "Return to the lobby's group before announcing it."
+    end
+    return true
+end
+
+-- Visible chat is sent only by the host's explicit Announce Lobby action.
+function Games:AnnounceLobby()
+    local ok, reason = self:CanAnnounceLobby()
+    if not ok then
+        return false, reason
+    end
+    local lobby = self.Lobby
+    local game = self.Registry[lobby.gameID]
+    local title = game.title:gsub("|", "-"):gsub("[%c]", " ")
+    local message = string.format(
+        "KIC-Games: I created a lobby: %s (%d/%d players).",
+        title,
+        #lobby.members,
+        game.maxPlayers
+    )
+    local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
+    send(message, lobby.channel)
+    return true
+end
+
 function Games:InvalidateReadiness()
     self.Lobby.epoch = self.Lobby.epoch + 1
     for _, entry in ipairs(self.Lobby.members) do
@@ -48,18 +94,25 @@ function Games:PublishLobby()
         return
     end
     self.Lobby.revision = self.Lobby.revision + 1
+    if self.Chess and self.Chess.match and self.Lobby.gameID == "chess" and self.Lobby.status == "running" then
+        self.Chess:Save()
+    end
+    if self.Blindshot and self.Lobby.gameID == "blindshot" and self.Lobby.status == "running" then
+        self.Blindshot:Save()
+    end
     if self.Lobby.mode == "multiplayer" then
         local game = self.Registry[self.Lobby.gameID]
         self.Lobby.gameTitle = game and game.title or ""
         self.Lobby.maxPlayers = game and game.maxPlayers or self.MAX_PLAYERS
         self:UpdateListing(self.Lobby)
-        self:Send("SNAPSHOT", self:GetSession())
+        local snapshot = self:GetSession()
+        self:Send("SNAPSHOT", snapshot)
     end
     self:Changed()
 end
 
 function Games:CreateLobby(gameID)
-    if self.Lobby or self.Pending then
+    if self.Lobby or self.Pending or self.ActiveGame then
         return false, "Leave the current lobby first."
     end
     local channel = self:GroupChannel()
@@ -69,6 +122,9 @@ function Games:CreateLobby(gameID)
     local game = gameID and self.Registry[gameID]
     if gameID and (not game or game.mode ~= "multiplayer") then
         return false, "Choose a multiplayer game."
+    end
+    if not partyAllowed(game) then
+        return false, "This game requires an ordinary PARTY group of 2-5 players."
     end
     serial = serial + 1
     self.Lobby = {
@@ -155,6 +211,9 @@ function Games:SelectGame(id)
     if not game or game.mode ~= self.Lobby.mode then
         return false, "This game is not installed."
     end
+    if not partyAllowed(game) then
+        return false, "This game requires an ordinary PARTY group of 2-5 players."
+    end
     if self.Lobby.gameID == id and self.Lobby.gameVersion == game.version then
         return true
     end
@@ -165,6 +224,7 @@ function Games:SelectGame(id)
         self:CancelCountdown(true)
     end
     self.Lobby.gameID, self.Lobby.gameVersion = id, game.version
+    self.Lobby.chess = nil
     self.Lobby.result = nil
     self:InvalidateReadiness()
     for _, entry in ipairs(self.Lobby.members) do
@@ -184,12 +244,15 @@ function Games:Discover()
 end
 
 function Games:JoinLobby(host, id)
-    if self.Lobby or self.Pending then
+    if self.Lobby or self.Pending or self.ActiveGame then
         return false, "Leave the current lobby first."
     end
     local listing = self.Listings[host]
     if not listing or listing.id ~= id or not self:Roster()[host] then
         return false, "This lobby is no longer available."
+    end
+    if not partyAllowed(self.Registry[listing.gameID]) then
+        return false, "This game requires an ordinary PARTY group of 2-5 players."
     end
     if listing.status == "running" and not listing.rejoin then
         return false, "This game has already started."
@@ -226,6 +289,13 @@ function Games:ResetLobby(reason)
 end
 
 function Games:LeaveLobby()
+    if self.Blindshot and self.Blindshot.practice then
+        return self.Blindshot:StopPractice()
+    end
+    if self.Chess and self.Chess:Active() and not self.Chess.match.info.sessionID then
+        self.Chess:Abandon("left")
+        return
+    end
     local lobby, pending = self.Lobby, self.Pending
     if lobby then
         if lobby.status == "countdown" and self:IsHost() then
@@ -299,6 +369,9 @@ function Games:CanStart()
     if not game then
         return false, "Choose an installed game first."
     end
+    if not partyAllowed(game) then
+        return false, "This game requires an ordinary PARTY group of 2-5 players."
+    end
     if #self.Lobby.members < game.minPlayers then
         return false, "Waiting for more players."
     end
@@ -332,6 +405,9 @@ function Games:LaunchGame()
     self.Lobby.countdownAt = nil
     self.Lobby.countdownHide = nil
     self.Lobby.result, self.StoppedRound = nil, nil
+    if lobby.gameID == "chess" then
+        self.Chess:PrepareLobby(lobby)
+    end
     self:PublishLobby()
     local started = self:StartModule(false)
     if started == false then
@@ -427,11 +503,23 @@ function Games:ValidSnapshot(data, sender)
         end
         names[entry.name] = true
     end
+    if data.gameID == "chess" and data.status == "running" and not self.Chess:LobbyInfoValid(data) then
+        return false
+    end
     return names[sender] == true
 end
 
 function Games:AcceptSnapshot(data, sender)
     if not self:ValidSnapshot(data, sender) then
+        return
+    end
+    if
+        data.gameID == "chess"
+        and data.result
+        and self.Chess.match
+        and data.result.id == self.Chess:ResultID(self.Chess.match.info)
+        and not self.Chess:ValidateResult(data.result, sender)
+    then
         return
     end
     local game = self.Registry[data.gameID]
@@ -592,6 +680,10 @@ function Games:Receive(kind, data, sender)
     if data.target and data.target ~= self:PlayerName() then
         return
     end
+    if kind == "CHESS" and self.Chess then
+        self.Chess:ReceiveControl(data, sender)
+        return
+    end
     if kind == "DISCOVER" then
         if self:IsHost() then
             if not self.LastDiscoveryResponse or GetTime() - self.LastDiscoveryResponse >= 2 then
@@ -724,6 +816,11 @@ function Games:Receive(kind, data, sender)
 end
 
 function Games:GroupChanged()
+    if self.Chess and self.Chess:Active() then
+        self.Chess:Tick()
+        self:Changed()
+        return
+    end
     local roster, channel = self:Roster(), self:GroupChannel()
     for host in pairs(self.Listings) do
         if not roster[host] then
@@ -765,6 +862,13 @@ function Games:Tick()
         and self:IsRoundStopped()
     then
         pcall(self.SendControl, self, "ABORT", self.PendingAbort)
+    end
+    if self.Chess and self.Chess:Active() then
+        self.Chess:Tick()
+        if self.Chess.match.info.sessionID and self:IsHost() then
+            self:PublishLobby()
+        end
+        return
     end
     for host, listing in pairs(self.Listings) do
         if now - listing.seen > 60 then

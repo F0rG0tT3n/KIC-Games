@@ -1,6 +1,6 @@
 local _, Games = ...
-local D = Games.BejeweledDeluxe
-Games.Graphics:Register("bejeweled_deluxe", Games.Graphics.providers.bejeweled)
+local D = Games.KICBejeweled
+Games.Graphics:Register("kic_bejeweled", Games.Graphics.providers.bejeweled)
 -- Use only existing audited event categories and the volume-controlled backend.
 -- One sound per resolution (highest priority) bounds overlapping chain audio.
 D.SoundEvents = {
@@ -18,7 +18,7 @@ local sounds = {}
 for _, event in ipairs(Games.Audio.events) do
     sounds[event] = Games.Audio.games.bejeweled[event]
 end
-Games.Audio:RegisterGame("bejeweled_deluxe", sounds)
+Games.Audio:RegisterGame("kic_bejeweled", sounds)
 function D:PlayResolution(resolution, cascade)
     local event = "bejeweled_match_3"
     for _, name in ipairs({
@@ -41,4 +41,4 @@ function D:PlayResolution(resolution, cascade)
     -- spec mappings, the resolution throttle and stop-previous-sound behavior.
     Games.Audio:Play("bejeweled", event, nil, cascade)
 end
-Games:RegisterBejeweledModule(D, "bejeweled_deluxe", "KIC Bejeweled", "KICBEJEWELEDDELUXE")
+Games:RegisterBejeweledModule(D, "kic_bejeweled", "KIC Bejeweled", "KICBEJEWELED")

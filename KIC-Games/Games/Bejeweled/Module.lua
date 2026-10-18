@@ -46,11 +46,11 @@ function Games:RegisterBejeweledModule(B, id, title, slash)
     end
     function B:ShareBest()
         if self.running then
-            self:Pause(true)
             self:SaveBest()
         end
         local best = self:Storage().best
-        local shareTitle = title:match("^KIC ") and title or ("KIC " .. title)
+        local shareTitle = self.ShareTitle and self:ShareTitle()
+            or (title:match("^KIC ") and title or ("KIC " .. title))
         local message = string.format(
             shareTitle .. " best: %d points - %d gems - %d moves - Cascade x%d",
             best.score,
@@ -58,7 +58,7 @@ function Games:RegisterBejeweledModule(B, id, title, slash)
             best.moves,
             best.bestCascade
         )
-        return Games:ShareBestToInstance(message)
+        return Games:ShareBestToGroup(message)
     end
     function B:Complete()
         if not self.running then
@@ -116,6 +116,9 @@ function Games:RegisterBejeweledModule(B, id, title, slash)
             B:ApplyPreset(Games:GetClassPreset())
             B.root:Show()
             B:Render()
+            if B.OnRunStarted then
+                B:OnRunStarted()
+            end
         end,
         OnStop = function()
             B:CancelDrag()
@@ -134,6 +137,9 @@ function Games:RegisterBejeweledModule(B, id, title, slash)
                 particle:Hide()
             end
             B.context = nil
+            if B.OnRunStopped then
+                B:OnRunStopped()
+            end
             if B.summary then
                 B.summary:Hide()
             end
@@ -153,4 +159,4 @@ function Games:RegisterBejeweledModule(B, id, title, slash)
         end
     end
 end
-Games:RegisterBejeweledModule(Games.Bejeweled, "bejeweled", "Bejeweled", "KICBEJEWELED")
+Games:RegisterBejeweledModule(Games.Bejeweled, "bejeweled", "Bejeweled", "BEJEWELED")

@@ -3,7 +3,7 @@ arg[1] = "--harness"
 local harness = assert(loadfile("tests/framework.lua"))()
 arg[1] = previous
 local owner = harness.client("SpecialEffects", "Realm")
-local G, D = owner.games, owner.games.BejeweledDeluxe
+local G, D = owner.games, owner.games.KICBejeweled
 local E, count = D.Engine, 0
 local function check(value, message)
     assert(value, message)
@@ -11,7 +11,8 @@ local function check(value, message)
 end
 local function reset()
     G:AbortGame()
-    G:StartSingleplayer("bejeweled_deluxe")
+    G:StartSingleplayer("kic_bejeweled")
+    D:ChooseMode("roguelike")
     for y = 1, 8 do
         for x = 1, 8 do
             D.model.board[y][x] = (x + 2 * y) % 6 + 1
@@ -44,43 +45,22 @@ for _, theme in ipairs({ "original", "class" }) do
             D.model.board[1][x] = E.Piece(x, special)
             D:Render()
             local cell = D.cells[x]
-            local art = cell.deluxeArt
-            check(not art.glow and art.special == special and art.builtSpecial == special, "Special frame missing")
-            check(
-                art.used >= 25 and art.used <= 64,
-                "Special has no clear geometric treatment or exceeds texture budget"
-            )
-            check(cell.icon:IsShown() and art.parts[1].points[1][2] == cell.icon, "Underlying icon/frame anchor lost")
+            local art = cell.specialArt
+            check(art.special == special and art.builtSpecial == special, "Special frame missing")
+            for _, part in ipairs({art.backdrop, art.glow, art.overlay}) do
+                check(part:IsShown() and part.points[1][2] == cell.icon, "Special layer detached from icon")
+            end
+            check(art.overlay.textureValue == G.Artwork["special-" .. special .. "-overlay"].file,
+                "Wrong special illustration")
+            check(art.glow.blendMode == "ADD" and art.overlay.blendMode == "BLEND", "Wrong overlay blending")
             check(art.label.points[1][5] < 0, "Secondary label overlaps emblem")
             local base = theme == "original" and G.Artwork["original-gem-" .. x].file or G:GetPieceIcons("bejeweled")[x]
             if x < 3 then
                 check(cell.icon.textureValue == base, "Special replaced the normal/spec icon")
             end
-            local core, edge = 0, 0
-            for i = 1, art.used do
-                local part = art.parts[i]
-                check(part:IsShown() and part.points[1][2] == cell.icon, "Special piece detached from icon")
-                local point = part.points[1]
-                local reach = math.max(math.abs(point[4]), math.abs(point[5])) / (D.tileSize - 10)
-                if reach < 0.27 then
-                    core = core + 1
-                end
-                if reach > 0.34 then
-                    edge = edge + 1
-                end
-            end
-            check(core >= 2 and edge >= 8, "Missing center emblem or distinct silhouette")
-            -- Recognition still works if the small label is unreadable.
             art.label:Hide()
-            check(art.parts[art.used]:IsShown() and core >= 2 and edge >= 8, "Treatment relies on label")
+            check(art.overlay:IsShown(), "Treatment relies on label")
             D:Render()
-            if special == "bomb" then
-                check(art.used >= 35 and art.used <= 48, "Bomb lacks heavy armor/fuse")
-            elseif special == "lightning" then
-                check(art.used >= 25 and art.used < 35, "Lightning lacks bolt/bracket geometry")
-            else
-                check(art.used >= 50 and art.used <= 64, "Orb lacks prismatic spherical geometry")
-            end
         end
     end
 end
@@ -88,7 +68,7 @@ G:SetOption("effectsLevel", 2)
 reset()
 D.model.board[1][1] = E.Piece(1, "bomb")
 D:Render()
-local hotGlow = D.cells[1].deluxeArt.pulseParts[1]
+local hotGlow = D.cells[1].specialArt.glow
 local beforePulse = hotGlow.alpha
 D:UpdateMatchEffect(0.15)
 check(hotGlow.alpha ~= beforePulse, "Special glow did not pulse")
@@ -99,7 +79,7 @@ check(hotGlow.alpha == stoppedPulse, "Paused glow kept pulsing")
 D:Pause(false)
 G:SetOption("effectsLevel", 0)
 D:UpdateMatchEffect(0.15)
-check(math.abs(hotGlow.alpha - hotGlow.markerAlpha) < 0.0001, "Off mode did not stop pulse")
+check(math.abs(hotGlow.alpha - 0.36) < 0.0001, "Off mode did not stop pulse")
 G:SetOption("effectsLevel", 2)
 for _, center in ipairs({ { 1, 1 }, { 4, 4 }, { 8, 8 } }) do
     hit("bomb", center[1], center[2])
@@ -166,5 +146,5 @@ D:UpdateMatchEffect(0.2)
 G:AbortGame()
 hidden()
 -- Original Bejeweled keeps its old timing and has no new effect hooks.
-check(not G.Bejeweled.GetClearDuration and not G.Bejeweled.specialTextures, "Original game got Deluxe effects")
-print(string.format("PASS: %d Deluxe overlay and activation-effect assertions", count))
+check(not G.Bejeweled.GetClearDuration and not G.Bejeweled.specialTextures, "Original game got KIC Bejeweled effects")
+print(string.format("PASS: %d KIC Bejeweled overlay and activation-effect assertions", count))

@@ -619,7 +619,7 @@ function B:CreateUI(parent)
     self.left = Theme:PremiumFrame(self.root, 250, 550, 0, 0)
     self.leftArt = Theme:Art(self.left, self.heroArt or "bejeweled-hero", 220, 130, 14, -14, 1, "ARTWORK")
     self.title = Theme:GameLabel(self.left, self.displayTitle or "BEJEWELED", self.titleSize or 28)
-    self.tagline = Theme:GameLabel(self.left, "MATCH / CASCADE / REPEAT", 12, Theme.Colors.accent)
+    self.tagline = Theme:GameLabel(self.left, self.taglineText or "MATCH / CASCADE / REPEAT", 12, Theme.Colors.accent)
     self.titleRule = Theme:Separator(self.left, 14, -200, 220)
     self.instructions = {}
     for _, row in
@@ -878,7 +878,8 @@ function B:CreateSummary()
     local resultName = self.resultName or "KICGamesBejeweledResult"
     _G[resultName] = f
     UISpecialFrames[#UISpecialFrames + 1] = resultName
-    Theme:Label(f, "NO MOVES LEFT", 24, -26, 350):SetTextColor(unpack(Theme.Colors.accent))
+    self.summaryHeading = Theme:Label(f, "NO MOVES LEFT", 24, -26, 350)
+    self.summaryHeading:SetTextColor(unpack(Theme.Colors.accent))
     Theme:Label(f, "Run complete", 24, -54, 380, "GameFontNormalLarge")
     self.summaryText = Theme:Label(f, "", 24, -104, 392)
     self.summaryText:SetFont("Fonts\\ARIALN.TTF", 17, "")

@@ -106,7 +106,7 @@ function Theme:StyleButton(button)
             or button.pressed and { 0.015, 0.12, 0.23, 1 }
             or button.hovered and enabled and { 0.12, 0.17, 0.24, 1 }
             or (button.variant == "primary" and self.Colors.primary or self.Colors.card)
-        button:SetBackdropColor(unpack(bg))
+        button:SetBackdropColor(bg[1], bg[2], bg[3], (bg[4] or 1) * (button.backdropAlpha or 1))
         button:SetBackdropBorderColor(
             unpack(
                 (selected or button.hovered or button.variant == "primary") and enabled and self.Colors.accent
@@ -195,6 +195,9 @@ function Theme:GameCard(parent, width, height)
     card.detail = self:Label(card, "", 16, -112, width - 32)
     card.detail:SetHeight(44)
     card.detail:SetMaxLines(2)
+    card.hostReason = self:Label(card, "", 16, -180, width - 32, "GameFontHighlightSmall")
+    card.hostReason:SetHeight(26)
+    card.hostReason:SetMaxLines(2)
     card.modeRule = self:Separator(card, 110, -99, width - 126, self.Colors.accent, 0.4)
     card.play = self:NeonButton(card, "Play", width - 104, 16, -178, function() end, 34, true)
     card.play.caption:SetFont("Fonts\\ARIALN.TTF", 16, "")
@@ -213,8 +216,8 @@ function Theme:UpdateGameCard(card, game, options)
     options = options or {}
     card.game, card.presentation = game, options
     local width, height = card:GetWidth(), card:GetHeight()
-    card.art:SetSize(width, height)
-    self:SetArt(card.art, options.art or "generic-card", width, height, 0.22)
+    local artHeight = height
+    self:SetArt(card.art, options.art or "generic-card", width, artHeight, 0.22)
     self:SetArt(card.icon, options.art or "generic-card", 80, 80, 1)
     if not options.art then
         card.icon:SetTexture(game.icon or "Interface\\Icons\\INV_Misc_Dice_01")
@@ -226,14 +229,20 @@ function Theme:UpdateGameCard(card, game, options)
     card.mode:SetPoint("TOPLEFT", 110, -77)
     card.mode:SetWidth(width - 126)
     card.mode:SetText(
-        game.mode == "singleplayer" and "SOLO" or string.format("PARTY / %d-%d", game.minPlayers, game.maxPlayers)
+        options.modeLabel
+            or (
+                game.mode == "singleplayer" and "SOLO"
+                or string.format("PARTY / %d-%d", game.minPlayers, game.maxPlayers)
+            )
     )
     card.modeRule:SetWidth(width - 126)
     card.detail:SetWidth(width - 32)
     card.detail:SetText(options.description or game.description or "")
     card.play:SetWidth(width - 104)
     card.play.caption:SetWidth(width - 120)
-    card.play:SetText(options.resume and "Resume" or game.mode == "singleplayer" and "Play" or "View lobby")
+    card.play:SetText(
+        options.playLabel or (options.resume and "Resume" or game.mode == "singleplayer" and "Play" or "View lobby")
+    )
     card.play:SetScript("OnClick", options.onPlay)
     if options.enabled == false or type(options.onPlay) ~= "function" then
         card.play:Disable()
@@ -249,6 +258,45 @@ function Theme:UpdateGameCard(card, game, options)
         card.details:Disable()
     end
     card:SetScript("OnClick", options.onSelect)
+    -- Compact multiplayer library variant of the shared Singleplayer card.
+    -- Restore every changed anchor and text style when pooled cards are reused.
+    local function anchor(region, x, y, w, h)
+        region:ClearAllPoints()
+        region:SetPoint("TOPLEFT", x, y)
+        region:SetSize(w, h)
+    end
+    anchor(card.art, 0, 0, width, artHeight)
+    anchor(card.icon, 16, -16, 80, 80)
+    card.icon:Show()
+    card.art:SetAlpha(0.22)
+    card.backdropAlpha = options.browser and 0.7 or nil
+    card.shade:SetAlpha(options.browser and 0.6 or 1)
+    anchor(card.title, 110, -22, width - 126, 48)
+    card.title:SetMaxLines(2)
+    anchor(
+        card.mode,
+        options.browser and 16 or 110,
+        options.browser and -102 or -77,
+        width - (options.browser and 32 or 126),
+        18
+    )
+    anchor(card.detail, 16, options.browser and -127 or -112, width - 32, options.browser and 48 or 44)
+    card.detail:SetMaxLines(options.browser and 3 or 2)
+    anchor(card.hostReason, 16, -180, width - 32, 26)
+    card.hostReason:SetText(options.reason or "")
+    card.hostReason:SetShown(options.browser and options.reason ~= nil)
+    card.detail:SetFont(self.Fonts.body, options.browser and 13 or 14, "")
+    card.modeRule:SetShown(not options.browser)
+    anchor(
+        card.play,
+        16,
+        options.browser and -214 or -178,
+        width - (options.browser and 32 or 104),
+        options.browser and 32 or 34
+    )
+    card.play.caption:SetWidth(width - (options.browser and 64 or 120))
+    anchor(card.details, width - 72, options.browser and -206 or -178, 56, options.browser and 30 or 34)
+    card.details:SetShown(not options.browser)
     self:Select(card, options.selected)
 end
 

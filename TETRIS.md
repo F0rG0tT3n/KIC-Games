@@ -66,8 +66,10 @@ WoW writes SavedVariables to disk on UI reload or normal logout; a client crash
 can lose changes since the last save. Active board state is not restored on reload.
 
 Click **Share best to chat** or use `/kictetris share` to send your best directly
-to instance (`/i`) chat. This pauses and saves an active run. Plain hyphens separate
-the score fields. Without an instance group, a local notice appears; nothing is sent.
+to the current group chat: party (`/p`), raid (`/raid`) or instance (`/i`). This saves
+an active run's best without changing its pause state. Plain hyphens separate the
+score fields. Without a group, it sends to `/say`. Instance parties and raids use
+`/i`; ordinary parties use `/p`, and ordinary raids use `/raid`.
 
 ## Leaving for the dungeon
 
@@ -90,5 +92,5 @@ game and connects persistence, completion and chat sharing to the framework.
 They are bundled in the existing addon folder, so one KIC-Games installation or
 junction is enough. The multiplayer protocol remains API v3.
 
-Chat sharing uses `C_ChatInfo.SendChatMessage` with `INSTANCE_CHAT`, with a legacy
+Chat sharing uses `C_ChatInfo.SendChatMessage` with the current group channel, with a legacy
 `SendChatMessage` fallback. Only an explicit Share action sends a message.

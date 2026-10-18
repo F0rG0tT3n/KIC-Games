@@ -39,7 +39,6 @@ function T:SaveBest()
 end
 function T:ShareBest()
     if self.running then
-        self:Pause(true)
         self:SaveBest()
     end
     local best = self:Storage().best
@@ -50,7 +49,7 @@ function T:ShareBest()
         best.level,
         Games.Graphics:Label("tetris", best)
     )
-    return Games:ShareBestToInstance(message)
+    return Games:ShareBestToGroup(message)
 end
 function T:Complete()
     if not self.running then

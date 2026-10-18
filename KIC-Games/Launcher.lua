@@ -1,15 +1,27 @@
 local _, Games = ...
 local UI, Theme = Games.UI, Games.Theme
 local library = {
+    blindshot = {
+        hero = "blindshot-hero",
+        card = "blindshot-card",
+        tagline = "HIDE / AIM / FIRE",
+        summary = "Hide, aim, then fire in random order.\nOne target per shot. PARTY / 2-5.",
+    },
+    chess = {
+        hero = "chess-hero",
+        card = "chess-card",
+        tagline = "THINK / MOVE / CHECKMATE",
+        summary = "Host or join a party lobby.\nReady up for two-player Chess.",
+    },
     bejeweled = {
         hero = "bejeweled-hero",
         card = "bejeweled-card",
         tagline = "MATCH / CASCADE / REPEAT",
         summary = "Match 3+ in a row or column.\nCascades multiply points.",
     },
-    bejeweled_deluxe = {
-        hero = "bejeweled-deluxe-hero",
-        card = "bejeweled-deluxe-card",
+    kic_bejeweled = {
+        hero = "kic-bejeweled-hero",
+        card = "kic-bejeweled-card",
         tagline = "BOMB / LIGHTNING / COLOR ORB",
         summary = "Create special gems.\nUnleash chain reactions.",
     },
@@ -41,9 +53,16 @@ local function invoke(fn)
     end
 end
 local pages = { home = true, singleplayer = true, multiplayer = true, results = true, options = true }
-function UI:OpenLauncher(page)
+function UI:OpenLauncher(page, browse)
     page = pages[page] and page or "home"
+    if page == "multiplayer" then
+        local joined = Games.Lobby and Games.Lobby.mode == "multiplayer" or Games.Pending
+        self.multiplayerView = joined and not browse and "lobby" or "browser"
+    end
     local changed = self.launcherPage ~= page
+    if page == "home" and changed then
+        self.featureRollPending = true
+    end
     self.launcherPage, Games.DB.launcherPage = page, page
     if page == "singleplayer" or page == "multiplayer" then
         self.tab, Games.DB.launcherTab = page, page
@@ -61,15 +80,7 @@ function UI:SelectMultiplayer(id)
     if not Games.Registry[id] or Games.Registry[id].mode ~= "multiplayer" then
         return false
     end
-    if Games.Lobby then
-        if not Games:IsHost() or Games.Lobby.mode ~= "multiplayer" or Games.Lobby.status == "running" then
-            return false, "Leave the current game or lobby before changing games."
-        end
-        local ok, err = Games:SelectGame(id)
-        if ok == false then
-            return ok, err
-        end
-    end
+    -- Highlighting a browser card never changes a joined session.
     self.selectedMulti = id
     self:Refresh()
     return true
@@ -91,6 +102,47 @@ function UI:FeatureGame(id)
     self:Refresh()
     return true
 end
+function UI:FeatureEligible(game)
+    return type(game) == "table"
+        and Games.Registry[game.id] == game
+        and (game.mode == "singleplayer" or game.mode == "multiplayer")
+        and type(game.OnStart) == "function"
+        and type(game.CreateUI) == "function"
+end
+function UI:FeaturedActiveGame()
+    local active = Games.ActiveGame
+    if not active or not active.frame or not self:FeatureEligible(active.game) or Games:IsRoundStopped() then
+        return nil
+    end
+    local lobby = Games.Lobby
+    if lobby and (lobby.status ~= "running" or lobby.gameID ~= active.game.id or not Games:Compatible(lobby)) then
+        return nil
+    end
+    -- ActiveGame is created by the real lifecycle (including local practice),
+    -- never inferred from saved records or an unstarted multiplayer lobby.
+    return active
+end
+function UI:SelectHomeFeature()
+    local active = self:FeaturedActiveGame()
+    if active then
+        self.featuredID = active.game.id
+    elseif
+        self.featureRollPending
+        or self.featureWasActive
+        or not self:FeatureEligible(Games.Registry[self.featuredID])
+    then
+        local eligible = {}
+        for _, game in ipairs(Games:GetGames()) do
+            if self:FeatureEligible(game) then
+                eligible[#eligible + 1] = game
+            end
+        end
+        local selected = #eligible > 0 and eligible[math.random(#eligible)] or nil
+        self.featuredID = selected and selected.id
+    end
+    self.featureRollPending, self.featureWasActive = nil, active ~= nil
+    return Games.Registry[self.featuredID], active
+end
 function UI:LaunchGame(id)
     local game = Games.Registry[id]
     if not game then
@@ -105,7 +157,7 @@ function UI:LaunchGame(id)
         if ok == false then
             return ok, err
         end
-        self:OpenLauncher("multiplayer")
+        self:OpenLauncher("multiplayer", true)
         return true
     end
     self.selectedSolo = id
@@ -119,11 +171,7 @@ function UI:CanLaunch(game)
         return true
     end
     if game.mode == "multiplayer" then
-        return not Games.Pending
-            and (
-                not Games.Lobby
-                or Games:IsHost() and Games.Lobby.mode == "multiplayer" and Games.Lobby.status ~= "running"
-            )
+        return true
     end
     return not Games.Pending
         and (not Games.Lobby or Games.Lobby.mode == "singleplayer" and Games.Lobby.status == "waiting")
@@ -164,8 +212,27 @@ function UI:InitializeLauncher()
     self.browserHeading = Theme:SectionHeader(self.browserPanel, "PARTY LOBBIES", 212, 14, -14, 14)
     self.lobbyTitle:Hide()
     self.lobbyTitle = Theme:SectionHeader(self.lobbyPanel, "YOUR LOBBY", 494, 16, -14, 16)
+    self.resumeLobby = Theme:NeonButton(self.browserPanel, "Resume Lobby", 156, 0, 0, function()
+        self:OpenLauncher("multiplayer")
+    end, 32, true)
+    self.lobbyBack = Theme:NeonButton(self.lobbyPanel, "Back to Games", 140, 0, 0, function()
+        self:OpenLauncher("multiplayer", true)
+    end, 32)
+    self.announceLobby = Theme:NeonButton(
+        self.lobbyPanel,
+        "Announce Lobby",
+        176,
+        0,
+        0,
+        invoke(function()
+            return Games:AnnounceLobby()
+        end),
+        32
+    )
+    self.lobbyArt = Theme:Art(self.lobbyPanel, "generic-card", 96, 64, 20, -20, 1, "ARTWORK")
+    self.lobbySummary = Theme:Label(self.lobbyPanel, "", 20, -416, 400)
+    self.slotArea, self.slotScroll = Theme:Scroll(self.lobbyPanel, 842, 256, 20, -136)
     for _, b in ipairs({
-        self.create,
         self.leave,
         self.ready,
         self.start,
@@ -204,7 +271,7 @@ function UI:InitializeLauncher()
     Theme:Primary(self.soloOpen)
     self.soloPlay.caption:SetFont("Fonts\\ARIALN.TTF", 18, "")
     self.soloOpen.caption:SetFont("Fonts\\ARIALN.TTF", 18, "")
-    self.soloOpen:SetText("Resume")
+    self.soloOpen:SetText("Continue Game")
     self.soloPlay:SetScript(
         "OnClick",
         invoke(function()
@@ -214,7 +281,12 @@ function UI:InitializeLauncher()
     self.soloOpen:SetScript(
         "OnClick",
         invoke(function()
-            return self:LaunchGame(self.featuredID)
+            if self:FeaturedActiveGame() then
+                self:ShowGame()
+                return true
+            end
+            self:Refresh()
+            return false, "This game has ended."
         end)
     )
     self.soloHint:Hide()
@@ -325,7 +397,10 @@ function UI:RefreshLauncher()
     end
     local inGame = self.gameContainer:IsShown()
     local home, multi = self.launcherPage == "home", self.launcherPage == "multiplayer"
-    local libraryPage = self.launcherPage == "singleplayer" or multi
+    local inLobby = multi
+        and self.multiplayerView == "lobby"
+        and (Games.Lobby and Games.Lobby.mode == "multiplayer" or Games.Pending) ~= nil
+    local libraryPage = self.launcherPage == "singleplayer" or multi and not inLobby
     local settingsPage = self.launcherPage == "options"
     local resultsPage = self.launcherPage == "results"
     local width, height = self.content:GetWidth(), self.content:GetHeight()
@@ -339,7 +414,7 @@ function UI:RefreshLauncher()
     local activeID = Games.ActiveGame and Games.ActiveGame.game.id
     local activeModule = activeID == "tetris" and Games.Tetris
         or activeID == "bejeweled" and Games.Bejeweled
-        or activeID == "bejeweled_deluxe" and Games.BejeweledDeluxe
+        or activeID == "kic_bejeweled" and Games.KICBejeweled
     self.continueButton:SetShown(
         not inGame and activeModule and activeModule.running and activeModule.paused and not Games:IsRoundStopped()
     )
@@ -347,8 +422,25 @@ function UI:RefreshLauncher()
     self.launcherMotto:SetShown(not inGame)
     self.hero:SetShown(home)
     self.multiplayerPage:SetShown(multi)
-    self.browserPanel:SetShown(multi)
-    self.lobbyPanel:SetShown(multi)
+    self.browserPanel:SetShown(multi and not inLobby)
+    self.lobbyPanel:SetShown(inLobby == true)
+    self.resumeLobby:SetShown(
+        multi and not inLobby and (Games.Lobby and Games.Lobby.mode == "multiplayer" or Games.Pending) ~= nil
+    )
+    if multi then
+        if inLobby then
+            place(self.lobbyPanel, nil, 0, 0, width, height)
+            local pendingListing = Games.Pending and Games.Listings[Games.Pending.host]
+            local game =
+                Games.Registry[Games.Lobby and Games.Lobby.gameID or pendingListing and pendingListing.gameID or self.selectedMulti]
+            local art = game and library[game.id]
+            Theme:SetArt(self.lobbyArt, art and art.card or "generic-card", 96, 64, 1)
+            if not art and game then
+                self.lobbyArt:SetTexture(game.icon or "Interface\\Icons\\INV_Misc_Dice_01")
+            end
+            self:LayoutLobbySlots()
+        end
+    end
     self.installedTitle:SetShown(home)
     self.cardScroll:SetShown(home or libraryPage)
     self.pageTitle:SetShown(libraryPage)
@@ -383,41 +475,17 @@ function UI:RefreshLauncher()
     local gridWidth, gridHeight, gridY = width, height - 66, -66
     if home then
         gridHeight, gridY = height - 310, -310
+        place(self.hero, nil, 0, 0, width, 256)
+        self.heroArt:SetSize(width - 2, 254)
+        self:RefreshFeature(width)
     elseif multi then
-        gridWidth, gridHeight = math.max(290, math.floor(width * 0.39)), 226
-        local lobbyX = gridWidth + 16
-        place(self.lobbyPanel, nil, lobbyX, 0, width - lobbyX, height)
-        place(self.browserPanel, nil, 0, -308, gridWidth, height - 308)
-        place(self.browser:GetParent(), nil, 14, -44, gridWidth - 28, height - 368)
-        place(self.browserRefresh, nil, gridWidth - 104, -9, 90, 28)
-        self.browserHeading:SetWidth(gridWidth - 132)
-        self.browser:SetWidth(gridWidth - 44)
-        for _, row in ipairs(self.listingRows) do
-            row:SetWidth(gridWidth - 44)
-            row.title:SetWidth(gridWidth - 56)
-            row.detail:SetWidth(gridWidth - 56)
-        end
-        self.emptyLobbies:SetWidth(gridWidth - 44)
-        for _, field in ipairs({
-            self.lobbyTitle,
-            self.lobbyInfo,
-            self.selectedGame,
-            self.gameInfo,
-            self.players,
-            self.countdownText,
-            self.hint,
-        }) do
-            field:SetWidth(width - lobbyX - 32)
-        end
-        local actionWidth = (width - lobbyX - 48) / 3
-        for i, pair in ipairs({
-            { self.create, self.leave },
-            { self.ready, self.showGame },
-            { self.start, self.endGame },
-        }) do
-            for _, b in ipairs(pair) do
-                place(b, nil, 16 + (i - 1) * (actionWidth + 8), -(height - 52), actionWidth, 32)
-            end
+        local sidebarWidth = math.max(260, math.floor((width - 16) * 0.35))
+        gridWidth, gridHeight, gridY = width - sidebarWidth - 16, height - 66, -66
+        place(self.browserPanel, nil, gridWidth + 16, 0, sidebarWidth, height)
+        self:LayoutPartyLobbies(sidebarWidth, height)
+        place(self.resumeLobby, nil, 14, -46, sidebarWidth - 28, 30)
+        if self.resumeLobby:IsShown() then
+            place(self.browser:GetParent(), nil, 14, -88, sidebarWidth - 28, height - 102)
         end
     end
     place(self.cardScroll, nil, 0, gridY, gridWidth, gridHeight)
@@ -428,6 +496,9 @@ function UI:RefreshLauncher()
     if home then
         columns = math.min(3, columns)
     end
+    if multi then
+        columns = available >= 514 and 2 or 1
+    end
     self.cardColumns = columns
     local pagesCount = math.max(1, math.ceil(#games / columns))
     self.recentPage = math.max(1, math.min(self.recentPage, pagesCount))
@@ -437,14 +508,11 @@ function UI:RefreshLauncher()
     self.installedTitle:SetText("RECENT GAMES")
     self.installedTitle:SetWidth(width - 232)
     self.pageTitle:SetText(multi and "MULTIPLAYER" or "SINGLEPLAYER")
-    self.pageTitle:SetWidth(multi and gridWidth or width)
-    self.pageSubtitle:SetWidth(multi and gridWidth or width)
+    self.pageTitle:SetWidth(gridWidth)
+    self.pageSubtitle:SetWidth(gridWidth)
     self.pageSubtitle:SetText(
-        string.format(
-            "%d installed game(s) / %s",
-            #games,
-            multi and "Host or join with your party" or "Play at your own pace"
-        )
+        multi and "Host or join games with your party"
+            or string.format("%d installed game(s) / %s", #games, "Play at your own pace")
     )
     if home then
         self.cardScroll:SetVerticalScroll(0)
@@ -483,6 +551,8 @@ function UI:RefreshLauncher()
     self.browseGames:SetScript("OnClick", function()
         self:OpenLauncher(#Games:GetGames("singleplayer") > 0 and "singleplayer" or "multiplayer")
     end)
+    local cardHeight = multi and 260 or 226
+    local rowStep = cardHeight + 14
     for i = first, last do
         local index, game = i - first + 1, games[i]
         local card = self.launcherCards[index]
@@ -491,49 +561,60 @@ function UI:RefreshLauncher()
             self.launcherCards[index] = card
         end
         local id, art = game.id, library[game.id]
+        local hostReason = multi and self:HostUnavailable(game) or nil
         place(
             card,
             nil,
             ((index - 1) % columns) * (cardWidth + 14),
-            -math.floor((index - 1) / columns) * 240,
+            -math.floor((index - 1) / columns) * rowStep,
             cardWidth,
-            226
+            cardHeight
         )
         card:SetGame(game, {
             art = art and art.card,
-            description = art and art.summary,
+            description = multi and game.description or art and art.summary,
+            browser = multi,
+            modeLabel = multi and ("MULTIPLAYER / " .. self:PlayerCount(game)) or nil,
+            playLabel = multi and "Host Game" or nil,
+            reason = hostReason,
             resume = Games.ActiveGame and Games.ActiveGame.game.id == id,
-            enabled = self:CanLaunch(game),
+            enabled = multi and not hostReason or not multi and self:CanLaunch(game),
             selected = (multi and self.selectedMulti or self.featuredID) == id,
             onPlay = invoke(function()
+                if multi then
+                    return Games:CreateLobby(id)
+                end
                 return self:LaunchGame(id)
             end),
             onDetails = invoke(function()
-                local ok, err = self:FeatureGame(id)
-                if ok then
-                    self:OpenLauncher(multi and "multiplayer" or "home")
+                if multi then
+                    return self:SelectMultiplayer(id)
                 end
-                return ok, err
+                self:OpenLauncher("home")
+                return self:FeatureGame(id)
             end),
             onSelect = invoke(function()
-                return self:FeatureGame(id)
+                return multi and self:SelectMultiplayer(id) or self:FeatureGame(id)
             end),
         })
         card:Show()
     end
     self.cardList:SetHeight(
-        math.max(gridHeight, #games == 0 and 206 or math.ceil((last - first + 1) / columns) * 240 - 14)
+        math.max(gridHeight, #games == 0 and 206 or math.ceil((last - first + 1) / columns) * rowStep - 14)
     )
-    if not home then
-        return
-    end
-    place(self.hero, nil, 0, 0, width, 256)
-    self.heroArt:SetSize(width - 2, 254)
-    self:RefreshFeature(width)
+end
+function UI:HostUnavailable(game)
+    return not game and "Game module is not installed"
+        or Games.Pending and "Joining a lobby..."
+        or Games.Lobby and "Resume your current lobby"
+        or Games.ActiveGame and "Finish your current game first"
+        or not Games:GroupChannel() and "Join a party to host"
+        or game.partyOnly
+            and (Games:GroupChannel() ~= "PARTY" or IsInRaid() or GetNumGroupMembers() < 2 or GetNumGroupMembers() > 5)
+            and "Requires a PARTY of 2-5"
 end
 function UI:RefreshFeature(width)
-    local selected = Games.Registry[self.featuredID] or Games.Registry[self.selectedSolo] or Games:GetGames()[1]
-    self.featuredID = selected and selected.id
+    local selected, active = self:SelectHomeFeature()
     if not selected then
         Theme:SetArt(self.heroArt, "generic-hero", width - 2, 254, 1)
         self.heroShade:Hide()
@@ -563,7 +644,9 @@ function UI:RefreshFeature(width)
     self.heroFallback:SetShown(not self.heroArt.artLoaded)
     self.heroFallback:SetTexture(selected.icon or "Interface\\Icons\\INV_Misc_Dice_01")
     place(self.heroBadge, nil, x, -22, textWidth)
-    self.heroBadge:SetText(selected.mode == "singleplayer" and "SOLO GAME" or "PARTY GAME")
+    self.heroBadge:SetText(
+        selected.mode == "singleplayer" and "SOLO GAME" or ("PARTY GAME / " .. self:PlayerCount(selected))
+    )
     place(self.soloTitle, nil, x, -54, textWidth, 42)
     self.soloTitle:SetText(selected.title:upper())
     place(self.heroTagline, nil, x, -104, textWidth)
@@ -572,7 +655,7 @@ function UI:RefreshFeature(width)
     self.soloDescription:SetText(selected.description or "")
     place(self.soloPlay, nil, x, -202, 190, 36)
     place(self.soloOpen, nil, x, -202, 190, 36)
-    local resume = Games.ActiveGame and Games.ActiveGame.game.id == selected.id
+    local resume = active ~= nil
     self.soloOpen:SetShown(resume == true)
     self.soloPlay:SetShown(not resume)
     self.soloPlay:SetText(selected.mode == "singleplayer" and "Play" or "View lobby")
@@ -581,13 +664,22 @@ function UI:RefreshFeature(width)
     else
         self.soloPlay:Disable()
     end
-    local saved = Games.DB[selected.id]
-    local score = type(saved) == "table" and type(saved.best) == "table" and saved.best.score
+    local best = self:GetPersonalBest(selected.id)
+    local score = best and best.score
+    local mode = self:GetPersonalBestMode(selected.id)
     local record = type(score) == "number"
         and score == score
         and score >= 0
         and score <= 2147483647
-        and ("Personal best: " .. tostring(score))
+        and ((mode and (mode .. " best: ") or "Personal best: ") .. tostring(score))
+    if selected.id == "chess" then
+        local stats = Games.Chess:Storage().stats
+        record = string.format("Record: %dW / %dL / %dD", stats.wins, stats.losses, stats.draws)
+    end
+    if selected.id == "blindshot" then
+        local stats = Games.Blindshot:Storage().stats
+        record = string.format("Record: %dW / %dD / %d eliminations", stats.wins, stats.draws, stats.eliminations)
+    end
     self.heroRecord:SetText(
         record
             or (

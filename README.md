@@ -1,17 +1,57 @@
 # KIC-Games
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
-0.13.0. Intended for waiting for the group to fill and the time between dungeons.
+0.17.0. Intended for waiting for the group to fill and the time between dungeons.
 Includes **[Tetris](TETRIS.md)** with Original and class/spec graphics and
 **[Bejeweled](BEJEWELED.md)** with animated gem swaps and cascades.
-Also includes **[KIC Bejeweled](BEJEWELED-DELUXE.md)**, an independent game with
+Also includes **[KIC Bejeweled](KIC-BEJEWELED.md)**, an independent game with
 Bomb, Lightning and Color Orb combinations and separate saved records.
-All singleplayer modules have saved high scores, direct instance-chat sharing and
+Every new KIC Bejeweled run opens a **Normal / Roguelike** mode picker.
+Normal keeps Bombs, Zaps and Orbs with no timer, Energy, levels or cards.
+Roguelike uses the existing Arcane Rush survival rules: scoring replenishes Energy,
+full Energy offers a power draft or reshuffle, and powers last for the current run.
+The two modes keep separate records. Reopening a run preserves its selected mode.
+All singleplayer modules have saved high scores, direct group-chat sharing (or /say when solo) and
 shared graphics, audio and interface scale settings from **Options**.
+
+**[Chess](CHESS.md)** is a two-player multiplayer game for an ordinary PARTY group
+of 2-5 members. Open Multiplayer, select Chess and click **Host game**. Another
+player joins from the shared lobby list; both click **Ready** for the three-second
+start. All multiplayer games use this same lobby flow. Chess uses the supplied piece/board artwork,
+host-authoritative moves, graphical promotion, draw/resign controls, reload
+recovery and separate win/loss/draw records. There are no clocks or AI. Closing
+the UI preserves the match; disconnects do not award automatic victories.
+For a local UI/gameplay test, `/kicchesstest` opens the board with both sides under
+your control. Use `/kicchesstest new` to reset or `/kicchesstest stop` to exit.
+The board and local result popup also provide **New test game / Leave test** buttons.
+It enforces the Chess rules and leaves multiplayer records unchanged.
+
+**[Blindshot](BLINDSHOT.md)** is a PARTY game for 2–5 players: secretly position
+your marker, aim and lock in, then fire in a host-shuffled order. Eliminated
+players lose their turn. Each shot stops at the first living opponent. Survivors play
+on a shrinking platform until one remains or the round limit draws. Host / Join /
+Ready uses the same multiplayer lobby flow. Lobby panels show one rectangular
+slot per supported player: a joined name or **Open Slot** (two for Chess, five for
+Blindshot). While waiting, the host can click **Announce Lobby** to send the game
+name and current joined/capacity count to the lobby's group chat. Only this explicit
+host action sends an announcement. The top-down arena uses matching circular bounds and hitboxes.
+Left-click or hold to move; right-click or hold to aim. Lock In submits the final
+choice; adjustments stay local until then. The circular arena smoothly zooms as it
+shrinks, with stronger shrinking for three survivors and duels. Firing order uses
+colored player names. Records include completed matches,
+wins/draws, rounds played and eliminations. Closing the UI preserves the live timer.
+Use `/kicblindshottest` after `/reload` for a party-free local test with simulated
+opponents. Add `2`–`5` to select the player count, `new` to restart or `stop` to exit.
+Local tests use the real UI/rules and do not affect multiplayer records.
 
 The Neon Arcade Launcher has a shared Home / Singleplayer / Multiplayer / Results /
 Options content area. Home shows the featured game and up to three recent games,
-ordered by successful launch and saved across reloads. Removed modules are hidden
+ordered by successful launch and saved across reloads. The featured panel always
+prioritizes the active session with **Continue Game**. Without an active session,
+opening Home chooses uniformly from installed solo and multiplayer games; the
+choice stays stable during refreshes, score updates and resizing. An idle party
+game opens the Multiplayer Browser without automatically hosting.
+Removed modules are hidden
 without deleting their history. The libraries scroll and reflow as the window
 width changes; multiplayer keeps its lobby browser and host/join/ready controls.
 Results displays each registered game's real saved best and framework history.
@@ -42,8 +82,11 @@ covers 40 specs, including Devourer. Changes preserve the active board and score
 
 Audio has independent Arcade/Class-Spec themes, an enable toggle, volume and real
 event previews on one page. Both tabs offer the same shared Follow/class/spec
-controls; Arcade Sounds disables the audio profile controls. New settings default
-to Class Spells, Follow My Character ON and Class & Specialization audio. Existing
+controls; Arcade Sounds disables the audio profile controls.
+Both preview headers omit game-selection buttons; the piece icons and sound-event
+test buttons remain. Follow My Character occupies its own row below the profile
+heading, with the class/spec dropdowns underneath. New settings default to Class
+Spells, Follow My Character ON and Class & Specialization audio. Existing
 saved choices are retained. Arcade SoundKits support independent volume on current
 Retail.
 All audible effects use volume-controlled SoundKits on WoW's Master channel.
@@ -74,10 +117,10 @@ installable folder at its root.
 - `/kicgames stop` or `/kicgames abort`: interrupt the current match and close the windows immediately.
 - `/kicgames results`: view the shared result history.
 - `/kictetris`: start Tetris, or reopen your current Tetris game.
-- `/kictetris share`: send your saved best score directly to instance (/i) chat.
-- `/kicbejeweled`: start Bejeweled, or reopen your active run.
-- `/kicbejeweled share`: send your best gem-matching score directly to /i chat.
-- `/kicbejeweleddeluxe`: start or reopen KIC Bejeweled; add `share` to send its best score directly to /i chat. The command keeps its former name for compatibility.
+- `/kictetris share`: send your saved best score directly to group chat (/p, /raid or /i).
+- `/bejeweled`: start standard Bejeweled, or reopen your active run.
+- `/bejeweled share`: send your standard Bejeweled best score directly to group chat.
+- `/kicbejeweled`: start or reopen KIC Bejeweled; add `share` to send its best score directly to group chat. Sharing preserves the current pause state.
 
 ## Singleplayer and Multiplayer tabs
 
@@ -93,21 +136,32 @@ a multiplayer lobby. Modules identify their mode when they register. Select
 ## Using a multiplayer lobby
 
 1. Join a WoW group. Every participant must install KIC-Games.
-2. Open **Multiplayer**, choose an installed game, and click **Host game**.
-   Any party member can host; party leadership is not required.
-3. The **Party lobbies** list shows every discovered host, the selected game,
+2. Open **Multiplayer** and click **Host Game** on the game card you want to play.
+   Any party member can host; party leadership is not required. Creating the
+   session opens a dedicated full-width lobby; the browser is hidden.
+3. The right-hand **Party lobbies** sidebar shows every discovered host, the selected game,
    current player count/capacity, and whether it is waiting, counting down, or
-   running. Click a waiting lobby to join. **Refresh** discovers existing lobbies.
+   running. Click **Join** to enter the same lobby view. **Refresh** discovers
+   existing lobbies. Missing modules, version mismatches, full or active sessions
+   show their actual Join restriction. Expired/out-of-party listings are hidden.
 4. Every participant needs the selected module with matching mode and game
-   protocol version. The host may choose another multiplayer game in the library.
+   protocol version. **Back to Games** preserves the joined session and offers
+   **Resume Lobby**. Browsing other game cards does not change that session.
+   The global **Multiplayer** item also returns to the current lobby. Use
+   **Leave Lobby** explicitly before hosting another game.
 5. Everyone clicks **Ready**, including the host. As soon as the game's minimum
    player count is met and all joined participants are ready, the framework
    automatically displays **3, 2, 1** and launches the game. No extra host click.
-6. **Launcher** returns to the library without ending the match. **Open game**
+6. The lobby shows the registered number of player cards (two for Chess, five for
+   Blindshot), joined/Ready counts and a shared countdown. **Unready** cancels a
+   pending start. **Launcher** preserves the match. **Open game**
    reopens the match. Every participant can use **Stop match** to interrupt it.
 
-The multiplayer library is empty until a multiplayer module is installed;
-**Host game** requires a selected multiplayer module. Multiple party members can host
+The game library and lobby sidebar scroll independently. The library uses two
+columns at normal/wide sizes and one readable column in narrow windows. Each
+installed multiplayer module supplies a card with its own **Host Game** action;
+without a party, cards remain visible with a disabled action and an explanation.
+The multiplayer library is empty until a multiplayer module is installed. Multiple party members can host
 independent lobbies, but a client joins only one session at a time.
 
 Withdrawing readiness, a participant departing, someone joining during the
@@ -115,6 +169,9 @@ countdown, selecting another game, or **Stop match** cancels the pending start.
 Changing membership or the game resets readiness. Selecting the current game
 again leaves readiness and countdown unchanged. A cancelled countdown records
 no result because a match has not started yet.
+
+See [the Multiplayer browser v2 redesign](design/MULTIPLAYER-BROWSER-V2.md) for the page
+states, validation and a two-client test checklist.
 
 The countdown uses a common server timestamp. Remote visibility and actual module
 launch still depend on message delivery; a delayed client waits for the host's
@@ -138,6 +195,12 @@ round. A module's framework-managed timers stop automatically. Each module's
 `OnStop` callback also releases its own resources.
 
 ## Shared results
+
+Select any installed game on the Results page, then click **Share Best** in the
+header to share its displayed personal best or Chess/Blindshot lifetime record.
+KIC Bejeweled includes the displayed Normal/Roguelike mode. This sends one message
+to instance, raid or party chat, with `/say` as the solo fallback, without launching
+the selected game. Games without a saved best have sharing disabled.
 
 Game modules finish a normal match using `context:FinishGame(result)`. The
 framework validates and distributes the host's result, displays scores/ranks
@@ -209,12 +272,28 @@ Run the isolated-client integration checks from the repository root:
 
 ```powershell
 lua tests/framework.lua
+lua tests/chess_engine.lua
+lua tests/chess_session.lua
+lua tests/chess_lobby.lua
+lua tests/chess_recovery.lua
+lua tests/chess_ui.lua
+lua tests/chess_practice.lua
+lua tests/blindshot_rules.lua
+lua tests/blindshot_protocol.lua
+lua tests/blindshot_session.lua
+lua tests/blindshot_ui.lua
+lua tests/blindshot_practice.lua
 lua tests/tetris.lua
 lua tests/bejeweled.lua
-lua tests/bejeweled_deluxe.lua
+lua tests/kic_bejeweled.lua
 lua tests/bejeweled_hints.lua
-lua tests/deluxe_effects.lua
+lua tests/kic_bejeweled_effects.lua
+lua tests/kic_bejeweled_migration.lua
+lua tests/kic_bejeweled_modes.lua
+lua tests/roguelite_integration.lua
+Get-ChildItem tests -Filter roguelite_*.lua | Where-Object Name -ne 'roguelite_integration.lua' | ForEach-Object { lua $_.FullName }
 lua tests/share_best.lua
+lua tests/results_share_best.lua
 python tests/artwork.py
 python tests/options_assets.py
 ```
@@ -232,7 +311,7 @@ responsive columns, embedded navigation and saved settings, urgent interruption
 during a large transfer, independent
 hosts, tabs, singleplayer without networking, the displayed 3-2-1 sequence,
 countdown cancellation and join acknowledgment. They also check Tetris launching,
-presets, saved records, instance-chat sharing, focus, pauses and quick stopping. Pure engine
+presets, saved records, group-chat sharing, focus, pauses and quick stopping. Pure engine
 checks cover bags, rotation, bounds, holding, drops, line clearing, scoring,
 gravity, locking, top-out and randomized board invariants. Bejeweled checks also
 cover legal opening boards, invalid swaps, crossing/long matches, falling-gem order,

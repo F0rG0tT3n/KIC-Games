@@ -1,10 +1,20 @@
 # KIC Bejeweled
 
-A separate, playable singleplayer game formerly named Bejeweled Deluxe. Its internal
-`bejeweled_deluxe` ID, saved records, command and artwork paths remain unchanged.
-Open it in Singleplayer or with `/kicbejeweleddeluxe`. The `share` argument immediately sends
-its best score to instance (`/i`) chat. Outside an instance group, it shows a local
-notice without sending. Score fields use plain hyphens instead of pipe characters.
+A separate, playable singleplayer game with the internal `kic_bejeweled` ID,
+`Games/KICBejeweled` module directory and `kic-bejeweled-*` artwork paths. The current
+mode picker offers **Normal** and **Roguelike** on every new run, including restarts
+and replays. Normal has Bombs, Zaps and Orbs with no timer, Energy, levels or cards.
+Roguelike keeps the existing Arcane Rush Energy survival and powers. Reopening an
+active run resumes its mode without asking again. The picker blocks play until
+selection and offers Back to Launcher to cancel.
+Existing saves automatically migrate scores, result history and recent-game
+entries to the new ID. If both IDs already have records, the higher best in each
+ruleset is retained. Standard Bejeweled keeps its own records and `/bejeweled` command.
+Open it in Singleplayer or with `/kicbejeweled`. The `share` argument immediately sends
+its best score to party (`/p`), raid (`/raid`) or instance (`/i`) chat as appropriate.
+Outside a group, it sends to `/say`. Instance groups use `/i` even when they are
+five-player parties; ordinary raids use `/raid`. Sharing preserves the
+current pause state. Score fields use plain hyphens instead of pipe characters.
 
 Standard Bejeweled remains `bejeweled`, with its original engine and rules.
 KIC Bejeweled does not migrate or overwrite Bejeweled or Tetris records.
@@ -16,7 +26,8 @@ pieces or use the same directional drag gesture as standard Bejeweled.
 **Hint (3/3)** provides three manual hints per run, with the same vertical tile
 bounce as standard Bejeweled. There are no automatic hints; restart resets the
 allowance while pause/reopen preserves it. Invalid
-normal swaps animate back without counting a move. There is no timer.
+normal swaps animate back without counting a move. A board with no legal swaps
+ends either mode. Energy depletion also ends Roguelike runs.
 
 | Pattern | Created special | Activation |
 | --- | --- | --- |
@@ -38,6 +49,32 @@ Bombs and Lightning keep their normal color and can participate in matches.
 Orbs have no normal color and cannot form ordinary matches. An Orb hit by another
 special targets the most numerous normal color on the current board; ties choose
 the lowest color index. This secondary Orb behavior is deterministic.
+
+## Roguelike: Energy, drafts and powers
+
+Runs begin at 70 / 100 Energy. Base drain is 4 Energy per second while the
+board is interactive; pausing, hiding the game, drafts and swap/clear/fall/reshuffle
+animations suspend drain. The survival counter measures this interactive time.
+Score restores Energy immediately after each clear wave: 0.08 per point, up to
+42 base Energy across one entire swap, plus power bonuses. Cascade waves share
+that budget, including when a draft interrupts the cascade.
+
+Reaching full Energy pauses the chain and offers three distinct powers. Choose
+one to add a stack and gain an Ascension level, or choose **Reshuffle All Gems**
+to rearrange existing pieces without gaining a power or level. A reshuffle chosen
+mid-cascade waits for a settled board. It preserves every gem and special, avoids
+automatic matches and guarantees a legal swap when successful.
+
+After either choice, Energy resets to 50% of maximum, modified by owned powers.
+There are 75 powers: 69 repeatable upgrades and six unique relics. Effects have
+bounded clear/spawn budgets; stacks beyond effect caps can provide overflow
+bonuses. Drain increases with Ascension and tradeoff powers. Second Wind can
+rescue depletion once per run. Powers and active runs do not persist across reloads.
+
+Streak Keeper uses the current accepted swap's speed for its first wave and
+cascades. Invalid swaps preserve streak/timing state. Gem Magnet recolors only
+eligible normal gems that differ from the attuned color, retaining a settled,
+playable board.
 
 ## Direct combinations
 
@@ -85,38 +122,46 @@ created special is not counted as removed; it earns the creation bonus instead.
 Scores cap at 2,147,483,647, as in the existing game. For example, creating one
 Bomb from four gems at x1 removes three cells: `3 * 50 + 100 = 250` points.
 
-Best scores use `KICGamesDB.bejeweled_deluxe.best`. Completed/interrupted history
+Roguelike best scores use `KICGamesDB.kic_bejeweled.arcaneRush.best`.
+Normal best scores use `KICGamesDB.kic_bejeweled.best`, retaining existing untimed
+records. The two rulesets are never compared or overwritten by the other mode.
+The picker displays both bests. Gameplay, sharing, the launcher and Results use
+the current mode, or the last selected mode after stopping/reloading, and identify
+that mode in record text. Completed match summaries identify Normal or Roguelike.
+Completed/interrupted history
 uses the framework's existing bounded results array with the new game ID, retaining
 the current SavedVariables schema and character filtering. Active runs are not
 saved across UI reloads, matching standard Bejeweled.
 
 ## Integration and architecture
 
-- `Games/BejeweledDeluxe/Engine.lua` owns all Deluxe matching, special creation,
-  combinations, scoring and resolution. It reuses only the original opening-board
-  generator, exchange, gravity/refill and no-moves state helper through inheritance.
+- `Games/KICBejeweled/Engine.lua` owns all KIC Bejeweled matching, special creation,
+  combinations, scoring and resolution. It reuses the original opening-board
+  generator, exchange and no-moves state helper through inheritance; refill
+  delegates to the original engine unless color-distribution powers are active.
+  `Roguelite.lua` owns powers, drafts, Energy and post-move generators, while
+  `RogueliteUI.lua` integrates those rules with the shared lifecycle and renderer.
+  `Modes.lua` owns the new-run picker and mode selection. Normal leaves the
+  engine's roguelite state unset, so all power, Energy and draft effects are disabled.
   The original `Games/Bejeweled/Engine.lua` is unchanged.
 - The existing Bejeweled UI methods are shared as functions, with separate module
   state, frames, result-window names and texture arrays. Small optional presentation
-  hooks handle Deluxe art, labels, overlays, score feedback and resolution audio.
+  hooks handle KIC Bejeweled art, labels, overlays, score feedback and resolution audio.
   The directional drag/hit-testing algorithm and timing are unchanged.
 - The existing module registration/lifecycle code is a small parameterized factory.
   Each invocation captures its own controller, game ID, title and command, retaining
-  pause, restart, stop, finish, instance-chat sharing and best-score behavior.
+  pause, restart, stop, finish, group-chat sharing and best-score behavior.
 - Launcher, Recent Games, Featured Game, Results, Continue Game, graphics changes,
-  effects settings and the existing interface scale apply to Deluxe.
-- The exact supplied `bejeweled-deluxe-hero.tga` (1024x512) and
-  `bejeweled-deluxe-card.tga` (256x256) were copied from the provided artwork archive
+  effects settings and the existing interface scale apply to KIC Bejeweled.
+- The exact supplied `kic-bejeweled-hero.tga` (1024x512) and
+  `kic-bejeweled-card.tga` (256x256) were copied from the provided artwork archive
   to the runtime media folder. The hero uses left-side text. Existing art is unchanged.
-- Bombs wear thick ember octagonal armor with hazard teeth, a compact bomb core
-  and lit fuse. Lightning uses open cyan brackets, cardinal terminals and a bright
-  white bolt with a dark keyline. Color Orbs have a full rainbow circular halo,
-  orbit and prismatic core. These distinct silhouettes and center symbols carry
-  recognition even without the small secondary text labels or color cues.
-  Underlying gem/spec spell icons stay visible around the compact emblems; markers
-  follow swaps, falls and drag ghosts. Glows pulse subtly while active, with static
-  shapes retained when effects are Off. No generated replacement artwork.
-- `Games/BejeweledDeluxe/Effects.lua` renders expanding fiery Bomb shockwaves,
+- Bomb, Lightning and Orb markers use registered transparent TGA overlays with
+  a backdrop, additive glow and small secondary label. Markers follow underlying
+  gem/spec icons during swaps, falls and drags. Reshuffles hide all static layers
+  while permutation sprites represent the board, then restore normal rendering.
+  Upgrade cards share nine category illustrations plus a reshuffle illustration.
+- `Games/KICBejeweled/Effects.lua` renders expanding fiery Bomb shockwaves,
   Lightning discharges along the affected rows/columns, and descending cyan/violet
   Orb bolts to every targeted color cell. Orb + Orb strikes all 64 cells. Full
   special clear durations are 0.65s for Bomb, 0.6s for Lightning and 0.85s for Orb,
@@ -127,7 +172,7 @@ saved across UI reloads, matching standard Bejeweled.
   match sound categories. Only the highest-priority sound plays per phase. Resolution
   audio uses the existing Bejeweled event owner to preserve class/spec mappings,
   resolution throttling and stop-previous-sound behavior. Other lifecycle sounds use
-  the Deluxe registration. Every sound goes through `Games.Audio:Play`, preserving
+  the KIC Bejeweled registration. Every sound goes through `Games.Audio:Play`, preserving
   Master routing, independent volume, 65% headroom and mute. `Audio.lua` and the
   Options UI are unchanged; no new audio IDs or direct sound calls were added.
 
@@ -135,22 +180,22 @@ saved across UI reloads, matching standard Bejeweled.
 
 Added:
 
-- `KIC-Games/Games/BejeweledDeluxe/Engine.lua`
-- `KIC-Games/Games/BejeweledDeluxe/UI.lua`
-- `KIC-Games/Games/BejeweledDeluxe/Effects.lua`
-- `KIC-Games/Games/BejeweledDeluxe/Module.lua`
-- `KIC-Games/Media/KICUI/bejeweled-deluxe-hero.tga`
-- `KIC-Games/Media/KICUI/bejeweled-deluxe-card.tga`
-- `tests/bejeweled_deluxe.lua`
-- `tests/deluxe_effects.lua`
-- `BEJEWELED-DELUXE.md`
+- `KIC-Games/Games/KICBejeweled/Engine.lua`
+- `KIC-Games/Games/KICBejeweled/UI.lua`
+- `KIC-Games/Games/KICBejeweled/Effects.lua`
+- `KIC-Games/Games/KICBejeweled/Module.lua`
+- `KIC-Games/Media/KICUI/kic-bejeweled-hero.tga`
+- `KIC-Games/Media/KICUI/kic-bejeweled-card.tga`
+- `tests/kic_bejeweled.lua`
+- `tests/kic_bejeweled_effects.lua`
+- `KIC-BEJEWELED.md`
 
 Updated:
 
 - `KIC-Games/Games/Bejeweled/UI.lua` and `Module.lua`: shared presentation/lifecycle hooks.
 - `KIC-Games/Artwork.lua`, `KIC-Games/KIC-Games.toc`: art registration and load order.
 - `KIC-Games/Launcher.lua`, `KIC-Games/UI.lua`: artwork, layout, pause and resume integration.
-- `KIC-Games/ResultsUI.lua`, `KIC-Games/Settings.lua`: Deluxe statistics and shared cosmetics.
+- `KIC-Games/ResultsUI.lua`, `KIC-Games/Settings.lua`: KIC Bejeweled statistics and shared cosmetics.
 - `tests/framework.lua`: third-game expectations and reusable isolated-client harness.
 - `tests/artwork.py`: two additional runtime assets and optional archive byte comparison.
 - `README.md`, `CHANGELOG.md`: discovery and implementation notes.
@@ -160,8 +205,13 @@ Updated:
 Run from the repository root:
 
 ```powershell
-lua tests/bejeweled_deluxe.lua
-lua tests/deluxe_effects.lua
+lua tests/kic_bejeweled.lua
+lua tests/kic_bejeweled_effects.lua
+lua tests/kic_bejeweled_migration.lua
+lua tests/kic_bejeweled_modes.lua
+lua tests/roguelite_integration.lua
+lua tests/bejeweled_hints.lua
+lua tests/share_best.lua
 lua tests/framework.lua
 lua tests/bejeweled.lua
 lua tests/tetris.lua
@@ -169,23 +219,23 @@ python tests/artwork.py
 python tests/options_assets.py
 ```
 
-The Deluxe suite covers pattern priority/placement, creation protection, all seven
+The KIC Bejeweled suite covers pattern priority/placement, creation protection, all seven
 Orb targets, every combination in both swap directions and at corners, activation
 footprints, dense chains, duplicate prevention, gravity, randomized complete cascades,
 invalid swaps, drag suppression, both graphics modes, scale, lifecycle, isolated
 scores/history/reload, artwork routing, audio hooks, volume, mute and throttling.
 The original framework suite includes its audit regressions.
 
-Final automated results:
+All roguelite suites run from the repository root:
 
-- Deluxe: 116,024 engine and integration assertions passed.
-- Framework: 3,726 assertions passed, including audit regressions.
-- Original Bejeweled: 68,272 assertions passed.
-- Tetris: 44,303 engine and icon assertions passed.
-- Artwork: 34 runtime TGAs passed dimensions, encoding, registry and TOC checks;
-  both Deluxe files matched the supplied archive bytes exactly.
-- Options assets: all 40 spec profiles, icons and audited sound mappings passed.
-- StyLua checks and `git diff --check` passed.
+```powershell
+Get-ChildItem tests -Filter roguelite_*.lua | ForEach-Object { lua $_.FullName }
+```
+
+The root integration suite exercises real addon startup, special-bearing reshuffles,
+static-layer cleanup, layout at 75%/100%/150%, separate score persistence and all
+record surfaces, first-wave streak scoring, invalid swaps and safe Gem Magnet
+recoloring. Artwork validation covers 47 runtime TGAs and TOC load order.
 
 Only mocked Lua clients and asset checks were run; no live WoW validation is claimed.
 An offline preview of the real mocked UI marker and effect geometry was inspected.

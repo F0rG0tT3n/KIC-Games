@@ -5,6 +5,21 @@ Games.UI = UI
 local Theme = Games.Theme
 local GOLD = Theme.Colors.accent
 
+-- Use the same record provider as gameplay and sharing, including games with
+-- a separate score bucket for their current ruleset.
+function UI:GetPersonalBest(id)
+    local module = id == "tetris" and Games.Tetris
+        or id == "bejeweled" and Games.Bejeweled
+        or id == "kic_bejeweled" and Games.KICBejeweled
+        or id == "chess" and Games.Chess
+        or id == "blindshot" and Games.Blindshot
+    local saved = module and module:Storage() or Games.DB[id]
+    return type(saved) == "table" and type(saved.best) == "table" and saved.best or nil
+end
+function UI:GetPersonalBestMode(id)
+    return id == "kic_bejeweled" and Games.KICBejeweled:ModeLabel() or nil
+end
+
 local function label(parent, value, x, y, width, template)
     return Theme:Label(parent, value, x, y, width, template)
 end
@@ -79,7 +94,7 @@ function UI:Initialize()
         local id = Games.ActiveGame and Games.ActiveGame.game.id
         local module = id == "tetris" and Games.Tetris
             or id == "bejeweled" and Games.Bejeweled
-            or id == "bejeweled_deluxe" and Games.BejeweledDeluxe
+            or id == "kic_bejeweled" and Games.KICBejeweled
         if module and module.running and module.paused then
             UI:ShowGame()
             module:Pause(false)
@@ -106,6 +121,8 @@ function UI:Initialize()
     self.browser = scroll(browser, 303, 126, 14, -44)
     self.emptyLobbies =
         label(self.browser, "No lobbies found.\n\nCreate one, or ask a party member with KIC-Games to host.", 0, 0, 290)
+    self.emptyLobbiesDetail = label(self.browser, "Host a game or wait for someone in your party.", 0, -30, 290)
+    self.emptyLobbiesDetail:SetHeight(48)
 
     local lobbyPanel = panel(self.home, 485, 450, 395, -120)
     self.lobbyPanel = lobbyPanel
@@ -117,19 +134,10 @@ function UI:Initialize()
     self.gameInfo:SetHeight(30)
     self.players = label(lobbyPanel, "", 16, -193, 450)
     self.players:SetSpacing(8)
+    self.lobbySlots = {}
     self.countdownText = label(lobbyPanel, "", 16, -308, 450, "GameFontNormalLarge")
     self.countdownText:SetJustifyH("CENTER")
     self.hint = label(lobbyPanel, "", 16, -340, 450, "GameFontHighlightSmall")
-    self.create = button(
-        lobbyPanel,
-        "Host game",
-        135,
-        16,
-        -393,
-        action(function()
-            return Games:CreateLobby(UI.selectedMulti)
-        end)
-    )
     self.leave = button(lobbyPanel, "Leave lobby", 125, 16, -393, function()
         Games:LeaveLobby()
     end)
@@ -271,7 +279,9 @@ function UI:LayoutGameContainer()
     local id = Games.ActiveGame and Games.ActiveGame.game.id
     local module = id == "bejeweled" and Games.Bejeweled
         or id == "tetris" and Games.Tetris
-        or id == "bejeweled_deluxe" and Games.BejeweledDeluxe
+        or id == "kic_bejeweled" and Games.KICBejeweled
+        or id == "chess" and Games.Chess
+        or id == "blindshot" and Games.Blindshot
     self.gameContainer:ClearAllPoints()
     if module then
         self.gameContainer:SetPoint("TOPLEFT", 20, -100)
@@ -295,15 +305,15 @@ function UI:PauseGameplay()
     local id = Games.ActiveGame and Games.ActiveGame.game.id
     local module = id == "tetris" and Games.Tetris
         or id == "bejeweled" and Games.Bejeweled
-        or id == "bejeweled_deluxe" and Games.BejeweledDeluxe
+        or id == "kic_bejeweled" and Games.KICBejeweled
     if module and module.running then
         module:Pause(true)
     end
 end
 
 function UI:ShowHome()
-    if self.gameContainer:IsShown() and Games.ActiveGame then
-        self.featuredID = Games.ActiveGame.game.id
+    if self.launcherPage == "home" and (not self.home:IsShown() or not self.frame:IsShown()) then
+        self.featureRollPending = true
     end
     self:PauseGameplay()
     self:HideAuxiliaryWindows()
@@ -353,75 +363,7 @@ function UI:Refresh()
     if not Games.Registry[self.selectedMulti] then
         self.selectedMulti = multiGames[1] and multiGames[1].id
     end
-    local listings = {}
-    for host, listing in pairs(Games.Listings) do
-        listings[#listings + 1] = listing
-    end
-    table.sort(listings, function(a, b)
-        return a.host < b.host
-    end)
-    self.emptyLobbies:SetShown(#listings == 0)
-    for _, row in ipairs(self.listingRows) do
-        row:Hide()
-    end
-    for i, listing in ipairs(listings) do
-        local row = self.listingRows[i]
-        if not row then
-            row = CreateFrame("Button", nil, self.browser, "BackdropTemplate")
-            row:SetSize(301, 56)
-            Theme:StyleButton(row)
-            row.title = label(row, "", 6, -3, 290, "GameFontNormal")
-            row.detail = label(row, "", 6, -24, 290, "GameFontHighlightSmall")
-            row.title:SetHeight(18)
-            row.detail:SetHeight(30)
-            self.listingRows[i] = row
-        end
-        local host, id = listing.host, listing.id
-        local game = Games.Registry[listing.gameID]
-        row:ClearAllPoints()
-        row:SetPoint("TOPLEFT", 0, -(i - 1) * 60)
-        row.title:SetText(
-            (game and game.title or (listing.gameTitle ~= "" and listing.gameTitle or "Choosing a game"))
-                .. "  "
-                .. listing.count
-                .. "/"
-                .. listing.max
-        )
-        row.detail:SetText(
-            string.format(
-                "Host: %s\n%s",
-                host,
-                listing.status == "countdown" and "Starting - click to join"
-                    or (
-                        listing.status == "running" and (listing.rejoin and "Click to rejoin" or "Game in progress")
-                        or "Waiting - click to join"
-                    )
-            )
-        )
-        row:SetScript(
-            "OnClick",
-            action(function()
-                if Games.Lobby and Games.Lobby.host == host and Games.Lobby.id == id then
-                    return true
-                end
-                return Games:JoinLobby(host, id)
-            end)
-        )
-        local joined = Games.Lobby and Games.Lobby.host == host and Games.Lobby.id == id
-        enable(
-            row,
-            joined
-                or (
-                    not Games.Lobby
-                    and not Games.Pending
-                    and (listing.status ~= "running" or listing.rejoin)
-                    and (listing.count < listing.max or listing.rejoin)
-                )
-        )
-        row:Show()
-    end
-    self.browser:SetHeight(math.max(112, #listings * 60))
-
+    self:RefreshPartyLobbies()
     local current, pending = Games.Lobby, Games.Pending
     local lobby = current and current.mode == "multiplayer" and current or nil
     local running = lobby and lobby.status == "running"
@@ -430,19 +372,24 @@ function UI:Refresh()
     self.abortButton:SetShown(
         current and (current.status == "running" or current.status == "countdown") and not Games:IsRoundStopped()
     )
+    local key = lobby and (lobby.host .. ":" .. lobby.id) or pending and (pending.host .. ":" .. pending.id)
+    if key ~= self.multiplayerSessionKey then
+        self.multiplayerSessionKey = key
+        self.multiplayerView = key and "lobby" or "browser"
+        if key and not self.gameContainer:IsShown() then
+            self.launcherPage, Games.DB.launcherPage = "multiplayer", "multiplayer"
+        end
+    end
     self:UpdateCountdown()
     self:RefreshSingleplayer()
     self:RefreshResults()
-    self.create:SetShown(not lobby)
-    enable(self.create, Games:GroupChannel() ~= nil and not current and not pending and self.selectedMulti ~= nil)
     self.leave:SetShown(lobby ~= nil or pending ~= nil)
-    if pending then
-        self.create:Hide()
-    end
     self.ready:SetShown(lobby ~= nil and not running)
-    self.start:SetShown(lobby ~= nil and not running and not counting)
+    self.start:Hide()
     self.showGame:SetShown(running and Games.ActiveGame ~= nil)
     self.endGame:SetShown((running or counting) and not interrupted)
+    self.announceLobby:SetShown(lobby ~= nil and Games:IsHost() and not running and not counting)
+    enable(self.announceLobby, Games:CanAnnounceLobby())
     if lobby then
         local game = Games.Registry[lobby.gameID]
         self.lobbyTitle:SetText(
@@ -465,21 +412,8 @@ function UI:Refresh()
                     or "The host can select a game from the library."
                 )
         )
-        local lines = {}
-        for _, entry in ipairs(lobby.members) do
-            local state = lobby.gameID == "" and "Waiting"
-                or (
-                    entry.version ~= lobby.gameVersion and "Missing / different game version"
-                    or (entry.ready and "|cff70db88Ready|r" or "Not ready")
-                )
-            if running then
-                state = "Playing"
-            end
-            lines[#lines + 1] = entry.name .. (entry.name == lobby.host and " (host)" or "") .. "  -  " .. state
-        end
-        self.players:SetText(table.concat(lines, "\n"))
         local own = Games:LocalMember()
-        self.ready:SetText((counting or (own and own.ready)) and "Not ready" or "Ready")
+        self.ready:SetText((counting or (own and own.ready)) and "Unready" or "Ready")
         enable(self.ready, Games:Compatible(lobby))
         local canStart, reason = Games:CanStart()
         self.hint:SetText(
@@ -499,7 +433,8 @@ function UI:Refresh()
             pending and ("Waiting for " .. pending.host .. "...")
                 or "Choose a multiplayer game, then click Host game. Or join a party lobby on the left."
         )
-        local selected = Games.Registry[self.selectedMulti]
+        local pendingListing = pending and Games.Listings[pending.host]
+        local selected = Games.Registry[pendingListing and pendingListing.gameID or self.selectedMulti]
         self.selectedGame:SetText(selected and selected.title or "Choose a multiplayer game")
         self.gameInfo:SetText(
             selected and (selected.description or "") or "Select an installed game in the library to host it."
@@ -517,6 +452,7 @@ function UI:Refresh()
                 )
         )
     end
+    self:RefreshLobbySlots(lobby)
     self.footer:SetText(
         string.format(
             "KIC-Games %s  |  %d installed game(s)  |  %s",
@@ -528,6 +464,300 @@ function UI:Refresh()
     self:RefreshLauncher()
 end
 
+function UI:PlayerCount(game)
+    if not game then
+        return ""
+    end
+    return game.minPlayers == game.maxPlayers and (game.maxPlayers .. " players")
+        or (game.minPlayers .. "-" .. game.maxPlayers .. " players")
+end
+function UI:LobbyAvailability(listing)
+    local current = Games.Lobby
+    local joined = current and current.host == listing.host and current.id == listing.id
+    local status = listing.status == "running" and "In Game"
+        or listing.status == "countdown" and "Starting"
+        or "Waiting"
+    if joined then
+        return true, nil, status, true
+    end
+    local game = Games.Registry[listing.gameID]
+    if not game then
+        return false,
+            listing.gameID == "" and "Host has not selected a game" or "Game module is not installed",
+            "Unavailable"
+    end
+    if game.mode ~= "multiplayer" or game.version ~= listing.gameVersion then
+        return false, "Different game module version", "Unavailable"
+    end
+    if
+        game.partyOnly
+        and (Games:GroupChannel() ~= "PARTY" or IsInRaid() or GetNumGroupMembers() < 2 or GetNumGroupMembers() > 5)
+    then
+        return false, "Requires an ordinary PARTY of 2-5 players", "Unavailable"
+    end
+    if listing.status == "running" and not listing.rejoin then
+        return false, "Game has already started", status
+    end
+    if listing.count >= listing.max and not listing.rejoin then
+        return false, "Lobby is full", status
+    end
+    if current then
+        return false, "Leave your current lobby first", status
+    end
+    if Games.Pending then
+        return false, "Joining a lobby...", status
+    end
+    if Games.ActiveGame then
+        return false, "Finish your current game first", status
+    end
+    return true, nil, status
+end
+function UI:RefreshPartyLobbies()
+    local listings, roster = {}, Games:Roster()
+    for host, listing in pairs(Games.Listings) do
+        if roster[host] and GetTime() - listing.seen <= 60 then
+            listings[#listings + 1] = listing
+        end
+    end
+    table.sort(listings, function(a, b)
+        return a.host < b.host
+    end)
+    self.emptyLobbies:SetText("No party lobbies found.")
+    self.emptyLobbies:SetShown(#listings == 0)
+    self.emptyLobbiesDetail:SetShown(#listings == 0)
+    for _, row in ipairs(self.listingRows) do
+        row:Hide()
+    end
+    for i, listing in ipairs(listings) do
+        local row = self.listingRows[i]
+        if not row then
+            row = CreateFrame("Button", nil, self.browser, "BackdropTemplate")
+            Theme:StyleButton(row)
+            Theme:StylePremiumFrame(row, "card-frame", { compact = true })
+            row.title = label(row, "", 12, -8, 450, "GameFontNormal")
+            row.title:SetHeight(18)
+            row.title:SetMaxLines(1)
+            row.detail = label(row, "", 12, -30, 450, "GameFontHighlightSmall")
+            row.detail:SetHeight(16)
+            row.detail:SetMaxLines(1)
+            row.reason = label(row, "", 12, -49, 450, "GameFontHighlightSmall")
+            row.reason:SetHeight(30)
+            row.reason:SetMaxLines(2)
+            row.status = label(row, "", 0, 0, 124, "GameFontHighlightSmall")
+            row.status:SetJustifyH("RIGHT")
+            row.status:SetMaxLines(1)
+            row.capacity = label(row, "", 12, -51, 200, "GameFontHighlightSmall")
+            row.join = Theme:NeonButton(row, "Join", 96, 0, 0, function() end, 30, true)
+            self.listingRows[i] = row
+        end
+        local host, id = listing.host, listing.id
+        local game = Games.Registry[listing.gameID]
+        local eligible, reason, status, joined = self:LobbyAvailability(listing)
+        row.title:SetText(game and game.title or listing.gameTitle ~= "" and listing.gameTitle or "Choosing a game")
+        row.detail:SetText("Host: " .. host)
+        row.capacity:SetText(listing.count .. "/" .. listing.max .. " players")
+        row.reason:SetText(reason or (joined and "Your current lobby" or ""))
+        row.status:SetText(status)
+        row.join:SetText(joined and "Resume" or listing.rejoin and "Rejoin" or "Join")
+        local click = action(function()
+            -- Revalidate on click, including a listing that expired between refreshes.
+            local latest = Games.Listings[host]
+            if not latest or latest.id ~= id or not Games:Roster()[host] or GetTime() - latest.seen > 60 then
+                self:Refresh()
+                return false, "This lobby is no longer available."
+            end
+            local allowed, why, _, isJoined = self:LobbyAvailability(latest)
+            if not allowed then
+                return false, why
+            end
+            if isJoined then
+                self:OpenLauncher("multiplayer")
+                return true
+            end
+            return Games:JoinLobby(host, id)
+        end)
+        row:SetScript("OnClick", click)
+        row.join:SetScript("OnClick", click)
+        row:SetEnabled(eligible)
+        row.join:SetEnabled(eligible)
+        Theme:Select(row, joined)
+        row:Show()
+    end
+    self.browser:SetHeight(math.max(80, #listings * 156 - 10))
+    if self.browserHeading then
+        self:LayoutPartyLobbies(self.browserPanel:GetWidth(), self.browserPanel:GetHeight())
+    end
+end
+function UI:LayoutPartyLobbies(width, height)
+    self.browserPanel:SetSize(width, height)
+    local scroll = self.browser:GetParent()
+    scroll:ClearAllPoints()
+    scroll:SetPoint("TOPLEFT", 14, -46)
+    scroll:SetSize(width - 28, math.max(50, height - 60))
+    self.browser:SetWidth(width - 46)
+    self.browserHeading.title:SetFont(Theme.Fonts.display, width < 290 and 12 or 14, "")
+    self.browserHeading:SetWidth(width - 112)
+    self.browserRefresh:ClearAllPoints()
+    self.browserRefresh:SetPoint("TOPLEFT", width - 90, -10)
+    self.browserRefresh:SetWidth(76)
+    self.emptyLobbies:SetWidth(width - 46)
+    self.emptyLobbies:SetHeight(24)
+    self.emptyLobbiesDetail:SetWidth(width - 46)
+    for i, row in ipairs(self.listingRows) do
+        row:ClearAllPoints()
+        row:SetPoint("TOPLEFT", 0, -(i - 1) * 156)
+        row:SetSize(width - 46, 146)
+        row.title:SetWidth(width - 70)
+        row.detail:SetWidth(width - 70)
+        row.reason:ClearAllPoints()
+        row.reason:SetPoint("TOPLEFT", 12, -75)
+        row.reason:SetWidth(width - 70)
+        row.capacity:SetWidth(90)
+        row.status:ClearAllPoints()
+        row.status:SetPoint("TOPRIGHT", -12, -51)
+        row.status:SetWidth(width - 180)
+        row.join:ClearAllPoints()
+        row.join:SetPoint("TOPLEFT", 12, -106)
+        row.join:SetWidth(width - 70)
+    end
+end
+function UI:LayoutLobbySlots()
+    if not self.slotScroll then
+        return
+    end
+    local width, height = self.lobbyPanel:GetWidth(), self.lobbyPanel:GetHeight()
+    self.lobbyArt:ClearAllPoints()
+    self.lobbyArt:SetPoint("TOPLEFT", 20, -20)
+    self.lobbyTitle:ClearAllPoints()
+    self.lobbyTitle:SetPoint("TOPLEFT", 132, -18)
+    self.lobbyTitle:SetWidth(width - 330)
+    self.selectedGame:ClearAllPoints()
+    self.selectedGame:SetPoint("TOPLEFT", 132, -52)
+    self.selectedGame:SetWidth(width - 320)
+    self.lobbyInfo:ClearAllPoints()
+    self.lobbyInfo:SetPoint("TOPLEFT", 132, -88)
+    self.lobbyInfo:SetWidth(width - 160)
+    self.lobbyInfo:SetHeight(28)
+    self.gameInfo:Hide()
+    self.players:Hide()
+    self.lobbyBack:ClearAllPoints()
+    self.lobbyBack:SetPoint("TOPRIGHT", -20, -20)
+    self.slotScroll:ClearAllPoints()
+    self.slotScroll:SetPoint("TOPLEFT", 20, -136)
+    self.slotScroll:SetSize(width - 40, height - 292)
+    local count = self.lobbySlotCount or 0
+    local available = width - 58
+    local columns = count <= 2 and math.max(1, count) or (available >= 660 and 3 or 2)
+    local rows = math.max(1, math.ceil(count / columns))
+    local cardWidth = (available - (columns - 1) * 14) / columns
+    local cardHeight = math.max(
+        count <= 2 and 190 or 112,
+        math.min(count <= 2 and 240 or 136, (height - 292 - (rows - 1) * 14) / rows)
+    )
+    for i, slot in ipairs(self.lobbySlots) do
+        local row = math.floor((i - 1) / columns)
+        local inRow = math.min(columns, count - row * columns)
+        local x = ((i - 1) % columns) * (cardWidth + 14) + (available - (inRow * cardWidth + (inRow - 1) * 14)) / 2
+        slot:ClearAllPoints()
+        slot:SetPoint("TOPLEFT", x, -row * (cardHeight + 14))
+        slot:SetSize(cardWidth, cardHeight)
+        slot.index:ClearAllPoints()
+        slot.index:SetPoint("TOPRIGHT", -16, -14)
+        slot.index:SetJustifyH("RIGHT")
+        slot.index:SetFont(Theme.Fonts.display, count <= 2 and 32 or 22, "")
+        slot.role:ClearAllPoints()
+        slot.role:SetPoint("TOPLEFT", 16, -18)
+        slot.name:ClearAllPoints()
+        slot.name:SetPoint("TOPLEFT", 16, count <= 2 and -82 or -46)
+        slot.name:SetWidth(cardWidth - 32)
+        slot.name:SetHeight(26)
+        slot.name:SetFont(Theme.Fonts.display, count <= 2 and 20 or 16, "")
+        slot.state:ClearAllPoints()
+        slot.state:SetPoint("TOPLEFT", 16, count <= 2 and -124 or -80)
+        slot.state:SetWidth(cardWidth - 32)
+        slot.state:SetJustifyH("LEFT")
+    end
+    self.slotArea:SetSize(available, math.max(height - 292, rows * (cardHeight + 14) - 14))
+    self.lobbySummary:ClearAllPoints()
+    self.lobbySummary:SetPoint("TOPLEFT", 20, -height + 132)
+    self.lobbySummary:SetWidth(width - 360)
+    self.countdownText:ClearAllPoints()
+    self.countdownText:SetPoint("TOPRIGHT", -20, -height + 136)
+    self.countdownText:SetWidth(310)
+    self.hint:ClearAllPoints()
+    self.hint:SetPoint("TOPLEFT", 20, -height + 96)
+    self.hint:SetWidth(width - 40)
+    self.hint:SetHeight(32)
+    for _, entry in ipairs({
+        { self.leave, 20, 160 },
+        { self.endGame, 196, 160 },
+        { self.announceLobby, 196, 176 },
+        { self.ready, width - 196, 176 },
+        { self.showGame, width - 196, 176 },
+    }) do
+        entry[1]:ClearAllPoints()
+        entry[1]:SetPoint("TOPLEFT", entry[2], -height + 52)
+        entry[1]:SetSize(entry[3], 32)
+    end
+end
+function UI:RefreshLobbySlots(lobby)
+    if not self.slotArea then
+        return
+    end
+    local game = lobby and Games.Registry[lobby.gameID]
+    self.lobbySlotCount = lobby and (game and game.maxPlayers or lobby.maxPlayers or Games.MAX_PLAYERS) or 0
+    local ready = 0
+    for i = 1, self.lobbySlotCount do
+        local slot = self.lobbySlots[i]
+        if not slot then
+            slot = Theme:PremiumFrame(self.slotArea, 260, 120, 0, 0, { compact = true, skin = "card-frame" })
+            slot.index = label(slot, tostring(i), 0, 0, 48)
+            slot.name = label(slot, "", 16, -46, 220)
+            slot.name:SetMaxLines(1)
+            slot.role = label(slot, "", 16, -18, 160, "GameFontHighlightSmall")
+            slot.role:SetTextColor(unpack(Theme.Colors.accent))
+            slot.state = label(slot, "", 16, -80, 220)
+            self.lobbySlots[i] = slot
+        end
+        local entry = lobby.members[i]
+        if entry and entry.ready then
+            ready = ready + 1
+        end
+        slot.name:SetText(entry and entry.name or "Open Slot")
+        slot.role:SetText(
+            entry and (entry.name == lobby.host and "HOST" or entry.name == Games:PlayerName() and "YOU" or "PLAYER")
+                or "WAITING FOR PLAYER"
+        )
+        local state = entry
+                and (lobby.status == "running" and "Playing" or lobby.gameID == "" and "Waiting" or entry.version ~= lobby.gameVersion and "Version mismatch" or entry.ready and "Ready" or "Not ready")
+            or "Join this lobby to play"
+        slot.state:SetText(state)
+        slot.name:SetTextColor(unpack(entry and Theme.Colors.text or Theme.Colors.muted))
+        slot.state:SetTextColor(unpack(state == "Ready" and Theme.Colors.success or Theme.Colors.muted))
+        slot:SetBackdropBorderColor(unpack(entry and Theme.Colors.accent or Theme.Colors.border))
+        slot:Show()
+    end
+    for i = self.lobbySlotCount + 1, #self.lobbySlots do
+        self.lobbySlots[i]:Hide()
+    end
+    self.lobbySummary:SetText(
+        lobby
+                and string.format(
+                    "%d/%d joined  /  %d/%d ready",
+                    #lobby.members,
+                    self.lobbySlotCount,
+                    ready,
+                    #lobby.members
+                )
+            or "Waiting for the host..."
+    )
+    if lobby then
+        local state = lobby.status == "running" and "In Game" or lobby.status == "countdown" and "Starting" or "Waiting"
+        self.lobbyInfo:SetText("Host: " .. lobby.host .. "  /  " .. state)
+    end
+    self.leave:SetText(lobby and "Leave Lobby" or "Cancel join")
+    self:LayoutLobbySlots()
+end
 function UI:CreateMinimapButton()
     local map = CreateFrame("Button", "KICGamesMinimapButton", Minimap)
     map:SetSize(31, 31)

@@ -10,6 +10,14 @@ function UI:CreateResultsWindow()
     self.resultsHeading = Theme:Label(frame, "RESULTS", 0, -6, 550, "GameFontNormalLarge")
     self.resultsSubtitle =
         Theme:Label(frame, "Personal bests and your last 20 saved matches.", 0, -36, 650, "GameFontHighlightSmall")
+    self.resultShareBest = Theme:NeonButton(frame, "Share Best", 160, 0, -2, function()
+        local ok, reason = self:ShareSelectedBest()
+        if ok == false and reason then
+            Games:Notify(reason)
+        end
+    end, 30, true)
+    self.resultShareBest:ClearAllPoints()
+    self.resultShareBest:SetPoint("TOPRIGHT", 0, -2)
     self.resultGames, self.resultGamesScroll = Theme:Scroll(frame, 216, 482, 0, -66)
     self.resultGameButtons = {}
     self.resultList, self.resultScroll = Theme:Scroll(frame, 642, 482, 232, -66)
@@ -21,6 +29,28 @@ function UI:CreateResultsWindow()
     self.resultText:SetSpacing(4)
     frame:Hide()
     self:LayoutResults()
+end
+function UI:ShareSelectedBest()
+    local selected = Games.Registry[self.resultGameID]
+    if not selected then
+        return false, "Select a game to share its best result."
+    end
+    self:RefreshResults()
+    if not self.resultShareBest:IsEnabled() then
+        return false, "No saved best for this game yet."
+    end
+    local title = selected.title:match("^KIC ") and selected.title or ("KIC " .. selected.title)
+    local mode = self:GetPersonalBestMode(selected.id)
+    if mode then
+        title = title .. " (" .. mode .. ")"
+    end
+    local record = selected.id == "chess" or selected.id == "blindshot"
+    local message = title .. (record and " record: " or " best: ") .. self.bestScore:GetText()
+    local details = self.bestMetadata:GetText()
+    if details and details ~= "" then
+        message = message .. " - " .. details
+    end
+    return Games:ShareBestToGroup(message)
 end
 function UI:ShowResults()
     local id = Games.ActiveGame and Games.ActiveGame.game.id or Games.LastResult and Games.LastResult.gameID
@@ -90,6 +120,12 @@ function UI:RefreshResults()
     self.resultGames:SetHeight(math.max(self.resultGamesScroll:GetHeight(), #games * 52))
     local selected = Games.Registry[self.resultGameID]
     local stats = Games:GetResultStats(self.resultGameID)
+    if self.resultGameID == "chess" or self.resultGameID == "blindshot" then
+        local all = (self.resultGameID == "chess" and Games.Chess or Games.Blindshot):Storage().stats
+        for _, key in ipairs({ "completed", "wins", "losses", "draws" }) do
+            stats[key] = all[key]
+        end
+    end
     self.resultSummary:SetText(
         selected
                 and string.format(
@@ -110,12 +146,15 @@ function UI:RefreshResults()
     self.historyHeading:SetPoint("TOPLEFT", 16, -(bestY + 136))
     self.resultText:ClearAllPoints()
     self.resultText:SetPoint("TOPLEFT", 16, -(bestY + 174))
-    local saved = selected and Games.DB[selected.id]
-    local best = type(saved) == "table" and type(saved.best) == "table" and saved.best or nil
+    local best = selected and self:GetPersonalBest(selected.id)
     self.bestScore:SetText(best and number(best.score) and tostring(best.score) .. " points" or "No saved best yet")
     local metadata = {}
+    local mode = selected and self:GetPersonalBestMode(selected.id)
+    if mode then
+        metadata[#metadata + 1] = "Mode: " .. mode
+    end
     local fields = self.resultGameID == "tetris" and { { "lines", "Lines" }, { "level", "Level" } }
-        or (self.resultGameID == "bejeweled" or self.resultGameID == "bejeweled_deluxe") and {
+        or (self.resultGameID == "bejeweled" or self.resultGameID == "kic_bejeweled") and {
             { "moves", "Moves" },
             { "cleared", "Gems" },
             { "bestCascade", "Cascade" },
@@ -127,6 +166,21 @@ function UI:RefreshResults()
         end
     end
     self.bestMetadata:SetText(table.concat(metadata, " / "))
+    self.bestPanel.label:SetText(self.resultGameID == "chess" and "CHESS RECORD" or "PERSONAL BEST")
+    if self.resultGameID == "chess" then
+        self.bestScore:SetText(string.format("%dW / %dL / %dD", stats.wins, stats.losses, stats.draws))
+        self.bestMetadata:SetText("Last opponent: " .. (Games.Chess:Storage().stats.lastOpponent or "None yet"))
+    end
+    if self.resultGameID == "blindshot" then
+        local all = Games.Blindshot:Storage().stats
+        self.bestPanel.label:SetText("BLINDSHOT RECORD")
+        self.bestScore:SetText(string.format("%dW / %dL / %dD", all.wins, all.losses, all.draws))
+        self.bestMetadata:SetText(string.format("Rounds played: %d / Eliminations: %d", all.rounds, all.eliminations))
+    end
+    self.resultShareBest:SetEnabled(
+        selected ~= nil
+            and (self.resultGameID == "chess" or self.resultGameID == "blindshot" or best ~= nil and number(best.score))
+    )
     local lines = {}
     for _, result in ipairs(selected and Games:GetResults(selected.id) or {}) do
         lines[#lines + 1] = (result.status == "aborted" and "Interrupted" or "Completed") .. " / round " .. result.run

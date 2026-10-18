@@ -1,5 +1,23 @@
 # KIC-Games API v3
 
+All multiplayer modules, including Chess, use the shared `CreateLobby`, discovery,
+`JoinLobby`, Ready and automatic three-second countdown flow. Chess requires two
+players from an ordinary PARTY group, uses module version `2`, and carries a compact
+color assignment in the shared snapshot. The host initializes each new round before
+`StartModule`; match/recovery messages include a distinct round identity. Chess
+recovery controls use the existing `CHESS` message kind; no invitation handshake is
+required. The public framework API version remains unchanged.
+
+Blindshot also uses this shared lobby flow. Modules can set `partyOnly = true` to
+require an ordinary 2–5 member PARTY at create/select/join/start. Blindshot sends
+hidden actions to the host through `SendAction`, and sends bounded compact public
+views and recipient-specific acknowledgements through `SendState`.
+
+Completed result entries may supply `stats = { rounds = integer, eliminations = integer }`.
+The framework validates and preserves these nonnegative metrics. Aborted entries
+cannot carry them. Blindshot uses them for lifetime records; scores/ranks/outcomes
+for other modules keep their existing semantics.
+
 ## Register a module
 
 A separate game addon should load after the framework:

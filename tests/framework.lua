@@ -196,6 +196,10 @@ local function client(name, realm, saved)
     env.IsInRaid = function()
         return c.grouped and c.channel == "RAID"
     end
+    env.UnitIsConnected = function(unit)
+        local name = unit == "player" and c.name or c.roster[tonumber(unit:match("%d+"))]
+        return not (c.disconnected and c.disconnected[name])
+    end
     env.GetNumSubgroupMembers = function()
         return c.grouped and #c.roster or 0
     end
@@ -216,6 +220,16 @@ local function client(name, realm, saved)
         end
     end
     local methods = {}
+    function methods:SetEnabled(value)
+        if value then
+            self:Enable()
+        else
+            self:Disable()
+        end
+    end
+    function methods:SetJustifyV(value)
+        self.justifyV = value
+    end
     function methods:SetScript(kind, fn)
         self.scripts[kind] = fn
     end
@@ -286,6 +300,9 @@ local function client(name, realm, saved)
         if self.caption and self.caption ~= self then
             self.caption.text = value
         end
+    end
+    function methods:GetText()
+        return self.text
     end
     function methods:GetStringHeight()
         local _, lines = (self.text or ""):gsub("\n", "\n")
@@ -497,6 +514,14 @@ local function client(name, realm, saved)
         w.drawLayer, w.subLevel = layer or "ARTWORK", subLevel or 0
         return w
     end
+    function methods:CreateMaskTexture()
+        local mask = self:CreateTexture(nil, "ARTWORK")
+        mask.kind = "mask"
+        return mask
+    end
+    function methods:AddMaskTexture(mask)
+        self.maskTexture = mask
+    end
     function methods:SetNormalTexture()
         self.texture = widget(self)
     end
@@ -662,15 +687,17 @@ local function register(c, version)
             ctx:SendState("restore", { value = 7 }, sender)
         end,
     })
+    c.games.UI.selectedMulti = "fixture"
 end
 
 check(
     #A:GetGames("singleplayer") == 3
         and A.Registry.tetris
         and A.Registry.bejeweled
-        and A.Registry.bejeweled_deluxe
-        and #A:GetGames("multiplayer") == 0,
-    "Bundled games must only appear in singleplayer"
+        and A.Registry.kic_bejeweled
+        and #A:GetGames("multiplayer") == 2
+        and A.Registry.chess.mode == "multiplayer",
+    "Bundled singleplayer games and multiplayer Chess must be separated"
 )
 A.UI:Toggle()
 check(A.UI.frame:IsShown(), "Slash/minimap launcher failed to open")
@@ -1023,8 +1050,17 @@ register(g, "1")
 register(h, "1")
 register(i, "1")
 local G, H, I = g.games, h.games, i.games
-G.UI.create.scripts.OnClick()
-H.UI.create.scripts.OnClick()
+local function hostCard(games, id)
+    games.UI:OpenLauncher("multiplayer", true)
+    for _, card in ipairs(games.UI.launcherCards) do
+        if card:IsShown() and card.game.id == id then
+            return card.play
+        end
+    end
+    error("Missing host card: " .. id)
+end
+hostCard(G, "fixture").scripts.OnClick()
+hostCard(H, "fixture").scripts.OnClick()
 pump(15)
 check(G.Lobby.gameID == "fixture" and H.Lobby.gameID == "fixture", "Host game did not create the selected game lobby")
 check(I.Listings[g.name] and I.Listings[h.name], "Independent party hosts did not appear together")
@@ -1195,7 +1231,7 @@ J:RegisterGame({
     end,
     OnStart = function() end,
 })
-check(#J:GetGames("singleplayer") == 4 and #J:GetGames("multiplayer") == 1, "Game modes were not separated")
+check(#J:GetGames("singleplayer") == 4 and #J:GetGames("multiplayer") == 3, "Game modes were not separated")
 J.UI.singleTab.scripts.OnClick()
 check(
     J.UI.tab == "singleplayer" and not J.UI.browserPanel:IsShown() and J.UI.cardScroll:IsShown(),
@@ -1234,7 +1270,9 @@ J.UI:SelectTab("multiplayer")
 check(
     J.UI.browserPanel:IsShown()
         and not J.UI.singlePanel:IsShown()
-        and J.UI.launcherCards[1].title.text == "Party fixture",
+        and J.UI.launcherCards[1].title.text == "Blindshot"
+        and J.UI.launcherCards[2].title.text == "Chess"
+        and J.UI.launcherCards[3].title.text == "Party fixture",
     "Multiplayer tab did not restore party lobby panels and multiplayer games"
 )
 check(not pcall(function()
@@ -1324,12 +1362,13 @@ T.root.scripts.OnKeyUp(T.root, "SPACE")
 check(G.DB.tetris.best.score > 0, "Drop score did not save the best")
 local best = G.DB.tetris.best.score
 t.grouped, t.channel = true, "INSTANCE_CHAT"
+local sharePaused = T.paused
 T:ShareBest()
 check(
     t.chatMessages[1].message:find("KIC Tetris best:", 1, true) == 1
         and t.chatMessages[1].channel == "INSTANCE_CHAT"
-        and T.paused,
-    "Best share did not send to instance chat and pause"
+        and T.paused == sharePaused,
+    "Best share did not send to instance chat or changed pause state"
 )
 t.grouped, t.channel = false, nil
 T:Pause(false)
@@ -1495,9 +1534,10 @@ check(Bj.model.score >= 150 and Q.DB.bejeweled.best.score == Bj.model.score, "Re
 check(not Bj.swap and not Bj.fall and Bj.model.phase == "idle", "Animated cascades did not settle")
 local jewelBest = Q.DB.bejeweled.best.score
 jewel.channel = "INSTANCE_CHAT"
-jewel.env.SlashCmdList.KICBEJEWELED("share")
+local jewelSharePaused = Bj.paused
+jewel.env.SlashCmdList.BEJEWELED("share")
 check(
-    Bj.paused
+    Bj.paused == jewelSharePaused
         and jewel.chatMessages[1].message:find("KIC Bejeweled best:", 1, true) == 1
         and jewel.chatMessages[1].channel == "INSTANCE_CHAT",
     "Bejeweled share did not send to instance chat"
@@ -1933,13 +1973,13 @@ do
     end
     Arcade.UI:ResetWindowSize()
 end
-check(#Arcade:GetGames() == 3 and not Arcade.Registry.pug, "Concept artwork registered a fake game")
+check(#Arcade:GetGames() == 5 and not Arcade.Registry.pug, "Concept artwork registered a fake game")
 check(
     Arcade.UI.noGames:IsShown() and Arcade.UI.browseGames:IsShown() and #Arcade:GetRecentGames() == 0,
     "New Home did not show the recent-games empty state"
 )
 check(
-    Arcade.UI.groupStatus.text == "No group" and Arcade.UI.footer.text:find("3 installed", 1, true),
+    Arcade.UI.groupStatus.text == "No group" and Arcade.UI.footer.text:find("5 installed", 1, true),
     "Inaccurate footer or party status"
 )
 Arcade.UI.browseGames.scripts.OnClick()
@@ -2161,12 +2201,13 @@ Arcade.UI.soloPlay.scripts.OnClick()
 check(
     Arcade.UI.launcherPage == "multiplayer"
         and Arcade.UI.browserPanel:IsShown()
-        and Arcade.UI.lobbyPanel:IsShown()
+        and Arcade.UI.multiplayerDetails == nil
+        and not Arcade.UI.lobbyPanel:IsShown()
         and Arcade.UI.cardScroll:IsShown(),
     "Multiplayer lost browsing or lobby controls"
 )
 check(
-    not Arcade.UI.create.enabled and not Arcade:GetRecentGames()[3],
+    not hostCard(Arcade, "external_arcade").enabled and not Arcade:GetRecentGames()[3],
     "Browsing a multiplayer lobby counted as an actual launch"
 )
 launcherClient.grouped, launcherClient.roster = true, { a.name, b.name }
@@ -2175,8 +2216,8 @@ check(
     Arcade.UI.groupStatus.text == "Party connected" and Arcade.UI.groupDetail.text:find("3 members", 1, true),
     "Group status is not roster-backed"
 )
-check(Arcade.UI.create.enabled, "Eligible party could not host a module")
-Arcade.UI.create.scripts.OnClick()
+check(hostCard(Arcade, "external_arcade").enabled, "Eligible party could not host a module")
+hostCard(Arcade, "external_arcade").scripts.OnClick()
 check(Arcade.Lobby and Arcade.Lobby.gameID == "external_arcade", "Host action lost registry selection")
 Arcade:LeaveLobby()
 Arcade.UI:OpenLauncher("home")
@@ -2253,14 +2294,14 @@ do
     end
     M.UI:OpenLauncher("multiplayer")
     check(
-        M.UI.launcherCards[24]:IsShown() and M.UI.browserPanel:IsShown() and M.UI.lobbyPanel:IsShown(),
+        M.UI.launcherCards[24]:IsShown()
+            and M.UI.browserPanel:IsShown()
+            and M.UI.multiplayerDetails == nil
+            and not M.UI.lobbyPanel:IsShown(),
         "Large multiplayer library hid lobby controls"
     )
     wheel(M.UI.cardScroll)
-    check(
-        M.UI.cardScroll.points[1][2] + M.UI.cardScroll.width < M.UI.lobbyPanel.points[1][2],
-        "Library overlaps lobby actions"
-    )
+    check(M.UI.cardScroll.width + 14 <= M.UI.browserPanel.points[1][2], "Library overlaps lobby sidebar")
     M.UI:LaunchGame("Party_01")
     check(#M:GetRecentGames() == 0, "Selecting a party module recorded a launch")
     M:CreateLobby("Party_01")
@@ -2295,7 +2336,7 @@ do
     M.UI:RefreshLauncher()
     check(not M.UI.recentNext.enabled, "Out-of-range carousel page was not clamped")
     M.UI:ShowResults()
-    check(#M.UI.resultGameButtons == 51, "Results selector capped registered games")
+    check(#M.UI.resultGameButtons == #M:GetGames(), "Results selector capped registered games")
     wheel(M.UI.resultGamesScroll)
     M.UI.resultGameID = "tetris"
     M.DB.tetris = { best = { score = 12345, lines = 12, level = 3 } }

@@ -1,8 +1,8 @@
--- Run from the repository root: lua tests/bejeweled_deluxe.lua
+-- Run from the repository root: lua tests/kic_bejeweled.lua
 local Games, tests = {}, 0
 assert(loadfile("KIC-Games/Games/Bejeweled/Engine.lua"))("KIC-Games", Games)
-assert(loadfile("KIC-Games/Games/BejeweledDeluxe/Engine.lua"))("KIC-Games", Games)
-local E, Base = Games.BejeweledDeluxe.Engine, Games.Bejeweled.Engine
+assert(loadfile("KIC-Games/Games/KICBejeweled/Engine.lua"))("KIC-Games", Games)
+local E, Base = Games.KICBejeweled.Engine, Games.Bejeweled.Engine
 local function check(value, message)
     assert(value, message)
     tests = tests + 1
@@ -46,7 +46,7 @@ local function affected(p)
     return set
 end
 math.randomseed(456713)
-check(E ~= Base and E.Swap ~= Base.Swap and E.Refill == Base.Refill, "Deluxe engine not isolated")
+check(E ~= Base and E.Swap ~= Base.Swap and E.Refill ~= Base.Refill, "KIC Bejeweled engine not isolated")
 local constant = E.New(function()
     return 1
 end)
@@ -331,28 +331,29 @@ local previous = arg[1]
 arg[1] = "--harness"
 local harness = assert(loadfile("tests/framework.lua"))()
 arg[1] = previous
-local owner = harness.client("DeluxeTester", "GemRealm", {
+local owner = harness.client("KICGemTester", "GemRealm", {
     bejeweled = { best = { score = 1234, moves = 12 } },
     tetris = { best = { score = 4321 } },
 })
 owner.grouped = false
-local G, D = owner.games, owner.games.BejeweledDeluxe
+local G, D = owner.games, owner.games.KICBejeweled
 check(
-    G.Registry.bejeweled and G.Registry.bejeweled_deluxe and #G:GetGames("singleplayer") == 3,
+    G.Registry.bejeweled and G.Registry.kic_bejeweled and #G:GetGames("singleplayer") == 3,
     "Independent registration missing"
 )
-check(G.Registry.bejeweled_deluxe.title == "KIC Bejeweled", "Wrong title")
+check(G.Registry.kic_bejeweled.title == "KIC Bejeweled", "Wrong title")
 G.UI:OpenLauncher("singleplayer")
-check(G.UI.launcherCards[2].icon.textureValue == G.Artwork["bejeweled-deluxe-card"].file, "Deluxe card missing")
+check(G.UI.launcherCards[2].icon.textureValue == G.Artwork["kic-bejeweled-card"].file, "KIC Bejeweled card missing")
 G.UI:OpenLauncher("home")
-G.UI:FeatureGame("bejeweled_deluxe")
+G.UI:FeatureGame("kic_bejeweled")
 check(
-    G.UI.heroArt.textureValue == G.Artwork["bejeweled-deluxe-hero"].file
-        and G.Artwork["bejeweled-deluxe-hero"].textSide == "left",
+    G.UI.heroArt.textureValue == G.Artwork["kic-bejeweled-hero"].file
+        and G.Artwork["kic-bejeweled-hero"].textSide == "left",
     "Wrong hero"
 )
-check(G:StartSingleplayer("bejeweled_deluxe") and D.running and #D.cells == 64, "Deluxe not playable")
-check(D.title.text == "KIC BEJEWELED" and G.DB.recentGames[1] == "bejeweled_deluxe", "Title/recent integration missing")
+check(G:StartSingleplayer("kic_bejeweled") and D.running and #D.cells == 64, "KIC Bejeweled not playable")
+D:ChooseMode("roguelike")
+check(D.title.text == "KIC BEJEWELED" and G.DB.recentGames[1] == "kic_bejeweled", "Title/recent integration missing")
 check(D.root ~= G.Bejeweled.root and D.Gems ~= G.Bejeweled.Gems, "UI state shared")
 local baseIcons = G:GetPieceIcons("bejeweled")
 for _, theme in ipairs({ "original", "class" }) do
@@ -365,8 +366,8 @@ for _, theme in ipairs({ "original", "class" }) do
         D:Render()
         for i, special in ipairs({ "bomb", "lightning", "orb" }) do
             local c = D.cells[i]
-            check(c.width == c.height and c.deluxeArt.label:IsShown(), "Special overlay/scaling missing")
-            check(c.deluxeArt.parts[1].points[1][2] == c.icon, "Special not anchored to moving icon")
+            check(c.width == c.height and c.specialArt.label:IsShown(), "Special overlay/scaling missing")
+            check(c.specialArt.overlay.points[1][2] == c.icon, "Special not anchored to moving icon")
             if i < 3 then
                 check(
                     c.icon.textureValue == G:GetPieceIcons("bejeweled")[i],
@@ -374,7 +375,7 @@ for _, theme in ipairs({ "original", "class" }) do
                 )
             end
         end
-        check(#G:GetPieceIcons("bejeweled") == 7, "Deluxe mutated shared graphics")
+        check(#G:GetPieceIcons("bejeweled") == 7, "KIC Bejeweled mutated shared graphics")
     end
 end
 check(#baseIcons == 7, "Shared class icons mutated")
@@ -396,7 +397,7 @@ owner.env.cursorY = (D.board:GetTop() - D.boardInset - 3 * D.step - D.tileSize /
 owner.env.mouseDown = true
 local source = D.cells[key(4, 4)]
 source.scripts.OnMouseDown(source, "LeftButton")
-check(D.drag and D.dragFrame.deluxeArt.label.text == "BOMB", "Special drag ghost missing")
+check(D.drag and D.dragFrame.specialArt.label.text == "BOMB", "Special drag ghost missing")
 owner.env.cursorX = owner.env.cursorX + D.step * scale
 D:UpdateDrag()
 check(D.swap and D.swap.valid and D.model.moves == 1, "Directional special swap failed")
@@ -409,12 +410,13 @@ D:Pause(true)
 D:Advance(1)
 check(D.model == model and D.model.plan == p and D.swap.time == 0, "Pause advanced resolution")
 G.UI:ShowHome()
-check(G.UI.continueButton:IsShown(), "Deluxe resume button missing")
+check(G.UI.continueButton:IsShown(), "KIC Bejeweled resume button missing")
 G.UI.continueButton.scripts.OnClick()
 check(D.model == model and not D.paused, "Resume discarded run")
 for _ = 1, 400 do
     harness.advance(0.1)
     D:Advance(0.1)
+    if D.run.pending then D:ReshuffleDraft() end
     if model.phase == "idle" and not D.fall then
         break
     end
@@ -452,10 +454,11 @@ for _, theme in ipairs({ "arcade", "class" }) do
     end
 end
 G:SetOption("effectsLevel", 0)
-check(not D.matchEffect and D.effectFlash.alpha == 0, "Effects off left Deluxe animation")
+check(not D.matchEffect and D.effectFlash.alpha == 0, "Effects off left KIC Bejeweled animation")
 local best = D:Storage().best.score
 D:Pause(true)
 D.pauseOverlay.restart.scripts.OnClick()
+D:ChooseMode("roguelike")
 check(
     D.running
         and not D.paused
@@ -474,24 +477,25 @@ D.model.score = best + 100
 D.model:CheckEnd()
 D:Advance(0)
 check(not G.ActiveGame and not D.running and D.summary:IsShown(), "No-moves finish missing")
-local results = G:GetResults("bejeweled_deluxe")
+local results = G:GetResults("kic_bejeweled")
 check(results[1].entries[1].score == best + 100 and #G:GetResults("bejeweled") == 0, "Result isolation failed")
 G.UI:ShowResults()
-G.UI.resultGameID = "bejeweled_deluxe"
+G.UI.resultGameID = "kic_bejeweled"
 G.UI:RefreshResults()
 check(
     G.UI.bestScore.text == (best + 100) .. " points" and G.UI.bestMetadata.text:find("Gems:", 1, true),
     "Results best/metadata missing"
 )
-local reload = harness.client("DeluxeTester", "GemRealm", G.DB)
+local reload = harness.client("KICGemTester", "GemRealm", G.DB)
 check(
-    reload.games.BejeweledDeluxe:Storage().best.score == best + 100
+    reload.games.KICBejeweled:Storage().best.score == best + 100
         and reload.games.Bejeweled:Storage().best.score == 1234
         and reload.games.DB.tetris.best.score == 4321,
     "Reload lost or migrated scores"
 )
-check(#reload.games:GetResults("bejeweled_deluxe") == #results, "Reload lost history")
-G:StartSingleplayer("bejeweled_deluxe")
+check(#reload.games:GetResults("kic_bejeweled") == #results, "Reload lost history")
+G:StartSingleplayer("kic_bejeweled")
+D:ChooseMode("roguelike")
 G.UI.frame:Hide()
 check(D.paused, "Close did not pause")
 G.UI.frame:Show()
@@ -499,5 +503,5 @@ G.UI:ShowGame()
 D:Pause(false)
 D.pauseOverlay.stop.scripts.OnClick()
 check(not D.running and not G.ActiveGame and G.UI.frame:IsShown(), "Stop lifecycle failed")
-check(#harness.packets == 0, "Deluxe emitted network traffic")
-print(string.format("PASS: %d Bejeweled Deluxe engine and integration assertions", tests))
+check(#harness.packets == 0, "KIC Bejeweled emitted network traffic")
+print(string.format("PASS: %d KIC Bejeweled engine and integration assertions", tests))

@@ -116,7 +116,7 @@ function Games:GetClassPreset()
 end
 function Games:ApplyCosmetics()
     local token = self:GetClassPreset()
-    for _, module in ipairs({ self.Tetris, self.Bejeweled, self.BejeweledDeluxe }) do
+    for _, module in ipairs({ self.Tetris, self.Bejeweled, self.KICBejeweled }) do
         if module and module.ApplyPreset then
             module:ApplyPreset(token)
         end
@@ -187,7 +187,7 @@ function Games:SetOption(key, value)
         if self.Tetris and self.Tetris.ClearLineEffect then
             self.Tetris:ClearLineEffect()
         end
-        for _, module in ipairs({ self.Bejeweled, self.BejeweledDeluxe }) do
+        for _, module in ipairs({ self.Bejeweled, self.KICBejeweled }) do
             if module.ClearMatchEffect then
                 module:ClearMatchEffect()
                 if module.scorePulse then

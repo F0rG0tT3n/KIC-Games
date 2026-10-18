@@ -1,10 +1,88 @@
 # Changelog
 
+## 0.17.0 - Multiplayer browser and dedicated lobby
+
+- Simplified Graphics Live Preview and Audio Sound Preview by removing their game-selection buttons while retaining piece icons and sound-event tests. Follow My Character now has its own row below the profile heading. Shifted the lower blocks and compacted preview layouts so both tabs still fit the minimum supported canvas without scrolling.
+- Added Share Best to the Results header for the selected game: saved Tetris/Bejeweled/KIC Bejeweled bests (with KIC mode), or Chess/Blindshot lifetime records. Reuses automatic group-chat selection and /say fallback, preserves active gameplay, and disables sharing when a selected module has no saved best. Added per-game selection, mode, channel and layout coverage.
+- Added a host-only Announce Lobby button beside Leave Lobby while waiting. It sends an English group-chat announcement with the current game name and joined/capacity count; guests, closed/starting/running lobbies and changed/missing groups cannot announce. Added permission, occupancy, state, group routing and scaled layout coverage.
+- Fixed Share Best in Tetris, Bejeweled and KIC Bejeweled: explicit clicks/commands now send to the current instance group (/i), raid (/raid), party (/p), or /say when solo. Sharing saves the current best without opening the pause menu or changing an existing pause. Added button, channel selection, solo fallback and legacy sender coverage.
+- Blindshot now uses left click/hold movement and right click/hold aiming, legal boundary clamping, local-only adjustments and final Lock In submission. Added colored player-name firing order with wrapping/scrolling, smooth circular arena auto zoom and stronger survivor-dependent shrinking down to a legal 150-unit duel radius. Blindshot protocol 5 requires matching updated clients. Expanded controls, camera, minimum-radius placement and party/recovery tests.
+- Fixed a false Chess draw-claim test failure caused by checking before the throttled terminal commit arrived. The test now waits for both clients and explicitly covers host/guest claims, unchanged board history, matching journals and exactly one drawn result.
+- Blindshot now uses a true top-down circular arena, hitbox-aligned portrait bodies and click-drag aiming with release confirmation. Preserved the nearest-target/non-piercing weapon and shrink schedule; sequential shots now run 0.6 seconds apart. Added per-round board acknowledgements and coalesced lock/sync snapshots to prevent throttle backlogs. Blindshot protocol 4 requires matching updated clients.
+- Home now features the active runtime session with Continue Game; otherwise, each Home entry uniformly showcases an installed game from either mode. Refreshes and resizing keep the choice stable, and idle multiplayer features open the browser without hosting. Existing hero layout and Recent Games are preserved.
+- Browser v2 replaces selection/details with direct Host Game actions, a responsive two-column library matching Singleplayer and a persistent independently scrolling party-lobby sidebar. Narrow windows use one game column; no-party cards retain artwork and show the hosting restriction.
+- Separated Multiplayer into a full-width registry-backed game browser and a dedicated main-content lobby. Host/Join opens the lobby; Back to Games preserves it, Resume Lobby and global Multiplayer return to it, and Leave explicitly ends membership.
+- Reused premium GameCard components with an opt-in artwork header and registered descriptions/player limits. Installed Chess and Blindshot appear side by side; future modules populate the same responsive grid.
+- Fixed multiplayer artwork proportions at all card widths and changed the selected game's button label to Selected.
+- Added explicit Join/Resume actions, Waiting/Starting/In Game/Unavailable labels and actual module/version/capacity/session eligibility reasons to party listings. Expired or out-of-party listings are hidden and stale clicks are revalidated.
+- Expanded player slots into responsive cards with name, host/local role, index and Ready state. Joined/Ready totals, countdown and actions occupy the footer; narrow layouts scroll the player area.
+- Preserved the existing host-authoritative Ready/countdown/start protocol, game modules, artwork, settings and save schema. No remote push or release package was produced for this redesign.
+
+## 0.16.1 - Local test controls, single-target shots and lobby slots
+
+- Added always-visible New test game / Leave test controls to local Chess and matching restart/exit buttons in its local result popup. Local play still controls both sides without network traffic or records.
+- Blindshot now hits only the nearest living opponent along the ray. The tracer ends at that opponent's hit-circle surface; no piercing or additional elimination credit. Blindshot protocol is now 3, requiring the same update on all participants.
+- Clients derive FIRING and ROUND_END from the full timed reveal plan instead of receiving redundant full-plan broadcasts. This prevents message-queue growth across multiple five-player rounds.
+- Replaced lobby roster text with player-capacity slot rectangles showing names, Open Slot and Ready/Playing state: two for Chess, five for Blindshot. Empty slots reflect lobby membership, not the party roster.
+- Added lobby slot/layout tests and updated Chess local lifecycle and Blindshot nearest-hit, tracer, multi-round transport and recovery tests.
+
+## 0.16.0 - Blindshot firing order and arena
+
+- Replaced simultaneous fire with one host-shuffled order per round, authoritative piercing-shot events, immediate per-shot elimination and skipped dead turns. Living shooters fire 0.8 seconds apart.
+- Added versioned sequence IDs, compact millisecond clocks, local event playback, duplicate/stale rejection and host/guest recovery during firing. Blindshot protocol version is now 2; every party member needs the update.
+- Rebuilt the native arena with layered stone masonry, a floating lower edge, etched rings and cyan boundary glow. No additional runtime art files are required.
+- Added masked player portraits, fallback fantasy tokens, colored order badges, local-player rings, current-shooter pulse, animated tracer, impact flashes, death crosses and a compact combat log.
+- Updated local tests to use the same sequence engine and added timeline, delayed-message, skip, multi-kill, reload and UI coverage. No shared Options or lobby behavior changed.
+
+## 0.15.0 - KIC Blindshot
+
+- Added `/kicblindshottest` (alias `/kicblindshot`) for local testing with 2–5 simulated participants, real phases/UI, restart/exit controls and no party traffic or multiplayer records.
+- Added a 2–5 player PARTY-only Blindshot module using the shared Host / Join / Ready / countdown flow.
+- Added hidden position/aim selection, lock acknowledgements/retries, a 15-second timeout with documented fallback, simultaneous multi-hit rays, elimination, shrinking platforms and a bounded 12-round draw rule.
+- Added a three-column native arena UI, both supplied artwork assets, scaled click/right-click controls, hidden/spectator markers, reveal/fire effects and a result popup.
+- Added compact validated state messages, startup synchronization, host/guest reload recovery and shared clean interruption on party departure.
+- Added lifetime match/win/draw/round/elimination records and validated optional result metrics without changing other games' records.
+- Preserved original artwork outside the addon and normalized runtime TGAs to WoW-compatible dimensions; no substitute art generated.
+- Added simulation, protocol, two/five-client transport and UI tests. See `BLINDSHOT.md` for rules, limitations and live party test steps.
+
+## 0.14.0 - Multiplayer Chess
+
+- Unified Chess with the shared multiplayer Host / Join / Ready / three-second countdown flow, replacing challenge popups. Added reusable lobbies, round-specific match IDs, version checks and lobby-aware recovery for rematches.
+- Fixed the four promotion piece icons rendering behind their button backgrounds.
+- Fixed Chess invitations appearing behind the launcher and added Accept/Decline challenge controls directly to the Chess panel.
+- Added `/kicchesstest` (alias `/kicchess`) for local play of both sides using the real Chess UI and rules, with restart/exit commands and no multiplayer records or recovery saves.
+- Added two-player Chess through targeted challenges in ordinary 2-5 member PARTY groups. The challenger remains the authority independently of color or group leadership.
+- Added pure Lua rules, legal king safety, castling, en passant, four promotions, FEN, SAN, repetition, draw claims and automatic draws.
+- Integrated all twenty supplied Chess textures into the launcher, three-column board UI, highlights, capture trays and promotion picker.
+- Reused existing addon-message and action/state APIs with participant, sequence, turn and digest validation. No WHISPER or visible party-chat messages.
+- Added persistent journals, bounded recovery chunks, reload/reconnect reconciliation, rollback refusal and safe interrupted results. Closing the UI preserves the match.
+- Added lifetime Chess records and idempotent completed results. Existing singleplayer records/settings remain intact.
+- Added engine, session, recovery, artwork and UI regressions. See `CHESS.md` for live test instructions and the conservative dead-position detection scope.
+
+## Unreleased - KIC Bejeweled mode selection
+
+- Every new run, restart and replay offers a Normal / Roguelike popup; reopening an active run preserves its mode.
+- Normal keeps Bombs, Zaps and Orbs without Energy, levels, power cards or survival drain. Roguelike retains the existing survival rules.
+- Mode selection blocks play until a choice, with a Back to Launcher action to cancel.
+- Normal reuses the untimed best-score bucket; Roguelike keeps its separate Arcane Rush bucket. The picker shows both records, and gameplay/sharing/launcher/Results identify the selected mode.
+- Added integration coverage for selection, cancellation, Normal special combos and unlimited thinking time, Roguelike drafts, mode switches, restart/reopen and isolated records.
+
+## Unreleased - Arcane Rush integration fixes
+
+- Fixed reshuffles with special-gem overlays and restored static artwork after animation.
+- Reflowed the right statistics column so Energy and active powers fit alongside all statistics.
+- Launcher, Results, gameplay and sharing now use the Arcane Rush best, preserving legacy records.
+- Accepted swaps update streak and quick-swap state before first-wave scoring; invalid swaps preserve it.
+- Gem Magnet skips gems already attuned instead of recoloring them away from its target.
+- Updated overlay, artwork and draft-aware checks; added real-renderer integration regressions for these fixes.
+
 ## Unreleased - KIC Bejeweled name
 
-- Renamed Bejeweled Deluxe to KIC Bejeweled in the launcher, gameplay header, results and shared score message. Kept the internal ID, slash command, artwork paths and saved records intact.
+- Standardized KIC Bejeweled throughout module names, game ID, files, artwork, tests and documentation.
+- `/kicbejeweled` now opens KIC Bejeweled; standard Bejeweled uses `/bejeweled`. The previous command remains a compatibility alias.
+- Existing scores, history and recent-game entries migrate automatically to `kic_bejeweled`, preserving untimed and Arcane Rush records separately.
 
-## Unreleased - Deluxe special gem readability
+## Unreleased - KIC Bejeweled special gem readability
 
 - Bombs now have octagonal ember armor, hazard teeth and a compact fused explosive core; Lightning has cyan directional brackets and a bold white bolt; Color Orbs have a circular rainbow halo, orbit and prismatic core.
 - Underlying original gems and class/spec spell icons remain visible. Geometry is cached per tile, while existing update timing gives glow layers a subtle pulse. Small labels are secondary.
@@ -12,10 +90,10 @@
 
 ## Unreleased - Manual Bejeweled hints
 
-- Restored Hint buttons in standard Bejeweled and Deluxe, with a visible three-use allowance per run. Removed automatic hints; both suggested tiles retain the existing vertical bounce.
+- Restored Hint buttons in standard Bejeweled and KIC Bejeweled, with a visible three-use allowance per run. Removed automatic hints; both suggested tiles retain the existing vertical bounce.
 - Pause/reopen preserves remaining uses; restart restores three. Blocked/no-move requests and repeat clicks on an active hint do not spend uses.
 
-## Unreleased - Deluxe special visuals
+## Unreleased - KIC Bejeweled special visuals
 
 - Replaced opaque special overlays with thin orange/cyan/rainbow corner rails and small bottom badges, keeping gem and class/spec icons readable during swaps, falls and dragging.
 - Bombs now produce expanding fiery shockwaves and debris; Lightning discharges along affected rows and columns; Color Orbs send descending cyan/violet bolts to every cleared color target (all 64 cells for Orb + Orb).
@@ -24,15 +102,15 @@
 
 ## Unreleased - Direct Share Best
 
-- Share Best in Tetris, Bejeweled and Bejeweled Deluxe now sends directly to instance (`/i`) chat on an explicit click or share command. No chat draft or Enter key is required.
+- Share Best in Tetris, Bejeweled and KIC Bejeweled now sends directly to instance (`/i`) chat on an explicit click or share command. No chat draft or Enter key is required.
 - Replaced pipe separators with hyphens and sanitized the shared sender. Outside an instance group, show a local notice instead of switching channels.
 
-## Unreleased - Bejeweled Deluxe
+## Unreleased - KIC Bejeweled
 
-- Added standalone `bejeweled_deluxe` with Bomb, Lightning and colorless Orb creation, all special combinations, bounded chain resolution and deterministic cascade scoring.
+- Added standalone `kic_bejeweled` with Bomb, Lightning and colorless Orb creation, all special combinations, bounded chain resolution and deterministic cascade scoring.
 - Reused Bejeweled's board UI, directional drag, animations and lifecycle with separate state and saved scores. Standard Bejeweled's engine and all Tetris gameplay remain unchanged.
-- Integrated supplied Deluxe hero/card art, launcher/recent/results/resume paths, special overlays in both graphics modes, and existing volume-controlled audio events.
-- Added dedicated engine/client integration tests and documented rules, scoring, file inventory and live-client checks in `BEJEWELED-DELUXE.md`. No remote push or release ZIP.
+- Integrated supplied KIC Bejeweled hero/card art, launcher/recent/results/resume paths, special overlays in both graphics modes, and existing volume-controlled audio events.
+- Added dedicated engine/client integration tests and documented rules, scoring, file inventory and live-client checks in `KIC-BEJEWELED.md`. No remote push or release ZIP.
 
 ## 0.13.0 - 2026-10-15 - Options 2.0
 

@@ -1,7 +1,7 @@
 local addonName, Games = ...
 _G.KICGames = Games
 
-Games.VERSION = "0.13.0"
+Games.VERSION = "0.17.0"
 Games.API_VERSION = 3
 Games.PREFIX = "KICGames3"
 Games.CONTROL_PREFIX = "KICGames3Ctl"
@@ -52,15 +52,12 @@ function Games:GroupChannel()
 end
 
 -- Called by explicit Share Best clicks/commands, never by automatic score saves.
-function Games:ShareBestToInstance(message)
-    if not IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
-        self:Notify("Join an instance group to share your best score in /i chat.")
-        return false
-    end
+function Games:ShareBestToGroup(message)
+    local channel = self:GroupChannel() or "SAY"
     -- A literal pipe is WoW chat markup, not a safe text separator.
     message = message:gsub("|", "-")
     local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
-    send(message, "INSTANCE_CHAT")
+    send(message, channel)
     return true
 end
 
@@ -334,6 +331,7 @@ events:SetScript("OnEvent", function(_, event, name)
             KICGamesDB = {}
         end
         Games.DB = KICGamesDB
+        Games:MigrateGameNames()
         Games.DB.minimapAngle = tonumber(Games.DB.minimapAngle) or 220
         local angle = Games.DB.minimapAngle
         Games.DB.minimapAngle = angle == angle and angle > -math.huge and angle < math.huge and angle % 360 or 220
@@ -343,6 +341,12 @@ events:SetScript("OnEvent", function(_, event, name)
         Games:GetSettings()
         Games:InitializeCommunication()
         Games.UI:Initialize()
+        if Games.Chess then
+            Games.Chess:Initialize()
+        end
+        if Games.Blindshot then
+            Games.Blindshot:Initialize()
+        end
         SLASH_KICGAMES1 = "/kicgames"
         SLASH_KICGAMES2 = "/kicgame"
         SlashCmdList.KICGAMES = function(text)

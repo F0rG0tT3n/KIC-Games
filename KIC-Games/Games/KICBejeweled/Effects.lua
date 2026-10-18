@@ -1,5 +1,5 @@
 local _, Games = ...
-local D = Games.BejeweledDeluxe
+local D = Games.KICBejeweled
 local baseStart, baseUpdate, baseClear = D.StartMatchEffect, D.UpdateMatchEffect, D.ClearMatchEffect
 local fire, gold, ice, violet = { 1, 0.22, 0.03 }, { 1, 0.75, 0.2 }, { 0.2, 0.75, 1 }, { 0.7, 0.35, 1 }
 local MAX_TEXTURES = 1024

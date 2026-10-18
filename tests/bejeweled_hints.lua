@@ -7,10 +7,11 @@ local function check(value, message)
     assert(value, message)
     tests = tests + 1
 end
-for _, game in ipairs({ { "bejeweled", "Bejeweled" }, { "bejeweled_deluxe", "BejeweledDeluxe" } }) do
+for _, game in ipairs({ { "bejeweled", "Bejeweled" }, { "kic_bejeweled", "KICBejeweled" } }) do
     local owner = harness.client("Hints", "Realm")
     local G, B = owner.games, owner.games[game[2]]
     G:StartSingleplayer(game[1])
+    if B.ChooseMode then B:ChooseMode("roguelike") end
     local function board(playable)
         for y = 1, 8 do
             for x = 1, 8 do
@@ -28,7 +29,7 @@ for _, game in ipairs({ { "bejeweled", "Bejeweled" }, { "bejeweled_deluxe", "Bej
         "New run must have three hints"
     )
     for _ = 1, 120 do
-        B:Advance(1)
+        B:Advance(0.1)
     end
     check(not B.hint and B.hintsRemaining == 3, "Automatic hint still exists")
     B:Pause(true)
@@ -59,6 +60,7 @@ for _, game in ipairs({ { "bejeweled", "Bejeweled" }, { "bejeweled_deluxe", "Bej
     check(not B.hint and B.hintsRemaining == 0, "Waiting replenished hints")
     B:Pause(true)
     B.pauseOverlay.restart.scripts.OnClick()
+    if B.ChooseMode then B:ChooseMode("roguelike") end
     check(B.hintsRemaining == 3 and not B.hint, "Restart did not reset hint budget")
     board(false)
     check(not B:Hint() and B.hintsRemaining == 3, "No-move hint consumed a use")
@@ -67,6 +69,7 @@ for _, game in ipairs({ { "bejeweled", "Bejeweled" }, { "bejeweled_deluxe", "Bej
     check(not B:Hint() and B.hintsRemaining == 3 and not B.hintButton:IsEnabled(), "Resolving board accepted hint")
     for _ = 1, 300 do
         B:Advance(0.1)
+        if B.run and B.run.pending then B:ReshuffleDraft() end
         if B.model.phase == "idle" and not B.fall then
             break
         end
@@ -82,9 +85,10 @@ for _, game in ipairs({ { "bejeweled", "Bejeweled" }, { "bejeweled_deluxe", "Bej
             "Hint button overlaps action order"
         )
     end
-    if game[1] == "bejeweled_deluxe" then
+    if game[1] == "kic_bejeweled" then
         G:AbortGame()
         G:StartSingleplayer(game[1])
+    if B.ChooseMode then B:ChooseMode("roguelike") end
         board(false)
         B.model.board[1][1] = B.Engine.Orb
         check(B:Hint() and B.hint.x == 1 and B.hint.y == 1, "Hint missed valid Orb swap")

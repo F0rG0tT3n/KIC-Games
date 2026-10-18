@@ -74,10 +74,21 @@ function Games:ValidResult(result, lobby)
             or (entry.score ~= nil and not finite(entry.score))
             or (entry.rank ~= nil and not integer(entry.rank, 1, self.MAX_PLAYERS))
             or (entry.outcome ~= nil and entry.outcome ~= "win" and entry.outcome ~= "loss" and entry.outcome ~= "draw")
+            or (
+                entry.stats ~= nil
+                and (
+                    type(entry.stats) ~= "table"
+                    or not integer(entry.stats.rounds, 0, 2147483647)
+                    or not integer(entry.stats.eliminations, 0, 2147483647)
+                )
+            )
         then
             return false
         end
-        if result.status == "aborted" and (entry.score ~= nil or entry.rank ~= nil or entry.outcome ~= nil) then
+        if
+            result.status == "aborted"
+            and (entry.score ~= nil or entry.rank ~= nil or entry.outcome ~= nil or entry.stats ~= nil)
+        then
             return false
         end
         names[entry.player] = true
@@ -144,11 +155,23 @@ function Games:RecordResult(result)
                 return true
             end
             history[i] = self.Copy(result)
+            if result.gameID == "chess" and self.Chess then
+                self.Chess:RecordStats(result)
+            end
+            if result.gameID == "blindshot" and self.Blindshot then
+                self.Blindshot:RecordStats(result)
+            end
             self.LastResult = latest(history, self:PlayerName())
             return true
         end
     end
     table.insert(history, 1, self.Copy(result))
+    if result.gameID == "chess" and self.Chess then
+        self.Chess:RecordStats(result)
+    end
+    if result.gameID == "blindshot" and self.Blindshot then
+        self.Blindshot:RecordStats(result)
+    end
     while #history > LIMIT do
         table.remove(history)
     end
@@ -200,6 +223,7 @@ function Games:BuildResult(status, reason, details, abortedBy)
             seen[entry.player] = true
             byName[entry.player].score, byName[entry.player].rank, byName[entry.player].outcome =
                 entry.score, entry.rank, entry.outcome
+            byName[entry.player].stats = self.Copy(entry.stats)
         end
     end
     if not self:ValidResult(result, lobby) then
@@ -275,6 +299,13 @@ function Games:FinishGame(details)
 end
 
 function Games:AbortGame()
+    if self.Blindshot and self.Blindshot.practice then
+        return self.Blindshot:StopPractice()
+    end
+    if self.Chess and self.Chess:Active() and not self.Chess.match.info.sessionID then
+        self.Chess:Abandon("player_abort")
+        return true
+    end
     local lobby = self.Lobby
     if not lobby or (lobby.status ~= "running" and lobby.status ~= "countdown") or self:IsRoundStopped() then
         self.UI:HideAll()
