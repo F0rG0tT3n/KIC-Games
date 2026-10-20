@@ -347,6 +347,9 @@ events:SetScript("OnEvent", function(_, event, name)
         if Games.Blindshot then
             Games.Blindshot:Initialize()
         end
+        if Games.Battleships then
+            Games.Battleships:Initialize()
+        end
         SLASH_KICGAMES1 = "/kicgames"
         SLASH_KICGAMES2 = "/kicgame"
         SlashCmdList.KICGAMES = function(text)

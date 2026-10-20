@@ -44,7 +44,7 @@ function UI:ShareSelectedBest()
     if mode then
         title = title .. " (" .. mode .. ")"
     end
-    local record = selected.id == "chess" or selected.id == "blindshot"
+    local record = selected.id == "chess" or selected.id == "blindshot" or selected.id == "battleships"
     local message = title .. (record and " record: " or " best: ") .. self.bestScore:GetText()
     local details = self.bestMetadata:GetText()
     if details and details ~= "" then
@@ -120,10 +120,14 @@ function UI:RefreshResults()
     self.resultGames:SetHeight(math.max(self.resultGamesScroll:GetHeight(), #games * 52))
     local selected = Games.Registry[self.resultGameID]
     local stats = Games:GetResultStats(self.resultGameID)
-    if self.resultGameID == "chess" or self.resultGameID == "blindshot" then
-        local all = (self.resultGameID == "chess" and Games.Chess or Games.Blindshot):Storage().stats
+    if self.resultGameID == "chess" or self.resultGameID == "blindshot" or self.resultGameID == "battleships" then
+        local all = (
+            self.resultGameID == "chess" and Games.Chess
+            or self.resultGameID == "blindshot" and Games.Blindshot
+            or Games.Battleships
+        ):Storage().stats
         for _, key in ipairs({ "completed", "wins", "losses", "draws" }) do
-            stats[key] = all[key]
+            stats[key] = all[key] or 0
         end
     end
     self.resultSummary:SetText(
@@ -180,8 +184,18 @@ function UI:RefreshResults()
     end
     self.resultShareBest:SetEnabled(
         selected ~= nil
-            and (self.resultGameID == "chess" or self.resultGameID == "blindshot" or best ~= nil and number(best.score))
+            and (
+                self.resultGameID == "chess"
+                or self.resultGameID == "blindshot"
+                or self.resultGameID == "battleships"
+                or best ~= nil and number(best.score)
+            )
     )
+    if self.resultGameID == "battleships" then
+        self.bestPanel.label:SetText("BATTLESHIPS RECORD")
+        self.bestScore:SetText(string.format("%dW / %dL", stats.wins, stats.losses))
+        self.bestMetadata:SetText("Matches played: " .. stats.completed)
+    end
     local lines = {}
     for _, result in ipairs(selected and Games:GetResults(selected.id) or {}) do
         lines[#lines + 1] = (result.status == "aborted" and "Interrupted" or "Completed") .. " / round " .. result.run

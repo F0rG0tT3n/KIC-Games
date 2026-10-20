@@ -89,7 +89,10 @@ check(
     U.cardColumns == 2 and U.launcherCards[1]:IsVisible() and U.launcherCards[2]:IsVisible(),
     "Installed multiplayer games are not side by side"
 )
-check(U.cardList:GetHeight() == U.cardScroll:GetHeight(), "Two games require unnecessary scrolling")
+check(
+    U.launcherCards[3]:IsShown() and U.cardList:GetHeight() > U.cardScroll:GetHeight(),
+    "Third multiplayer game is not reachable by scrolling"
+)
 check(
     U.browserPanel:IsVisible() and U.multiplayerDetails == nil and not U.lobbyPanel:IsVisible(),
     "Browser includes an empty lobby"
@@ -280,7 +283,7 @@ G:RegisterGame({
     end,
 })
 U:OpenLauncher("multiplayer")
-check(#G:GetGames("multiplayer") == 3 and U.launcherCards[3]:IsVisible(), "Future module missing from browser")
+check(#G:GetGames("multiplayer") == 4 and U.launcherCards[4]:IsVisible(), "Future module missing from browser")
 U:SelectMultiplayer("future_party")
 check(
     gameCard(U, "future_party").detail.text == G.Registry.future_party.description
@@ -319,7 +322,7 @@ check(
     not U.launcherCards[1].details:IsShown() and U.launcherCards[1].art:GetHeight() == U.launcherCards[1]:GetHeight(),
     "Reused multiplayer card did not restore browser presentation"
 )
--- Six games form three rows, while a large lobby list scrolls independently.
+-- Seven games form four rows, while a large lobby list scrolls independently.
 for i = 1, 3 do
     G:RegisterGame({
         id = "future_" .. i,
@@ -339,8 +342,8 @@ end
 U:SetWindowSize(1120, 700)
 U:SetWindowScale(1)
 U:Refresh()
-check(U.cardColumns == 2 and #G:GetGames("multiplayer") == 6, "Six-game library is not two columns")
-check(U.launcherCards[6].points[1][3] == -548 and U.cardList:GetHeight() == 808, "Six games did not form three rows")
+check(U.cardColumns == 2 and #G:GetGames("multiplayer") == 7, "Seven-game library is not two columns")
+check(U.launcherCards[7].points[1][3] == -822 and U.cardList:GetHeight() == 1082, "Seven games did not form four rows")
 for i = 1, 14 do
     local host = "Sidebar" .. i .. "-Realm"
     a.roster[#a.roster + 1] = host

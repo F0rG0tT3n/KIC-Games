@@ -1,6 +1,11 @@
 local addonName, Games = ...
 local UI, Theme = Games.UI, Games.Theme
 local library = {
+    battleships = {
+        hero = "battleships-hero",
+        card = "battleships-card",
+        summary = "Deploy your fleet and take turns firing at enemy waters. Two players. Five ships. One winner.",
+    },
     ["2048"] = {
         hero = "2048-hero",
         card = "2048-card",

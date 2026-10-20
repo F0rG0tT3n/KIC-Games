@@ -2,6 +2,10 @@
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
 0.17.0. Intended for waiting for the group to fill and the time between dungeons.
+Includes **[Battleships](BATTLESHIPS.md)** for two players: manually or automatically
+deploy five ships, lock both fleets, then take turns firing. It uses the shared
+multiplayer lobby, reload recovery, saved win/loss records and a result popup
+with Rematch / Back to menu while keeping both final boards in the main window.
 Includes **[2048](2048.md)** with mouse dragging, arrow/WASD controls, animated
 tile merges and saved best scores. Open it from Singleplayer or `/kic2048`.
 Includes **[Minesweeper](MINESWEEPER.md)** with three classic difficulties, safe

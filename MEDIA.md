@@ -5,6 +5,7 @@ Runtime artwork lives in the installable addon's `KIC-Games/Media/` directory:
 ```text
 Media/
   2048/           hero, card
+  Battleships/    optional battleships-hero.tga, battleships-card.tga
   Bejeweled/       hero, card, Pieces/gem-1.tga ... gem-7.tga
   KICBejeweled/    hero, card, Specials/, Upgrades/
   Tetris/         hero, card, Pieces/block.tga
@@ -16,12 +17,15 @@ Media/
     Navigation/   launcher navigation icons
 ```
 
-All 74 runtime textures are registered centrally in `Artwork.lua`. Existing keys
+All 74 supplied runtime textures and two optional Battleships assets are registered centrally in `Artwork.lua`. Existing keys
 are unchanged; game code requests those keys rather than constructs file paths.
 Both Bejeweled games reuse the original gems in `Bejeweled/Pieces/`, so the same
 images are not duplicated in the KIC Bejeweled folder.
 The shared hero footer fade is also registered here; revised hero banners contain
 their own wordmarks and retain the current launcher presentation.
+Battleships expects a 1024×512 hero and 256×256 card; see [BATTLESHIPS.md](BATTLESHIPS.md).
+Those two files may be absent until supplied. If present, the artwork checker validates
+their formats and dimensions just like the other assets.
 
 The repository-level `Media/` folder holds supplied source artwork outside the
 installable addon, organized into game and Shared folders. Minesweeper's PNG

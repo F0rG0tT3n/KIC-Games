@@ -699,7 +699,7 @@ check(
         and A.Registry.kic_bejeweled
         and A.Registry.minesweeper
         and A.Registry["2048"]
-        and #A:GetGames("multiplayer") == 2
+        and #A:GetGames("multiplayer") == 3
         and A.Registry.chess.mode == "multiplayer",
     "Bundled singleplayer games and multiplayer Chess must be separated"
 )
@@ -1235,7 +1235,7 @@ J:RegisterGame({
     end,
     OnStart = function() end,
 })
-check(#J:GetGames("singleplayer") == 6 and #J:GetGames("multiplayer") == 3, "Game modes were not separated")
+check(#J:GetGames("singleplayer") == 6 and #J:GetGames("multiplayer") == 4, "Game modes were not separated")
 J.UI.singleTab.scripts.OnClick()
 check(
     J.UI.tab == "singleplayer" and not J.UI.browserPanel:IsShown() and J.UI.cardScroll:IsShown(),
@@ -1274,9 +1274,10 @@ J.UI:SelectTab("multiplayer")
 check(
     J.UI.browserPanel:IsShown()
         and not J.UI.singlePanel:IsShown()
-        and J.UI.launcherCards[1].title.text == "Blindshot"
-        and J.UI.launcherCards[2].title.text == "Chess"
-        and J.UI.launcherCards[3].title.text == "Party fixture",
+        and J.UI.launcherCards[1].title.text == "Battleships"
+        and J.UI.launcherCards[2].title.text == "Blindshot"
+        and J.UI.launcherCards[3].title.text == "Chess"
+        and J.UI.launcherCards[4].title.text == "Party fixture",
     "Multiplayer tab did not restore party lobby panels and multiplayer games"
 )
 check(not pcall(function()
@@ -1977,13 +1978,13 @@ do
     end
     Arcade.UI:ResetWindowSize()
 end
-check(#Arcade:GetGames() == 7 and not Arcade.Registry.pug, "Concept artwork registered a fake game")
+check(#Arcade:GetGames() == 8 and not Arcade.Registry.pug, "Concept artwork registered a fake game")
 check(
     Arcade.UI.noGames:IsShown() and Arcade.UI.browseGames:IsShown() and #Arcade:GetRecentGames() == 0,
     "New Home did not show the recent-games empty state"
 )
 check(
-    Arcade.UI.groupStatus.text == "No group" and Arcade.UI.footer.text:find("7 installed", 1, true),
+    Arcade.UI.groupStatus.text == "No group" and Arcade.UI.footer.text:find("8 installed", 1, true),
     "Inaccurate footer or party status"
 )
 Arcade.UI.browseGames.scripts.OnClick()

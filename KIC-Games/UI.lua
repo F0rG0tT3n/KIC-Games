@@ -14,6 +14,7 @@ function UI:GetPersonalBest(id)
         or id == "kic_bejeweled" and Games.KICBejeweled
         or id == "chess" and Games.Chess
         or id == "blindshot" and Games.Blindshot
+        or id == "battleships" and Games.Battleships
         or id == "minesweeper" and Games.Minesweeper
     local saved = module and module:Storage() or Games.DB[id]
     return type(saved) == "table" and type(saved.best) == "table" and saved.best or nil
@@ -286,6 +287,7 @@ function UI:LayoutGameContainer()
         or id == "kic_bejeweled" and Games.KICBejeweled
         or id == "chess" and Games.Chess
         or id == "blindshot" and Games.Blindshot
+        or id == "battleships" and Games.Battleships
         or id == "minesweeper" and Games.Minesweeper
     self.gameContainer:ClearAllPoints()
     if module then

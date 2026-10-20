@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased - Battleships
+
+- Added two-player multiplayer Battleships through the shared Host/Join/Ready lobby, Home feature and recent games, with optional hero/card artwork under Media/Battleships.
+- Added 10×10 grids, five classic ships, manual placement/rotation previews, auto-placement, fleet locking, alternating shots, hit/miss/sunk states and resignation. Enemy ships stay hidden in live opponent views and both fleets reveal at the end.
+- Added host-authoritative validation, action acknowledgements/retries, duplicate protection, periodic snapshots/heartbeats and reload recovery. Connection loss interrupts without an automatic winner.
+- Kept completed boards in the main window with a score/outcome popup and Rematch / Back to menu. Added persistent win/loss records, Results sharing and rule, transport, recovery and responsive UI coverage.
+
 ## Unreleased - 2048
 
 - Added singleplayer 2048 with the supplied hero/card art, a 4x4 board, standard single-merge rules, 2/4 spawning, animated slides and merge/spawn effects.

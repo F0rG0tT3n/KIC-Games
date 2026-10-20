@@ -1,6 +1,19 @@
 local addonName, Games = ...
 local base = "Interface\\AddOns\\" .. addonName .. "\\Media\\"
 Games.Artwork = {
+    ["battleships-hero"] = {
+        file = base .. "Battleships/battleships-hero.tga",
+        width = 1024,
+        height = 512,
+        textSide = "right",
+        optional = true,
+    },
+    ["battleships-card"] = {
+        file = base .. "Battleships/battleships-card.tga",
+        width = 256,
+        height = 256,
+        optional = true,
+    },
     ["2048-hero"] = { file = base .. "2048/2048-hero.tga", width = 1024, height = 512, textSide = "right" },
     ["2048-card"] = { file = base .. "2048/2048-card.tga", width = 256, height = 256 },
     ["hero-footer-fade"] = { file = base .. "Shared/hero-footer-fade.tga", width = 512, height = 256 },

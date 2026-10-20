@@ -8,13 +8,17 @@ root = Path(__file__).resolve().parents[1]
 addon = root / 'KIC-Games'
 art = (addon / 'Artwork.lua').read_text(encoding='utf-8')
 files = re.findall(r'file\s*=\s*base\s*\.\.\s*"([^"]+\.tga)"\s*,\s*width\s*=\s*(\d+)\s*,\s*height\s*=\s*(\d+)', art)
-assert len(files) == 74, 'Expected 71 existing artworks, two supplied 2048 assets and the shared hero fade'
-owners = {'2048', 'Bejeweled', 'KICBejeweled', 'Tetris', 'Chess', 'Blindshot', 'Minesweeper', 'Shared'}
+assert len(files) == 76, 'Expected 74 supplied artworks and two optional Battleships assets'
+optional = set(re.findall(r'file\s*=\s*base\s*\.\.\s*"([^"]+\.tga)"[^}]*optional\s*=\s*true', art))
+assert optional == {'Battleships/battleships-hero.tga', 'Battleships/battleships-card.tga'}
+owners = {'Battleships', '2048', 'Bejeweled', 'KICBejeweled', 'Tetris', 'Chess', 'Blindshot', 'Minesweeper', 'Shared'}
 assert all('/' in name and name.split('/')[0] in owners for name, _, _ in files), 'Artwork must live under its game or Shared'
 runtime_files = {p.relative_to(addon / 'Media').as_posix() for p in (addon / 'Media').rglob('*') if p.is_file()}
-assert runtime_files == {name for name, _, _ in files}, 'Runtime Media must contain only registered TGAs; keep sources outside the addon'
+assert runtime_files <= {name for name, _, _ in files} and {name for name, _, _ in files} - runtime_files <= optional, 'Runtime Media must contain only registered TGAs; keep sources outside the addon'
 for name, width, height in files:
     path = addon / 'Media' / name
+    if name in optional and not path.exists():
+        continue
     data = path.read_bytes()
     header = struct.unpack('<BBBHHBHHHHBB', data[:18])
     assert (header[8], header[9]) == (int(width), int(height)), f'Wrong dimensions: {name}'
@@ -38,7 +42,7 @@ for name, width, height in files:
 assert not any('pug' in p.name for p in (addon / 'Media').iterdir()), 'Unused concept artwork copied to runtime'
 assert not re.search(r'design[\\/]|references[\\/]|sources[\\/]', art), 'Runtime artwork points at design sources'
 assert 'glyph =' not in art, 'Letter placeholders remain in the artwork registry'
-assert {p.relative_to(addon / 'Media').as_posix() for p in (addon / 'Media').rglob('*.tga')} == {f[0] for f in files}, 'Unused runtime art or missing registry paths'
+assert {p.relative_to(addon / 'Media').as_posix() for p in (addon / 'Media').rglob('*.tga')} == runtime_files, 'Unused runtime art or missing registry paths'
 toc = (addon / 'KIC-Games.toc').read_text()
 entries = [line.strip().replace('\\', '/') for line in toc.splitlines() if line.strip().endswith('.lua')]
 assert all((addon / entry).is_file() for entry in entries), 'Missing TOC file'
@@ -47,7 +51,7 @@ assert set(entries) <= actual_paths, 'Incorrectly cased TOC file path'
 assert not (addon / 'tests').exists(), 'Development tests must stay outside the installable addon'
 assert {p for p in actual_paths if p.endswith('.lua')} == set(entries), 'Unlisted runtime Lua file'
 assert entries.index('Artwork.lua') < entries.index('Theme.lua') < entries.index('GameplayUI.lua') < entries.index('UI.lua') < entries.index('Launcher.lua') < entries.index('Options.lua')
-print(f'PASS: {len(files)} runtime TGAs, headers, dimensions, optional source hashes, paths and TOC load order')
+print(f'PASS: {len(runtime_files)} supplied TGAs, {len(optional)} optional assets, headers, dimensions, optional source hashes, paths and TOC load order')
 
 assert entries.index('ProfileData.lua') < entries.index('Profiles.lua') < entries.index('Settings.lua') < entries.index('Graphics.lua') < entries.index('Audio.lua') < entries.index('UI.lua')
 

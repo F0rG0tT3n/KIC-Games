@@ -61,3 +61,7 @@ Games\Minesweeper\Module.lua
 Games\2048\Engine.lua
 Games\2048\UI.lua
 Games\2048\Module.lua
+Games\Battleships\Rules.lua
+Games\Battleships\Session.lua
+Games\Battleships\UI.lua
+Games\Battleships\Module.lua
