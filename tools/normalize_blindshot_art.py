@@ -8,7 +8,7 @@ from PIL import Image
 
 root = Path(__file__).resolve().parents[1]
 source = root / 'KIC-Blindshot-Artwork' / 'Sources'
-runtime = root / 'KIC-Games' / 'Media' / 'KICUI' / 'Blindshot'
+runtime = root / 'KIC-Games' / 'Media' / 'Blindshot'
 for name, size in [('blindshot-hero', (1024, 512)), ('blindshot-card', (256, 256))]:
     original = source / (name + '.tga')
     if not original.is_file():

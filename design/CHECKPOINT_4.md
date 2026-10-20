@@ -26,7 +26,7 @@ created. The approved Launcher layout is retained.
   Restart/Stop live in the in-game pause menu; Launcher/lobby Stop and slash
   commands still use the existing urgent stop path. Other registered modules
   retain the previous container dimensions.
-- `Artwork.lua`, `Media/KICUI/Icons/*.tga`, `tools/generate_gameplay_icons.py`:
+- `Artwork.lua`, `Media/Shared/Icons/*.tga`, `tools/generate_gameplay_icons.py`:
   eleven matching original transparent masks and optional gameplay decoration
   slots. Supplied artwork and existing navigation textures are unchanged.
 - `KIC-Games.toc`, `Core.lua`, README and CHANGELOG: new shared helper load entry,

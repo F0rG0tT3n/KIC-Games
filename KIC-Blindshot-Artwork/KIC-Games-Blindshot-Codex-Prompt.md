@@ -26,8 +26,8 @@ Core fantasy:
 
 ## Installed artwork
 These files are already present and must be used:
-- `Media/KICUI/Blindshot/blindshot-hero.tga` — large launcher / gameplay left panel art
-- `Media/KICUI/Blindshot/blindshot-card.tga` — small launcher game card art
+- `Media/Blindshot/blindshot-hero.tga` — large launcher / gameplay left panel art
+- `Media/Blindshot/blindshot-card.tga` — small launcher game card art
 
 Reference-only visuals:
 - `KIC-Blindshot-Artwork/blindshot-ui-mockup.png`

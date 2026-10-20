@@ -2499,7 +2499,7 @@ do
         "GameCard shading obscures the artwork/icon stack"
     )
     local original = owner.games.Artwork["stat-frame"].file
-    owner.games.Artwork["stat-frame"].file = "Interface\\AddOns\\KIC-Games\\Media\\KICUI\\missing-test.tga"
+    owner.games.Artwork["stat-frame"].file = "Interface\\AddOns\\KIC-Games\\Media\\Shared\\missing-test.tga"
     owner.env.rejectTexture = owner.games.Artwork["stat-frame"].file
     local fallback = C:StatPanel(parent, "Fallback", 300, 112, 0, 0)
     check(

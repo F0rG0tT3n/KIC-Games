@@ -1,7 +1,7 @@
 # Artwork replacement slots
 
 All eight supplied textures needed by this checkpoint are present and copied,
-unchanged, to `KIC-Games/Media/KICUI/`. No game artwork is missing for the two
+unchanged, to `KIC-Games/Media/`. No game artwork is missing for the two
 installed games. PUG concept artwork is intentionally unused and is not registered
 as a game. References and source PNGs are not runtime textures.
 
@@ -29,7 +29,7 @@ pretending to reproduce a complete illustrated frame skin.
 ## Navigation icons supplied in launcher organization checkpoint
 
 The five former letter placeholders are replaced by original, matching 64x64 RGBA
-TGA masks in `KIC-Games/Media/KICUI/Navigation/`: `nav-home.tga`,
+TGA masks in `KIC-Games/Media/Shared/Navigation/`: `nav-home.tga`,
 `nav-singleplayer.tga`, `nav-multiplayer.tga`, `nav-results.tga`, `nav-options.tga`.
 They depict a house, person, group of three, trophy and gear. They are complete
 runtime artwork, not missing-asset slots. `Artwork.lua` remains the replacement
@@ -46,7 +46,7 @@ It is development tooling and must not be included in installable packages.
 
 These skin slots are replaceable placeholders, not claims of matching every
 illustrated detail in the reference. Their files must live in the addon runtime
-`Media/KICUI/` directory and be registered via `base .. "filename.tga"` in
+`Media/Shared/` directory and be registered via `base .. "Shared/filename.tga"` in
 Artwork.lua. Transparent centers are required, especially for the hero frame.
 Source PNGs, mockups and developer previews remain outside the installable addon.
 Current geometry follows each component's anchors and scales without stretching
@@ -74,17 +74,17 @@ painted reference; they are not pixel-perfect texture replicas.
 | `game-board-frame` | 1024x1024 RGBA, transparent center; must support square and tall variants | Stepped cyan double frame, soft outward bloom, luminous corner cuts and diamonds around both boards | `file=false`; `Theme:GameBoard` supplies layered PremiumFrame, inset L rails, static glow and four separate diamond textures. Supply an edge-only TGA via Artwork.lua; use scalable borders for final aspect-specific work. |
 | `game-stats-frame` | 512x1024 RGBA, transparent center | Engraved cyan/gold crown-top Bejeweled statistics frame; compatible shared Tetris statistics border | `file=false`; PremiumFrame native rails/corners, separate crown and supplied low-alpha lion crest; gold best uses tinted native premium edges. |
 | `gem-cluster` | 256x128 RGBA, fully transparent background | Low violet/blue crystal cluster above Bejeweled's tip panel | `file=false`; a muted crop of the supplied `bejeweled-card` in the same bounded decoration region. Replace this slot without editing the game UI. Hidden when the compact region cannot fit. |
-| `ornament-crown` | 64x64 RGBA mask | Illustrated gold crown above Bejeweled stats, beside BEST in both games | Original geometric `Icons/crown.tga`, tinted gold. Replace the central registry path for a more ornate crown. |
-| `ornament-diamond` | 64x64 RGBA mask | Thin luminous cyan lozenge at each board edge | Original geometric `Icons/diamond.tga`. Replace through the registry for illustrated glow. |
+| `ornament-crown` | 64x64 RGBA mask | Illustrated gold crown above Bejeweled stats, beside BEST in both games | Original geometric `Shared/Icons/crown.tga`, tinted gold. Replace the central registry path for a more ornate crown. |
+| `ornament-diamond` | 64x64 RGBA mask | Thin luminous cyan lozenge at each board edge | Original geometric `Shared/Icons/diamond.tga`. Replace through the registry for illustrated glow. |
 
 Preferred final filenames are `game-board-frame.tga`, `game-stats-frame.tga`,
-`gem-cluster.tga`, `crown.tga`, and `diamond.tga`, inside runtime Media/KICUI.
+`gem-cluster.tga`, `crown.tga`, and `diamond.tga`, inside runtime Media.
 Keep transparency around ornaments and inside border centers; do not bake text,
 scores, icons or buttons into them. Every registered real path currently exists.
 
 Nine matching gameplay action/instruction masks (`gem`, `hint`, `share`, `swap`,
 `clock`, `infinity`, `cascade`, `pause`, `back`) plus the two ornaments are original
-64x64 antialiased RGBA TGAs in `Media/KICUI/Icons/`. They use shared Theme tint,
+64x64 antialiased RGBA TGAs in `Media/Shared/Icons/`. They use shared Theme tint,
 are centrally replaceable, and avoid missing Blizzard atlas dependencies.
 `tools/generate_gameplay_icons.py` is their editable geometric source and belongs
 outside installable packages. The Tetris title icon uses the supplied `tetris-card`
@@ -96,7 +96,8 @@ All eight supplied artwork TGAs and five existing navigation TGAs remain unchang
 
 The supplied kit contains game promo art, not individual classic game pieces.
 Eight original geometric placeholders are provided in runtime
-`Media/KICUI/Pieces/`: `gem-1.tga` through `gem-7.tga` and `block.tga`.
+`Media/Bejeweled/Pieces/`: `gem-1.tga` through `gem-7.tga`, and
+`Media/Tetris/Pieces/block.tga`.
 All are 64x64, uncompressed RGBA with antialiased transparent edges. The gems
 have distinct colored/faceted silhouettes (hexagon, diamond, octagon, triangle,
 square, star, pentagon). The neutral beveled block is tinted by the actual

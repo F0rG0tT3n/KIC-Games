@@ -25,7 +25,7 @@ are discarded on UI reload.
 ## Playing with two WoW clients
 
 1. Install the same inner `KIC-Games` folder on both clients. It must contain the
-   updated TOC, `Games/Chess/` and `Media/KICUI/Chess/`. Reload both UIs; restart
+   updated TOC, `Games/Chess/` and `Media/Chess/`. Reload both UIs; restart
    the client if the addon was newly installed.
 2. Put both characters in the same ordinary PARTY group. It can have two to five
    members. RAID and INSTANCE_CHAT are deliberately unsupported.

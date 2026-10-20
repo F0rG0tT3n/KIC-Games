@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased - Media organization
+
+- Removed the extra `KICUI` directory level from runtime and source Media folders, preserving the existing files and subdirectories. Updated the artwork base path, generation tools, tests and documentation.
+- Grouped runtime TGAs into Bejeweled, KICBejeweled, Tetris, Chess, Blindshot and Minesweeper folders, with Shared for common UI. Updated registry paths and generation tools; preserved image contents and moved source originals outside the installable addon.
+
 ## Unreleased - Minesweeper
 
 - Finished Minesweeper boards stay in the main three-panel game window. A compact Bejeweled-style result popup shows win/loss, score (revealed safe tiles), time, best time and difficulty, with Play again and Back to menu. Closing it preserves the board; scores and outcomes enter the shared result history.

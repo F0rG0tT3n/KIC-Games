@@ -30,7 +30,7 @@ Bejeweled and Tetris gameplay UI redesigns have not started. No new ZIP is made.
 - `UI.lua`: shared-page initialization, responsive shell integration and retained
   lobby/browser actions. Removed the superseded text library and standalone
   history window. Existing game container stays 860x450 and is centered.
-- `Theme.lua`, `Artwork.lua`, `Media/KICUI/Navigation/*.tga`: reusable navigation
+- `Theme.lua`, `Artwork.lua`, `Media/Shared/Navigation/*.tga`: reusable navigation
   buttons with original 64x64 transparent house, person, group, trophy and gear
   icons rendered at 24 UI pixels. Muted, hover, selected and disabled tints/glow
   share button state handling. Scrollbars sit inside their clipped viewports.

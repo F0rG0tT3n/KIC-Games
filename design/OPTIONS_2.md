@@ -32,7 +32,7 @@ controls. No release ZIP was made.
   the following profile and UI. Neither cosmetic nor audio changes reset models,
   scores, queues, RNG, bests, results or recent launches.
 - `Graphics.lua`: per-game original-piece providers and shared icon/preview API.
-  `Artwork.lua`, `Media/KICUI/Pieces/`, `tools/generate_original_pieces.py`: seven
+  `Artwork.lua`, `Media/Bejeweled/Pieces/`, `Media/Tetris/Pieces/`, `tools/generate_original_pieces.py`: seven
   original faceted gems and one neutral beveled block, tinted by Tetris piece kind.
 - `Audio.lua`: logical event registry, game/spec profiles, enabled/zero-volume
   gates, tracked sound handles, immediate stop, preview playback, throttling,

@@ -39,8 +39,9 @@ existing abort lifecycle.
 Runtime code lives in `KIC-Games/Games/Minesweeper/`: `Engine.lua` contains pure
 rules, `UI.lua` uses shared Theme/GameplayUI components, and `Module.lua` handles
 registration, lifecycle and saved data. No multiplayer messages are added.
-The supplied PNG originals remain in `Media/KICUI/Minesweeper`; the adjacent
-uncompressed power-of-two TGAs are registered in `Artwork.lua`. Rebuild them
+The supplied PNG originals live in the repository's `Media/Minesweeper/`.
+Runtime TGAs live in `KIC-Games/Media/Minesweeper/` and are registered in
+`Artwork.lua`. Rebuild them
 with `python tools/normalize_minesweeper_art.py` (Pillow required).
 
 From this repository's root, run `lua tests/minesweeper.lua`,

@@ -16,7 +16,7 @@ Current UI references:
 - design/references/old-tetris.png
 - design/references/old-options.png
 
-Use the preprocessed World of Warcraft-compatible TGA textures in Media/KICUI.
+Use the preprocessed World of Warcraft-compatible TGA textures in Media.
 Consult design/asset-manifest.json for exact intended usage and source PNGs
 in design/sources/ if an asset needs to be cropped or adjusted.
 
@@ -116,4 +116,4 @@ you actually observed it in WoW.
 Deliver a concise report with changed files, completed screens, any known
 issues, all placeholders needing artwork, and exact manual in-game tests.
 Packaging into the final addon ZIP should include only necessary runtime
-files (including Media/KICUI), not mockup/design/reference PNGs.
+files (including Media), not mockup/design/reference PNGs.

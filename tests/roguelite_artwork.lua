@@ -18,7 +18,7 @@ for _, card in ipairs(R.Cards) do
     assert(Games.Artwork[key] and Games.Artwork[key].file, 'art registry missing: '..key)
     counts[group] = (counts[group] or 0) + 1
 end
-local base = 'KIC-Games/Media/KICUI/Upgrades/'
+local base = 'KIC-Games/Media/KICBejeweled/Upgrades/'
 for group in pairs(known) do
     assert((counts[group] or 0) > 0, 'category empty: '..group)
     local file = assert(io.open(base .. group .. '.tga', 'rb'))

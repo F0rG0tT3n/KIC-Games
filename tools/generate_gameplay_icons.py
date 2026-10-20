@@ -3,7 +3,7 @@ from pathlib import Path
 from math import sin, cos, pi
 from PIL import Image, ImageDraw
 
-OUT = Path(__file__).resolve().parents[1] / 'KIC-Games/Media/KICUI/Icons'
+OUT = Path(__file__).resolve().parents[1] / 'KIC-Games/Media/Shared/Icons'
 OUT.mkdir(parents=True, exist_ok=True)
 S = 4
 

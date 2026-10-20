@@ -14,23 +14,23 @@ Implement a new **fully playable, rules-correct two-player Chess game** inside t
 
 ## 1. Finished artwork (already installed)
 
-All paths below are relative to the addon root `KIC-Games/`, and must exist before starting. Use WoW texture paths rooted at `Interface\\AddOns\\KIC-Games\\Media\\KICUI\\Chess\\...` (or use the actual addon name from `...` at runtime). Register these centrally in `Artwork.lua`, following the existing Bejeweled/Tetris conventions:
+All paths below are relative to the addon root `KIC-Games/`, and must exist before starting. Use WoW texture paths rooted at `Interface\\AddOns\\KIC-Games\\Media\\Chess\\...` (or use the actual addon name from `...` at runtime). Register these centrally in `Artwork.lua`, following the existing Bejeweled/Tetris conventions:
 
 **Launcher**
-- `Media/KICUI/Chess/chess-hero.tga` — 1024 × 512, left portion intentionally dark for the launcher text overlay; use for Featured/hero artwork.
-- `Media/KICUI/Chess/chess-card.tga` — 256 × 256, use for game card, Recent Games and multiplayer list.
+- `Media/Chess/chess-hero.tga` — 1024 × 512, left portion intentionally dark for the launcher text overlay; use for Featured/hero artwork.
+- `Media/Chess/chess-card.tga` — 256 × 256, use for game card, Recent Games and multiplayer list.
 
 **Chess pieces — 12 distinct transparent 128 × 128 TGA textures**
-- `Media/KICUI/Chess/Pieces/white-king.tga`, `white-queen.tga`, `white-rook.tga`, `white-bishop.tga`, `white-knight.tga`, `white-pawn.tga`
-- `Media/KICUI/Chess/Pieces/black-king.tga`, `black-queen.tga`, `black-rook.tga`, `black-bishop.tga`, `black-knight.tga`, `black-pawn.tga`
+- `Media/Chess/Pieces/white-king.tga`, `white-queen.tga`, `white-rook.tga`, `white-bishop.tga`, `white-knight.tga`, `white-pawn.tga`
+- `Media/Chess/Pieces/black-king.tga`, `black-queen.tga`, `black-rook.tga`, `black-bishop.tga`, `black-knight.tga`, `black-pawn.tga`
 
 **Board square textures — 64 × 64 TGA**
-- `Media/KICUI/Chess/Squares/square-light.tga`
-- `Media/KICUI/Chess/Squares/square-dark.tga`
-- `Media/KICUI/Chess/Squares/square-selected.tga` (transparent overlay)
-- `Media/KICUI/Chess/Squares/square-valid-move.tga` (transparent overlay)
-- `Media/KICUI/Chess/Squares/square-last-move.tga` (transparent overlay)
-- `Media/KICUI/Chess/Squares/square-check.tga` (transparent overlay)
+- `Media/Chess/Squares/square-light.tga`
+- `Media/Chess/Squares/square-dark.tga`
+- `Media/Chess/Squares/square-selected.tga` (transparent overlay)
+- `Media/Chess/Squares/square-valid-move.tga` (transparent overlay)
+- `Media/Chess/Squares/square-last-move.tga` (transparent overlay)
+- `Media/Chess/Squares/square-check.tga` (transparent overlay)
 
 Use the *provided pieces* on the board and for captured-piece lists. Do not use Unicode characters, text placeholders or arbitrary spell icons when these assets exist. Reuse the existing KIC neon-fantasy style and frame system. Board backgrounds and highlights must not obscure piece silhouettes. Preserve logical hit areas through UI scaling. For best readability make pieces approximately 85–92% of cell size, centered, with alpha blending. If you encounter missing files, report their exact paths rather than inventing replacements.
 

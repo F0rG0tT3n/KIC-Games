@@ -261,7 +261,7 @@ stopping, managed timers, sender checks and transport.
 - `Countdown.lua`: all-ready scheduling, shared countdown and cancellation.
 - `UI.lua`: library, lobby browser, participants and minimap launcher.
 - `Theme.lua`: shared dark cards, typography, custom buttons and movable layered windows.
-- `Artwork.lua`, `Media/KICUI/`: centralized decorative runtime textures and native fallbacks.
+- `Artwork.lua`, `Media/`: game-specific runtime texture folders and shared UI artwork. See [media layout](MEDIA.md) for the directory structure and source files.
 - `Launcher.lua`: artwork feature panel, sidebar, registry-driven cards and group status.
 - `IconPresets.lua`: shared audited textures and class colors for both games.
 - `Settings.lua`, `Options.lua`: recent history, class selection, full-page settings, saved scale and responsive window dimensions.

@@ -184,8 +184,8 @@ Added:
 - `KIC-Games/Games/KICBejeweled/UI.lua`
 - `KIC-Games/Games/KICBejeweled/Effects.lua`
 - `KIC-Games/Games/KICBejeweled/Module.lua`
-- `KIC-Games/Media/KICUI/kic-bejeweled-hero.tga`
-- `KIC-Games/Media/KICUI/kic-bejeweled-card.tga`
+- `KIC-Games/Media/KICBejeweled/kic-bejeweled-hero.tga`
+- `KIC-Games/Media/KICBejeweled/kic-bejeweled-card.tga`
 - `tests/kic_bejeweled.lua`
 - `tests/kic_bejeweled_effects.lua`
 - `KIC-BEJEWELED.md`

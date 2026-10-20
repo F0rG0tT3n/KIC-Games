@@ -17,7 +17,7 @@ This checkpoint stops before the Bejeweled, Tetris and Options layout redesigns.
   their page. No duplicate visible solo heading or Home header-menu controls.
 - `KIC-Games/Options.lua`: only resize calculations were adapted to the new base
   window size (1120×700). The Options presentation and settings are unchanged.
-- Eight supplied TGAs copied byte-for-byte into `KIC-Games/Media/KICUI/`.
+- Eight supplied TGAs copied byte-for-byte into `KIC-Games/Media/`.
   No runtime references to mockups/source PNGs, no PUG registration, no ZIP.
 
 Game rules, game UI source files, networking, communication prefixes, registration

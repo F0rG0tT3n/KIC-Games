@@ -8,7 +8,7 @@ from math import cos, sin, pi
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'KIC-Games/Media/KICUI/Navigation'
+OUT = ROOT / 'KIC-Games/Media/Shared/Navigation'
 OUT.mkdir(parents=True, exist_ok=True)
 S = 4
 
