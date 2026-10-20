@@ -338,7 +338,7 @@ local owner = harness.client("KICGemTester", "GemRealm", {
 owner.grouped = false
 local G, D = owner.games, owner.games.KICBejeweled
 check(
-    G.Registry.bejeweled and G.Registry.kic_bejeweled and #G:GetGames("singleplayer") == 3,
+    G.Registry.bejeweled and G.Registry.kic_bejeweled and #G:GetGames("singleplayer") == 4,
     "Independent registration missing"
 )
 check(G.Registry.kic_bejeweled.title == "KIC Bejeweled", "Wrong title")

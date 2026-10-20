@@ -13,6 +13,7 @@ function UI:GetPersonalBest(id)
         or id == "kic_bejeweled" and Games.KICBejeweled
         or id == "chess" and Games.Chess
         or id == "blindshot" and Games.Blindshot
+        or id == "minesweeper" and Games.Minesweeper
     local saved = module and module:Storage() or Games.DB[id]
     return type(saved) == "table" and type(saved.best) == "table" and saved.best or nil
 end
@@ -276,12 +277,14 @@ function UI:GetGameContainer()
     return self.gameContainer
 end
 function UI:LayoutGameContainer()
-    local id = Games.ActiveGame and Games.ActiveGame.game.id
+    local displayed = Games.ActiveGame or self.completedGame
+    local id = displayed and displayed.game.id
     local module = id == "bejeweled" and Games.Bejeweled
         or id == "tetris" and Games.Tetris
         or id == "kic_bejeweled" and Games.KICBejeweled
         or id == "chess" and Games.Chess
         or id == "blindshot" and Games.Blindshot
+        or id == "minesweeper" and Games.Minesweeper
     self.gameContainer:ClearAllPoints()
     if module then
         self.gameContainer:SetPoint("TOPLEFT", 20, -100)
@@ -311,7 +314,17 @@ function UI:PauseGameplay()
     end
 end
 
+-- Completed solo boards remain viewable without retaining a running session.
+function UI:ClearCompletedGame()
+    local completed = self.completedGame
+    self.completedGame = nil
+    if completed and completed.frame then
+        completed.frame:Hide()
+    end
+end
+
 function UI:ShowHome()
+    self:ClearCompletedGame()
     if self.launcherPage == "home" and (not self.home:IsShown() or not self.frame:IsShown()) then
         self.featureRollPending = true
     end
@@ -324,8 +337,12 @@ function UI:ShowHome()
 end
 
 function UI:ShowGame()
-    if not Games.ActiveGame then
+    local displayed = Games.ActiveGame or self.completedGame
+    if not displayed then
         return
+    end
+    if Games.ActiveGame then
+        self:ClearCompletedGame()
     end
     self:HideAuxiliaryWindows()
     self.home:Hide()
@@ -333,6 +350,9 @@ function UI:ShowGame()
     self.optionsFrame:Hide()
     self:LayoutGameContainer()
     self.gameContainer:Show()
+    if displayed.frame then
+        displayed.frame:Show()
+    end
     self.homeButton:Show()
     self.frame:Show()
     self:Refresh()
@@ -352,7 +372,7 @@ function UI:Refresh()
     if not self.frame then
         return
     end
-    if not Games.ActiveGame and self.gameContainer:IsShown() then
+    if not Games.ActiveGame and not self.completedGame and self.gameContainer:IsShown() then
         self:ShowHome()
         return
     end

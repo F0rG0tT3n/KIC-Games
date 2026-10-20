@@ -55,3 +55,6 @@ Games\Blindshot\Session.lua
 Games\Blindshot\UI.lua
 Games\Blindshot\Practice.lua
 Games\Blindshot\Module.lua
+Games\Minesweeper\Engine.lua
+Games\Minesweeper\UI.lua
+Games\Minesweeper\Module.lua

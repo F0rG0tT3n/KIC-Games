@@ -1,6 +1,12 @@
 local _, Games = ...
 local UI, Theme = Games.UI, Games.Theme
 local library = {
+    minesweeper = {
+        hero = "minesweeper-hero",
+        card = "minesweeper-card",
+        tagline = "REVEAL / FLAG / CLEAR",
+        summary = "Read the numbers. Avoid the mines.\nThree classic difficulties.",
+    },
     blindshot = {
         hero = "blindshot-hero",
         card = "blindshot-card",
@@ -679,6 +685,11 @@ function UI:RefreshFeature(width)
     if selected.id == "blindshot" then
         local stats = Games.Blindshot:Storage().stats
         record = string.format("Record: %dW / %dD / %d eliminations", stats.wins, stats.draws, stats.eliminations)
+    end
+    if selected.id == "minesweeper" then
+        local storage = Games.Minesweeper:Storage()
+        record = Games.Minesweeper.Engine.ByID[storage.difficulty].title .. " best: "
+            .. Games.Minesweeper:TimeText(storage.best[storage.difficulty])
     end
     self.heroRecord:SetText(
         record

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased - Minesweeper
+
+- Finished Minesweeper boards stay in the main three-panel game window. A compact Bejeweled-style result popup shows win/loss, score (revealed safe tiles), time, best time and difficulty, with Play again and Back to menu. Closing it preserves the board; scores and outcomes enter the shared result history.
+- Added singleplayer Minesweeper to the shared launcher, Home feature/recent cards and Singleplayer library, using the supplied hero and card artwork converted to WoW textures.
+- Added Beginner (9x9/10), Intermediate (16x16/40), Expert (30x16/99), safe first openings, iterative flood reveal, flag/question/clear marking, elapsed time and saved best times by difficulty.
+- Added responsive three-panel gameplay, one-click new runs and win/loss results with the final board, revealed mines and incorrect flags. Completed runs also enter the shared result history.
+
 ## 0.17.0 - Multiplayer browser and dedicated lobby
 
 - Simplified Graphics Live Preview and Audio Sound Preview by removing their game-selection buttons while retaining piece icons and sound-event tests. Follow My Character now has its own row below the profile heading. Shifted the lower blocks and compacted preview layouts so both tabs still fit the minimum supported canvas without scrolling.

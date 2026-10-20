@@ -8,7 +8,7 @@ root = Path(__file__).resolve().parents[1]
 addon = root / 'KIC-Games'
 art = (addon / 'Artwork.lua').read_text(encoding='utf-8')
 files = re.findall(r'file\s*=\s*base\s*\.\.\s*"([^"]+\.tga)"\s*,\s*width\s*=\s*(\d+)\s*,\s*height\s*=\s*(\d+)', art)
-assert len(files) == 69, 'Expected 67 existing artworks and two supplied Blindshot assets'
+assert len(files) == 71, 'Expected 69 existing artworks and two supplied Minesweeper assets'
 for name, width, height in files:
     path = addon / 'Media' / 'KICUI' / name
     data = path.read_bytes()

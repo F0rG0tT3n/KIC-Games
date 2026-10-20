@@ -164,7 +164,7 @@ U:OpenLauncher("home")
 for i, game in ipairs(G:GetGames()) do
     if game.id == "zz_future" then
         c.env.math.random = function(n)
-            check(n == 6, "New registration was not included")
+            check(n == 7, "New registration was not included")
             return i
         end
     end

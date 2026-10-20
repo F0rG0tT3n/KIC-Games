@@ -1,6 +1,13 @@
 local addonName, Games = ...
 local base = "Interface\\AddOns\\" .. addonName .. "\\Media\\KICUI\\"
 Games.Artwork = {
+    ["minesweeper-hero"] = {
+        file = base .. "Minesweeper/minesweeper-hero.tga",
+        width = 2048,
+        height = 512,
+        textSide = "right",
+    },
+    ["minesweeper-card"] = { file = base .. "Minesweeper/minesweeper-card.tga", width = 256, height = 256 },
     ["blindshot-hero"] = {
         file = base .. "Blindshot/blindshot-hero.tga",
         width = 1024,
