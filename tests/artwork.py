@@ -8,8 +8,8 @@ root = Path(__file__).resolve().parents[1]
 addon = root / 'KIC-Games'
 art = (addon / 'Artwork.lua').read_text(encoding='utf-8')
 files = re.findall(r'file\s*=\s*base\s*\.\.\s*"([^"]+\.tga)"\s*,\s*width\s*=\s*(\d+)\s*,\s*height\s*=\s*(\d+)', art)
-assert len(files) == 71, 'Expected 69 existing artworks and two supplied Minesweeper assets'
-owners = {'Bejeweled', 'KICBejeweled', 'Tetris', 'Chess', 'Blindshot', 'Minesweeper', 'Shared'}
+assert len(files) == 74, 'Expected 71 existing artworks, two supplied 2048 assets and the shared hero fade'
+owners = {'2048', 'Bejeweled', 'KICBejeweled', 'Tetris', 'Chess', 'Blindshot', 'Minesweeper', 'Shared'}
 assert all('/' in name and name.split('/')[0] in owners for name, _, _ in files), 'Artwork must live under its game or Shared'
 runtime_files = {p.relative_to(addon / 'Media').as_posix() for p in (addon / 'Media').rglob('*') if p.is_file()}
 assert runtime_files == {name for name, _, _ in files}, 'Runtime Media must contain only registered TGAs; keep sources outside the addon'
@@ -31,7 +31,9 @@ for name, width, height in files:
         alpha = data[18 + header[0] + 3:18 + header[0] + int(width) * int(height) * 4:4]
         assert min(alpha) == 0 and max(alpha) == 255 and any(0 < a < 255 for a in alpha), f'Missing antialiased transparency: {name}'
     supplied = root / 'Media' / name
-    if supplied.exists():
+    # Hero banners have since been revised for baked wordmarks and the shared
+    # footer fade; their archived originals are references, not runtime copies.
+    if supplied.exists() and not name.endswith('-hero.tga'):
         assert hashlib.sha256(data).digest() == hashlib.sha256(supplied.read_bytes()).digest(), f'Artwork changed: {name}'
 assert not any('pug' in p.name for p in (addon / 'Media').iterdir()), 'Unused concept artwork copied to runtime'
 assert not re.search(r'design[\\/]|references[\\/]|sources[\\/]', art), 'Runtime artwork points at design sources'
@@ -49,11 +51,11 @@ print(f'PASS: {len(files)} runtime TGAs, headers, dimensions, optional source ha
 
 assert entries.index('ProfileData.lua') < entries.index('Profiles.lua') < entries.index('Settings.lua') < entries.index('Graphics.lua') < entries.index('Audio.lua') < entries.index('UI.lua')
 
-# KIC Bejeweled uses the exact supplied artwork bytes, with left-side hero text.
+# The KIC Bejeweled card retains its supplied bytes; the revised hero stays left-aligned.
 import zipfile
 archive = root / "KIC-Bejeweled-Assets.zip"
 if archive.exists():
     with zipfile.ZipFile(archive) as z:
-        for name in ("kic-bejeweled-hero.tga", "kic-bejeweled-card.tga"):
+        for name in ("kic-bejeweled-card.tga",):
             assert (addon / "Media/KICBejeweled" / name).read_bytes() == z.read(name)
 assert re.search(r'\["kic-bejeweled-hero"\].*?textSide = "left"', art, re.S)

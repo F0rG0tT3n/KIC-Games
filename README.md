@@ -2,6 +2,8 @@
 
 World of Warcraft Retail party-game launcher and multiplayer framework, version
 0.17.0. Intended for waiting for the group to fill and the time between dungeons.
+Includes **[2048](2048.md)** with mouse dragging, arrow/WASD controls, animated
+tile merges and saved best scores. Open it from Singleplayer or `/kic2048`.
 Includes **[Minesweeper](MINESWEEPER.md)** with three classic difficulties, safe
 first reveals and saved best times. Open it from Singleplayer or `/kicminesweeper`.
 Includes **[Tetris](TETRIS.md)** with Original and class/spec graphics and
@@ -13,7 +15,7 @@ Normal keeps Bombs, Zaps and Orbs with no timer, Energy, levels or cards.
 Roguelike uses the existing Arcane Rush survival rules: scoring replenishes Energy,
 full Energy offers a power draft or reshuffle, and powers last for the current run.
 The two modes keep separate records. Reopening a run preserves its selected mode.
-Tetris and both Bejeweled modules have saved high scores, direct group-chat sharing (or /say when solo) and
+2048, Tetris and both Bejeweled modules have saved high scores, direct group-chat sharing (or /say when solo) and
 shared graphics, audio and interface scale settings from **Options**.
 
 **[Chess](CHESS.md)** is a two-player multiplayer game for an ordinary PARTY group

@@ -353,6 +353,8 @@ local function client(name, realm, saved)
         "SetFontString",
         "SetOwner",
         "AddLine",
+        "SetShadowColor",
+        "SetShadowOffset",
     }) do
         methods[method] = function() end
     end
@@ -691,11 +693,12 @@ local function register(c, version)
 end
 
 check(
-    #A:GetGames("singleplayer") == 4
+    #A:GetGames("singleplayer") == 5
         and A.Registry.tetris
         and A.Registry.bejeweled
         and A.Registry.kic_bejeweled
         and A.Registry.minesweeper
+        and A.Registry["2048"]
         and #A:GetGames("multiplayer") == 2
         and A.Registry.chess.mode == "multiplayer",
     "Bundled singleplayer games and multiplayer Chess must be separated"
@@ -1232,18 +1235,18 @@ J:RegisterGame({
     end,
     OnStart = function() end,
 })
-check(#J:GetGames("singleplayer") == 5 and #J:GetGames("multiplayer") == 3, "Game modes were not separated")
+check(#J:GetGames("singleplayer") == 6 and #J:GetGames("multiplayer") == 3, "Game modes were not separated")
 J.UI.singleTab.scripts.OnClick()
 check(
     J.UI.tab == "singleplayer" and not J.UI.browserPanel:IsShown() and J.UI.cardScroll:IsShown(),
     "Singleplayer tab kept multiplayer panels visible"
 )
 check(
-    J.UI.launcherCards[4].title.text == "Solo fixture" and J.UI.soloPlay.enabled,
+    J.UI.launcherCards[5].title.text == "Solo fixture" and J.UI.soloPlay.enabled,
     "Singleplayer tab did not show an available offline game"
 )
 local queued = #packets
-J.UI.launcherCards[4].play.scripts.OnClick()
+J.UI.launcherCards[5].play.scripts.OnClick()
 check(
     J.ActiveGame and J.Lobby.mode == "singleplayer" and soloMessages == 1,
     "Solo game failed to launch without a group"
@@ -1577,10 +1580,10 @@ local S = sharedClient.games
 sharedClient.grouped = false
 S.UI:SelectTab("singleplayer")
 check(
-    S.UI.launcherCards[1].icon:IsShown() and S.UI.launcherCards[1].title.text == "Bejeweled",
+    S.UI.launcherCards[2].icon:IsShown() and S.UI.launcherCards[2].title.text == "Bejeweled",
     "Bejeweled library icon is missing"
 )
-check(S.UI.launcherCards[4].icon.textureValue == S.Artwork["tetris-card"].file, "Tetris block icon is missing")
+check(S.UI.launcherCards[5].icon.textureValue == S.Artwork["tetris-card"].file, "Tetris block icon is missing")
 check(S:StartSingleplayer("tetris"), "Could not start Tetris for options checks")
 local originalModel = S.Tetris.model
 S.UI.optionsButton.scripts.OnClick()
@@ -1958,9 +1961,9 @@ do
             check(
                 ui.heroShade.drawLayer == "ARTWORK"
                     and ui.heroShade.subLevel == 1
-                    and ui.heroShade.color[4] < 1
-                    and ui.heroShade.width < ui.hero.width,
-                "Featured shade must be translucent, text-side only and above the image"
+                    and ui.heroShade.textureValue == Arcade.Artwork["hero-footer-fade"].file
+                    and ui.heroShade.width == ui.hero.width - 2,
+                "Featured footer fade must match the banner viewport above the image"
             )
             check(
                 ui.heroFallback.drawLayer == "ARTWORK"
@@ -1974,24 +1977,25 @@ do
     end
     Arcade.UI:ResetWindowSize()
 end
-check(#Arcade:GetGames() == 6 and not Arcade.Registry.pug, "Concept artwork registered a fake game")
+check(#Arcade:GetGames() == 7 and not Arcade.Registry.pug, "Concept artwork registered a fake game")
 check(
     Arcade.UI.noGames:IsShown() and Arcade.UI.browseGames:IsShown() and #Arcade:GetRecentGames() == 0,
     "New Home did not show the recent-games empty state"
 )
 check(
-    Arcade.UI.groupStatus.text == "No group" and Arcade.UI.footer.text:find("6 installed", 1, true),
+    Arcade.UI.groupStatus.text == "No group" and Arcade.UI.footer.text:find("7 installed", 1, true),
     "Inaccurate footer or party status"
 )
 Arcade.UI.browseGames.scripts.OnClick()
 check(
     Arcade.UI.launcherPage == "singleplayer"
-        and Arcade.UI.launcherCards[1].title.text == "Bejeweled"
-        and Arcade.UI.launcherCards[3].title.text == "Minesweeper"
-        and Arcade.UI.launcherCards[4].title.text == "Tetris",
+        and Arcade.UI.launcherCards[1].title.text == "2048"
+        and Arcade.UI.launcherCards[2].title.text == "Bejeweled"
+        and Arcade.UI.launcherCards[4].title.text == "Minesweeper"
+        and Arcade.UI.launcherCards[5].title.text == "Tetris",
     "Browse did not show registered games"
 )
-Arcade.UI.launcherCards[4].details.scripts.OnClick()
+Arcade.UI.launcherCards[5].details.scripts.OnClick()
 check(
     Arcade.UI.launcherPage == "home"
         and Arcade.UI.featuredID == "tetris"
@@ -2263,7 +2267,7 @@ do
     end
     M.UI:OpenLauncher("singleplayer")
     check(
-        #M:GetGames("singleplayer") == 28 and M.UI.launcherCards[28]:IsShown(),
+        #M:GetGames("singleplayer") == 29 and M.UI.launcherCards[29]:IsShown(),
         "Library capped the installed game count"
     )
     check(
@@ -2643,7 +2647,7 @@ do
         check(
             ui.featuredID == id
                 and ui.heroArt.artKey == id .. "-hero"
-                and ui.soloTitle.text == id:upper()
+                and not ui.soloTitle:IsShown()
                 and ui.soloOpen:IsShown()
                 and not ui.soloPlay:IsShown(),
             "Returning from gameplay left another game featured instead of the active game's artwork/title/resume"

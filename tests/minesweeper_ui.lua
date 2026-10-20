@@ -185,7 +185,7 @@ check(
     "Home recent card omitted Minesweeper artwork"
 )
 U:FeatureGame("minesweeper")
-check(U.heroRecord.text == "Beginner best: " .. M:TimeText(saved), "Home best time does not match saved data")
+check(U.heroArt.artKey == "minesweeper-hero" and not U.soloTitle:IsShown(), "Home did not preserve the baked Minesweeper wordmark")
 new("beginner")
 win()
 M.summary.menu.scripts.OnClick()

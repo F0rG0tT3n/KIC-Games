@@ -9,6 +9,7 @@ local GOLD = Theme.Colors.accent
 -- a separate score bucket for their current ruleset.
 function UI:GetPersonalBest(id)
     local module = id == "tetris" and Games.Tetris
+        or id == "2048" and Games.Game2048
         or id == "bejeweled" and Games.Bejeweled
         or id == "kic_bejeweled" and Games.KICBejeweled
         or id == "chess" and Games.Chess
@@ -280,6 +281,7 @@ function UI:LayoutGameContainer()
     local displayed = Games.ActiveGame or self.completedGame
     local id = displayed and displayed.game.id
     local module = id == "bejeweled" and Games.Bejeweled
+        or id == "2048" and Games.Game2048
         or id == "tetris" and Games.Tetris
         or id == "kic_bejeweled" and Games.KICBejeweled
         or id == "chess" and Games.Chess

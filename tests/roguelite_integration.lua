@@ -74,7 +74,8 @@ check(G.DB.kic_bejeweled.best.score == 987654, "Legacy record overwritten")
 check(D:Storage().best.score == 1234, "Rush score not saved separately")
 G.UI:OpenLauncher("home")
 G.UI:FeatureGame("kic_bejeweled")
-check(G.UI.heroRecord.text == "Roguelike best: 1234", "Launcher displays legacy record")
+check(G.UI:GetPersonalBest("kic_bejeweled").score == 1234
+    and G.UI:GetPersonalBestMode("kic_bejeweled") == "Roguelike", "Launcher record provider exposes legacy record")
 G.UI:ShowResults()
 G.UI.resultGameID = "kic_bejeweled"
 G.UI:RefreshResults()

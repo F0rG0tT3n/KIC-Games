@@ -1,41 +1,40 @@
-local _, Games = ...
+local addonName, Games = ...
 local UI, Theme = Games.UI, Games.Theme
 local library = {
+    ["2048"] = {
+        hero = "2048-hero",
+        card = "2048-card",
+        summary = "Slide equal tiles together, build your score, and reach 2048. Drag or use the arrow keys.",
+    },
     minesweeper = {
         hero = "minesweeper-hero",
         card = "minesweeper-card",
-        tagline = "REVEAL / FLAG / CLEAR",
-        summary = "Read the numbers. Avoid the mines.\nThree classic difficulties.",
+        summary = "Reveal safe tiles, flag hidden mines, and beat your best time.",
     },
     blindshot = {
         hero = "blindshot-hero",
         card = "blindshot-card",
-        tagline = "HIDE / AIM / FIRE",
-        summary = "Hide, aim, then fire in random order.\nOne target per shot. PARTY / 2-5.",
+        summary = "Aim in secret, fire in random order, and outlast the party.",
     },
     chess = {
         hero = "chess-hero",
         card = "chess-card",
-        tagline = "THINK / MOVE / CHECKMATE",
-        summary = "Host or join a party lobby.\nReady up for two-player Chess.",
+        summary = "Challenge a friend to a two-player chess match. No clocks or AI.",
     },
     bejeweled = {
         hero = "bejeweled-hero",
         card = "bejeweled-card",
-        tagline = "MATCH / CASCADE / REPEAT",
-        summary = "Match 3+ in a row or column.\nCascades multiply points.",
+        summary = "Match class icons, trigger cascades, and chase your high score.",
     },
     kic_bejeweled = {
         hero = "kic-bejeweled-hero",
         card = "kic-bejeweled-card",
-        tagline = "BOMB / LIGHTNING / COLOR ORB",
-        summary = "Create special gems.\nUnleash chain reactions.",
+        summary = "Match gems, unleash power combos, or brave a Roguelike run.",
     },
     tetris = {
         hero = "tetris-hero",
         card = "tetris-card",
-        tagline = "STACK / CLEAR / REPEAT",
-        summary = "Stack, clear lines,\nbeat your best.",
+        summary = "Stack colorful blocks, clear lines, and beat your high score.",
     },
 }
 local function place(frame, parent, x, y, width, height)
@@ -259,20 +258,24 @@ function UI:InitializeLauncher()
     -- Artwork surfaces have no opaque native Center at all. Only an edge-only
     -- backdrop and OVERLAY ornaments can overlap the explicit ARTWORK stack.
     Theme:StylePremiumFrame(self.hero, "window-frame", { artwork = true })
-    -- Keep art, translucent text-side shade and fallback icon in explicit order.
+    -- All wordmarks are baked into the left side of the hero art.
+    -- Use a soft bottom fade only: never cover the wordmark with a half-screen rectangle.
     self.heroArt = Theme:Art(self.hero, "bejeweled-hero", 880, 254, 1, -1, 1, "ARTWORK")
     self.heroShade = self.hero:CreateTexture(nil, "ARTWORK", nil, 1)
-    self.heroShade:SetColorTexture(0.008, 0.02, 0.05, 0.72)
+    self.heroShade:SetTexture(Games.Artwork["hero-footer-fade"].file)
+    self.heroShade:SetTexCoord(0, 1, 0, 1)
+    self.heroShade:SetBlendMode("BLEND")
+    self.heroShade:SetPoint("TOPLEFT", 1, -1)
+    self.heroShade:SetSize(880, 254)
     self.heroFallback = self.hero:CreateTexture(nil, "ARTWORK", nil, 2)
     self.heroFallback:SetSize(112, 112)
-    self.heroFallback:SetPoint("TOPLEFT", 100, -70)
-    self.heroBadge = Theme:Label(self.hero, "SOLO GAME", 0, 0, 220, "GameFontHighlightSmall")
-    self.heroBadge:SetTextColor(unpack(Theme.Colors.accent))
-    self.heroTagline = Theme:Label(self.hero, "", 0, 0, 420)
-    self.heroTagline:SetTextColor(unpack(Theme.Colors.accent))
-    self.heroRecord = Theme:Label(self.hero, "", 0, 0, 230, "GameFontHighlightSmall")
+    self.heroFallback:SetPoint("TOPRIGHT", -52, -68)
+    -- The featured game's wordmark lives in the hero TGA, not in a UI font.
+    -- Keep the reusable native title only as a fallback for missing artwork.
     self.soloTitle:SetFont("Fonts\\ARIALN.TTF", 32, "")
-    self.soloDescription:SetFont("Fonts\\ARIALN.TTF", 14, "")
+    self.soloDescription:SetFont("Fonts\\ARIALN.TTF", 17, "")
+    self.soloDescription:SetShadowColor(0, 0, 0, 0.95)
+    self.soloDescription:SetShadowOffset(1, -1)
     Theme:Primary(self.soloPlay)
     Theme:Primary(self.soloOpen)
     self.soloPlay.caption:SetFont("Fonts\\ARIALN.TTF", 18, "")
@@ -626,43 +629,48 @@ function UI:RefreshFeature(width)
         self.heroShade:Hide()
         self.heroFallback:Hide()
         self.soloLeave:Hide()
-        place(self.heroBadge, nil, 28, -24, 400)
+        self.soloTitle:Show()
         place(self.soloTitle, nil, 28, -64, width - 56, 42)
         place(self.soloDescription, nil, 28, -132, width - 56, 58)
         self.soloTitle:SetText("Your next adventure")
         self.soloDescription:SetText("Install a KIC Games module to begin.")
         self.soloPlay:Hide()
         self.soloOpen:Hide()
-        self.heroRecord:SetText("")
-        self.heroBadge:SetText("GAME LIBRARY")
-        self.heroTagline:SetText("")
+        self.soloHint:Hide()
         return
     end
+
     local art = library[selected.id]
-    self.heroShade:Show()
-    local asset = art and Games.Artwork[art.hero]
-    local x = asset and asset.textSide == "left" and 28 or math.max(28, width - 460)
-    local textWidth = math.min(432, width - x - 24)
     Theme:SetArt(self.heroArt, art and art.hero or "generic-hero", width - 2, 254, 1)
+    -- Scale the gradient with the hero viewport, not the underlying source image.
+    -- It begins near the bottom: the illuminated game wordmark stays untouched.
+    self.heroShade:Show()
     self.heroShade:ClearAllPoints()
-    self.heroShade:SetPoint("TOPLEFT", x - 12, -1)
-    self.heroShade:SetSize(456, 254)
+    self.heroShade:SetPoint("TOPLEFT", 1, -1)
+    self.heroShade:SetSize(width - 2, 254)
     self.heroFallback:SetShown(not self.heroArt.artLoaded)
     self.heroFallback:SetTexture(selected.icon or "Interface\\Icons\\INV_Misc_Dice_01")
-    place(self.heroBadge, nil, x, -22, textWidth)
-    self.heroBadge:SetText(
-        selected.mode == "singleplayer" and "SOLO GAME" or ("PARTY GAME / " .. self:PlayerCount(selected))
-    )
-    place(self.soloTitle, nil, x, -54, textWidth, 42)
-    self.soloTitle:SetText(selected.title:upper())
-    place(self.heroTagline, nil, x, -104, textWidth)
-    self.heroTagline:SetText(art and art.tagline or "PLAY / TOGETHER")
-    place(self.soloDescription, nil, x, -131, textWidth, 58)
-    self.soloDescription:SetText(selected.description or "")
-    place(self.soloPlay, nil, x, -202, 190, 36)
-    place(self.soloOpen, nil, x, -202, 190, 36)
+
+    -- The native game title is only a safety net when the TGA is unavailable.
+    self.soloTitle:SetShown(not self.heroArt.artLoaded)
+    if not self.heroArt.artLoaded then
+        place(self.soloTitle, nil, 30, -60, width - 64, 44)
+        self.soloTitle:SetText(selected.title:upper())
+    end
+
+    -- Compact, consistent action row at bottom left for all installed games.
+    -- Description sits alongside Play rather than covering the baked-in logo.
+    local actionX, actionY, actionWidth, actionHeight = 30, -207, 206, 40
+    local leaving = Games.Pending ~= nil or Games.Lobby and Games.Lobby.mode == "multiplayer"
+    local leaveWidth = 146
+    local detailX = actionX + actionWidth + 20 + (leaving and leaveWidth + 16 or 0)
+    place(self.soloDescription, nil, detailX, -195, math.max(120, width - detailX - 26), 56)
+    self.soloDescription:SetJustifyV("MIDDLE")
+    self.soloDescription:SetText(art and art.summary or selected.description or "")
+    place(self.soloPlay, nil, actionX, actionY, actionWidth, actionHeight)
+    place(self.soloOpen, nil, actionX, actionY, actionWidth, actionHeight)
     local resume = active ~= nil
-    self.soloOpen:SetShown(resume == true)
+    self.soloOpen:SetShown(resume)
     self.soloPlay:SetShown(not resume)
     self.soloPlay:SetText(selected.mode == "singleplayer" and "Play" or "View lobby")
     if self:CanLaunch(selected) then
@@ -670,38 +678,9 @@ function UI:RefreshFeature(width)
     else
         self.soloPlay:Disable()
     end
-    local best = self:GetPersonalBest(selected.id)
-    local score = best and best.score
-    local mode = self:GetPersonalBestMode(selected.id)
-    local record = type(score) == "number"
-        and score == score
-        and score >= 0
-        and score <= 2147483647
-        and ((mode and (mode .. " best: ") or "Personal best: ") .. tostring(score))
-    if selected.id == "chess" then
-        local stats = Games.Chess:Storage().stats
-        record = string.format("Record: %dW / %dL / %dD", stats.wins, stats.losses, stats.draws)
-    end
-    if selected.id == "blindshot" then
-        local stats = Games.Blindshot:Storage().stats
-        record = string.format("Record: %dW / %dD / %d eliminations", stats.wins, stats.draws, stats.eliminations)
-    end
-    if selected.id == "minesweeper" then
-        local storage = Games.Minesweeper:Storage()
-        record = Games.Minesweeper.Engine.ByID[storage.difficulty].title .. " best: "
-            .. Games.Minesweeper:TimeText(storage.best[storage.difficulty])
-    end
-    self.heroRecord:SetText(
-        record
-            or (
-                selected.mode == "singleplayer" and "Your next personal best awaits."
-                or "Open the party lobby to host or join."
-            )
-    )
-    place(self.heroRecord, nil, x + 208, -212, 222)
-    local leaving = Games.Pending ~= nil or Games.Lobby and Games.Lobby.mode == "multiplayer"
-    place(self.soloLeave, nil, x + 208, -202, 170, 36)
-    self.soloLeave:SetShown(leaving)
-    self.heroRecord:SetShown(not leaving)
+
+    -- Keep the secondary lobby escape action accessible alongside Play.
+    place(self.soloLeave, nil, actionX + actionWidth + 12, -209, leaveWidth, 36)
+    self.soloLeave:SetShown(leaving == true)
     self.soloHint:Hide()
 end

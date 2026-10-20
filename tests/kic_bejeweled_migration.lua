@@ -47,7 +47,8 @@ check(#recent == 3 and recent[1] == newID and recent[2] == "tetris" and recent[3
     "Recent order lost or renamed entry duplicated")
 games.UI:OpenLauncher("home")
 games.UI:FeatureGame(newID)
-check(games.UI.heroRecord.text == "Roguelike best: 500", "Launcher failed after migration")
+check(games.UI:GetPersonalBest(newID).score == 500 and games.UI:GetPersonalBestMode(newID) == "Roguelike"
+    and games.UI.heroArt.artKey == "kic-bejeweled-hero", "Launcher failed after migration")
 games.UI:ShowResults()
 games.UI.resultGameID = newID
 games.UI:RefreshResults()

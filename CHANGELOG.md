@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased - 2048
+
+- Added singleplayer 2048 with the supplied hero/card art, a 4x4 board, standard single-merge rules, 2/4 spawning, animated slides and merge/spawn effects.
+- Added scale-aware left-mouse dragging, arrows/WASD, outside-board release handling and cancellation on hide, resize, scale changes or chat focus. Runs preserve their board during launcher navigation.
+- Added saved best scores, highest-tile/move stats, shared result history and a Bejeweled-style win/loss popup with Play again and Back to menu while keeping the final board in the main window.
+- Preserved the revised launcher wordmark/footer presentation and registered its shared fade. Updated launcher tests for the current artwork presentation and the additional game.
+
 ## Unreleased - Media organization
 
 - Removed the extra `KICUI` directory level from runtime and source Media folders, preserving the existing files and subdirectories. Updated the artwork base path, generation tools, tests and documentation.

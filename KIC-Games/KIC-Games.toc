@@ -58,3 +58,6 @@ Games\Blindshot\Module.lua
 Games\Minesweeper\Engine.lua
 Games\Minesweeper\UI.lua
 Games\Minesweeper\Module.lua
+Games\2048\Engine.lua
+Games\2048\UI.lua
+Games\2048\Module.lua

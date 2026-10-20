@@ -1,9 +1,12 @@
 local addonName, Games = ...
 local base = "Interface\\AddOns\\" .. addonName .. "\\Media\\"
 Games.Artwork = {
+    ["2048-hero"] = { file = base .. "2048/2048-hero.tga", width = 1024, height = 512, textSide = "right" },
+    ["2048-card"] = { file = base .. "2048/2048-card.tga", width = 256, height = 256 },
+    ["hero-footer-fade"] = { file = base .. "Shared/hero-footer-fade.tga", width = 512, height = 256 },
     ["minesweeper-hero"] = {
         file = base .. "Minesweeper/minesweeper-hero.tga",
-        width = 2048,
+        width = 1024,
         height = 512,
         textSide = "right",
     },

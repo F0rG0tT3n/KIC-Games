@@ -159,6 +159,7 @@ function UI:RefreshResults()
             { "cleared", "Gems" },
             { "bestCascade", "Cascade" },
         }
+        or self.resultGameID == "2048" and { { "highest", "Highest tile" }, { "moves", "Moves" } }
         or {}
     for _, field in ipairs(fields) do
         if best and number(best[field[1]]) then

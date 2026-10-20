@@ -338,12 +338,12 @@ local owner = harness.client("KICGemTester", "GemRealm", {
 owner.grouped = false
 local G, D = owner.games, owner.games.KICBejeweled
 check(
-    G.Registry.bejeweled and G.Registry.kic_bejeweled and #G:GetGames("singleplayer") == 4,
+    G.Registry.bejeweled and G.Registry.kic_bejeweled and #G:GetGames("singleplayer") == 5,
     "Independent registration missing"
 )
 check(G.Registry.kic_bejeweled.title == "KIC Bejeweled", "Wrong title")
 G.UI:OpenLauncher("singleplayer")
-check(G.UI.launcherCards[2].icon.textureValue == G.Artwork["kic-bejeweled-card"].file, "KIC Bejeweled card missing")
+check(G.UI.launcherCards[3].icon.textureValue == G.Artwork["kic-bejeweled-card"].file, "KIC Bejeweled card missing")
 G.UI:OpenLauncher("home")
 G.UI:FeatureGame("kic_bejeweled")
 check(
